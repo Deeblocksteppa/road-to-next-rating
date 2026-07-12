@@ -1,101 +1,129 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { Assessment } from "@/components/assessment/Assessment";
+import { Computing } from "@/components/assessment/Computing";
+import { Reveal } from "@/components/diagnosis/Reveal";
+import { RoadmapScreen } from "@/components/diagnosis/Roadmap";
+import { CommittedScreen } from "@/components/diagnosis/Committed";
+import { diagnose } from "@/lib/engine";
+import { generateRoadmap, Roadmap } from "@/lib/roadmap";
+import { QUESTIONS } from "@/lib/questions";
+import { AnswerMap, Diagnosis } from "@/lib/types";
+
+type Phase = "landing" | "assessment" | "computing" | "reveal" | "roadmap" | "committed";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [phase, setPhase] = useState<Phase>("landing");
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [answers, setAnswers] = useState<AnswerMap | null>(null);
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  function handleAssessmentComplete(ans: AnswerMap) {
+    const diag = diagnose(ans);
+    setDiagnosis(diag);
+    setAnswers(ans);
+    setPhase("computing");
+  }
+
+  function handleRevealNext() {
+    if (diagnosis && answers) {
+      setRoadmap(generateRoadmap(diagnosis, answers));
+      setPhase("roadmap");
+    }
+  }
+
+  function handleReset() {
+    setPhase("landing");
+    setDiagnosis(null);
+    setAnswers(null);
+    setRoadmap(null);
+  }
+
+  if (phase === "assessment") {
+    return <Assessment onComplete={handleAssessmentComplete} />;
+  }
+
+  if (phase === "computing") {
+    return <Computing onDone={() => setPhase("reveal")} />;
+  }
+
+  if (phase === "reveal" && diagnosis) {
+    return <Reveal diagnosis={diagnosis} onNext={handleRevealNext} />;
+  }
+
+  if (phase === "roadmap" && roadmap) {
+    return <RoadmapScreen roadmap={roadmap} onCommit={() => setPhase("committed")} />;
+  }
+
+  if (phase === "committed" && roadmap) {
+    return (
+      <CommittedScreen
+        roadmap={roadmap}
+        onBackToPlan={() => setPhase("roadmap")}
+        onStartOver={handleReset}
+      />
+    );
+  }
+
+  // Landing
+  return (
+    <main
+      className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center px-6 text-center bg-[#080b12] text-slate-100"
+      style={{
+        backgroundImage:
+          "radial-gradient(120% 80% at 50% -10%, #0e1726 0%, #080b12 55%, #06080d 100%)",
+      }}
+    >
+      <LandingStyles />
+      <div className="landing-in mx-auto w-full max-w-[520px] space-y-8">
+        <div className="space-y-4">
+          <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-slate-50 md:text-5xl">
+            Road to{" "}
+            <span className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
+              Next Rating
+            </span>
+          </h1>
+          <div className="space-y-1">
+            <p className="text-[17px] leading-relaxed text-slate-200">
+              Find what&apos;s holding back your game.
+            </p>
+            <p className="text-sm leading-relaxed text-slate-400">
+              3 minutes. No generic advice. Just the one thing that actually matters.
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        <button
+          onClick={() => setPhase("assessment")}
+          className={[
+            "mx-auto block rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500",
+            "px-10 py-4 text-[16px] font-medium text-white",
+            "hover:opacity-90 active:scale-[0.99] transition-all duration-150",
+          ].join(" ")}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          Start →
+        </button>
+
+        <p className="text-[12px] text-slate-600">{QUESTIONS.length} questions · ~3 minutes</p>
+      </div>
+    </main>
+  );
+}
+
+function LandingStyles() {
+  return (
+    <style>{`
+      @keyframes landingIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .landing-in {
+        animation: landingIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .landing-in { animation: none; }
+      }
+    `}</style>
   );
 }
