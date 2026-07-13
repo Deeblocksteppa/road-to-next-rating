@@ -62,4 +62,8 @@
   body {
     @apply bg-background text-foreground;
   }
+  html, body {
+    background-color: #080b12;
+    min-height: 100%;
+  }
 }
