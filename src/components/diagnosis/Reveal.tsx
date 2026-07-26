@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { SKILL_LABELS } from "@/lib/diagnoses";
+import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
 import { Diagnosis } from "@/lib/types";
 
 const BEAT_COUNT = 5;
 
+/**
+ * The reveal — five choreographed beats, spec order (DESIGN_SYSTEM.md §5):
+ *   0 mirror → 1 verdict → 2 insight → 3 absolution → 4 readiness
+ * Darker-than-app background, story-progress ticks up top, one idea per beat,
+ * the user controls the pace (tap to continue), readiness ends on the CTA.
+ */
 export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: () => void }) {
   const [beat, setBeat] = useState(0);
   const isLast = beat === BEAT_COUNT - 1;
@@ -19,138 +24,133 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
     <main
       onClick={advance}
       className={[
-        "relative min-h-[100dvh] w-full overflow-hidden select-none",
-        "bg-[#080b12] text-slate-100",
+        "relative min-h-[100dvh] w-full select-none overflow-hidden bg-reveal text-ink",
         isLast ? "cursor-default" : "cursor-pointer",
       ].join(" ")}
-      style={{
-        backgroundImage:
-          "radial-gradient(120% 80% at 50% -10%, #0e1726 0%, #080b12 55%, #06080d 100%)",
-      }}
     >
       <RevealStyles />
 
-      {/* Beat content — full screen, vertically centered, centered column */}
-      <div className="flex min-h-[100dvh] w-full items-center justify-center px-6 pt-20 pb-36 md:px-7 md:pt-24">
-        <div
-          key={beat}
-          className="beat-in mx-auto w-full max-w-[600px] text-center"
-        >
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[440px] flex-col px-6 pb-8">
+        {/* Story-progress ticks */}
+        <div className="flex gap-[5px] pt-6">
+          {Array.from({ length: BEAT_COUNT }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-0.5 flex-1 rounded-full ${i <= beat ? "bg-ink" : "bg-line-strong"}`}
+            />
+          ))}
+        </div>
+
+        {/* Beat content */}
+        <div key={beat} className="beat-in flex flex-1 flex-col justify-center">
           {beat === 0 && <MirrorBeat diagnosis={diagnosis} />}
-          {beat === 1 && <BottleneckBeat diagnosis={diagnosis} />}
-          {beat === 2 && <ReframeBeat diagnosis={diagnosis} />}
-          {beat === 3 && <ThatsWhyBeat diagnosis={diagnosis} />}
-          {beat === 4 && <ReadinessBeat diagnosis={diagnosis} onNext={onNext} />}
+          {beat === 1 && <VerdictBeat diagnosis={diagnosis} />}
+          {beat === 2 && <InsightBeat diagnosis={diagnosis} />}
+          {beat === 3 && <AbsolutionBeat diagnosis={diagnosis} />}
+          {beat === 4 && <ReadinessBeat diagnosis={diagnosis} />}
         </div>
-      </div>
 
-      {/* Continue affordance */}
-      {!isLast && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-20 flex flex-col items-center gap-1">
-          <span className="continue-hint text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
-            Tap to continue
-          </span>
-          <svg
-            className="continue-hint h-4 w-4 text-slate-600"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Footer — tap hint for beats 0–3, the CTA on readiness */}
+        {isLast ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
+            className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
           >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </div>
-      )}
-
-      {/* Progress dots */}
-      <div className="absolute inset-x-0 bottom-8 flex items-center justify-center gap-2">
-        {Array.from({ length: BEAT_COUNT }).map((_, i) => (
-          <span
-            key={i}
-            className={[
-              "h-1.5 rounded-full transition-all duration-500 ease-out",
-              i === beat
-                ? "w-6 bg-gradient-to-r from-sky-400 to-emerald-400"
-                : i < beat
-                  ? "w-1.5 bg-slate-500"
-                  : "w-1.5 bg-slate-700",
-            ].join(" ")}
-          />
-        ))}
+            See my 3-week plan
+          </button>
+        ) : (
+          <div className="flex justify-center">
+            <span className="continue-hint font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
+              Tap to continue
+            </span>
+          </div>
+        )}
       </div>
     </main>
   );
 }
 
-/* ── Beat 1: Mirror ───────────────────────────────────────────── */
+/* ── Beat 1: Mirror — their answers reflected back ────────────── */
 function MirrorBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   return (
-    <div className="space-y-8 md:space-y-10">
-      <h1 className="text-xl font-medium leading-snug tracking-tight text-slate-200 md:text-2xl">
-        Here&apos;s what you told me about your game.
-      </h1>
-      {/* Block centered in the column, but text left-aligned within */}
-      <ul className="mx-auto max-w-[460px] space-y-4 text-left md:space-y-5">
+    <div className="flex flex-col gap-7">
+      <div className="flex flex-col gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
+          What you told us
+        </p>
+        <h1 className="font-display text-2xl font-bold leading-[1.2] tracking-[-0.01em]">
+          In your own words —
+        </h1>
+      </div>
+      <div className="flex flex-col gap-5">
         {diagnosis.mirror.map((line, i) => (
-          <li key={i} className="flex gap-4">
-            <span className="mt-2.5 h-px w-5 shrink-0 bg-gradient-to-r from-sky-400/70 to-transparent" />
-            <span className="text-[15px] leading-relaxed text-slate-400 md:text-[17px]">
-              {line}
-            </span>
-          </li>
+          <div key={i} className="border-l-2 border-line-strong pl-4">
+            <p className="text-pretty text-base leading-[1.5] text-ink">{line}</p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
 
-/* ── Beat 2: Bottleneck — the verdict ─────────────────────────── */
-function BottleneckBeat({ diagnosis }: { diagnosis: Diagnosis }) {
+/* ── Beat 2: Verdict — centered, the skill name is the only big thing ── */
+function VerdictBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   return (
-    <div className="space-y-6 md:space-y-8">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-sky-400/80">
+    <div className="flex flex-col items-center gap-6 text-center">
+      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
         Your bottleneck
       </p>
-      <h2 className="text-4xl font-semibold leading-[1.05] tracking-tight text-slate-50 md:text-[2.75rem]">
-        {SKILL_LABELS[diagnosis.bottleneck]}
+      <h2 className="text-balance font-display text-[46px] font-extrabold leading-[1.04] tracking-[-0.02em]">
+        {SKILL_TITLES[diagnosis.bottleneck]}
       </h2>
-      <p className="mx-auto max-w-[440px] text-[17px] leading-relaxed text-slate-400 md:text-[18px]">
+      <div className="h-px w-11 bg-line-strong" />
+      <p className="max-w-[280px] text-balance text-[15px] leading-[1.6] text-ink-2">
         {diagnosis.bottleneckVerdict}
       </p>
     </div>
   );
 }
 
-/* ── Beat 3: Reframe — THE moment, the emotional peak ─────────── */
-function ReframeBeat({ diagnosis }: { diagnosis: Diagnosis }) {
+/* ── Beat 3: Insight — why it hasn't improved, left-aligned ───── */
+function InsightBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   return (
-    <div className="space-y-6 md:space-y-14">
-      <span className="mx-auto block h-8 w-px bg-gradient-to-b from-transparent to-emerald-400/60 md:h-16" />
-      <p className="bg-gradient-to-br from-white via-slate-100 to-slate-300 bg-clip-text text-[22px] font-medium leading-[1.5] tracking-tight text-transparent md:text-[32px] md:leading-[1.55]">
-        {diagnosis.reframeText}
+    <div className="flex flex-col gap-[22px]">
+      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
+        Why it hasn&apos;t improved
+      </p>
+      <h2 className="text-pretty font-display text-[25px] font-bold leading-[1.32] tracking-[-0.01em]">
+        {diagnosis.insightHeadline}
+      </h2>
+      <p className="text-pretty text-[15.5px] leading-[1.68] text-ink-2">
+        {diagnosis.insightBody}
       </p>
     </div>
   );
 }
 
-/* ── Beat 4: That's why ───────────────────────────────────────── */
-function ThatsWhyBeat({ diagnosis }: { diagnosis: Diagnosis }) {
+/* ── Beat 4: Absolution — the exhale ──────────────────────────── */
+function AbsolutionBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   return (
-    <div className="space-y-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-400/80">
-        That&apos;s why
+    <div className="flex flex-col gap-[26px]">
+      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
+        The part that matters
       </p>
-      <p className="mx-auto max-w-[520px] text-[17px] leading-relaxed text-slate-300 md:text-[19px]">
-        {diagnosis.thatsWhyText}
+      <h2 className="text-pretty font-display text-[29px] font-bold leading-[1.28] tracking-[-0.015em]">
+        {diagnosis.absolution}
+      </h2>
+      <div className="h-px w-11 bg-line-strong" />
+      <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
+        {diagnosis.absolutionClose}
       </p>
     </div>
   );
 }
 
-/* ── Beat 5: Readiness ────────────────────────────────────────── */
-function ReadinessBeat({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: () => void }) {
+/* ── Beat 5: Readiness — the score ────────────────────────────── */
+function ReadinessBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   const [fill, setFill] = useState(0);
   const [count, setCount] = useState(0);
 
@@ -162,8 +162,7 @@ function ReadinessBeat({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
     const duration = 1100;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
       setCount(Math.round(eased * diagnosis.readiness));
       if (t < 1) raf = requestAnimationFrame(tick);
     };
@@ -176,42 +175,33 @@ function ReadinessBeat({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
   }, [diagnosis.readiness]);
 
   return (
-    <div className="space-y-8 md:space-y-10">
-      <div className="space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">
-          Your readiness to break through
-        </p>
-        <div className="flex items-end justify-center gap-1">
-          <span className="bg-gradient-to-br from-sky-400 to-emerald-400 bg-clip-text text-6xl font-semibold tabular-nums leading-none tracking-tight text-transparent md:text-7xl">
-            {count}
-          </span>
-          <span className="mb-2 text-xl font-medium text-slate-500 md:text-2xl">/ 100</span>
-        </div>
+    <div className="flex flex-col gap-[26px]">
+      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
+        Readiness for 4.0
+      </p>
+
+      <div className="font-display text-[96px] font-extrabold leading-none tabular-nums">
+        {count}
+        <span className="text-[28px] font-semibold text-ink-3"> /100</span>
       </div>
 
-      <div className="space-y-4">
-        <div className="mx-auto h-2 w-full max-w-[440px] overflow-hidden rounded-full bg-slate-800/80">
+      <div className="flex flex-col gap-2.5">
+        <div className="h-1.5 overflow-hidden rounded-full bg-line">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-sky-400 to-emerald-400 transition-[width] duration-[1100ms] ease-out"
+            className="h-full rounded-full bg-optic transition-[width] duration-[1100ms] ease-out"
             style={{ width: `${fill}%` }}
           />
         </div>
-        <p className="mx-auto max-w-[460px] text-[15px] leading-relaxed text-slate-400">
-          The biggest thing holding you down right now is{" "}
-          <span className="font-medium text-slate-200">
-            {SKILL_LABELS[diagnosis.bottleneck]}
-          </span>
-          . Close that gap and the number moves.
-        </p>
+        <div className="flex justify-between">
+          <span className="font-mono text-[10px] tracking-[0.1em] text-ink-3">3.0</span>
+          <span className="font-mono text-[10px] tracking-[0.1em] text-ink-3">4.0</span>
+        </div>
       </div>
 
-      <Button
-        size="lg"
-        onClick={(e) => { e.stopPropagation(); onNext(); }}
-        className="mx-auto h-12 w-full max-w-[440px] bg-gradient-to-r from-sky-500 to-emerald-500 text-base font-medium text-white hover:opacity-90"
-      >
-        See my plan →
-      </Button>
+      <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
+        The biggest thing between you and 4.0 is {SKILL_LABELS[diagnosis.bottleneck]}.
+        The plan starts there.
+      </p>
     </div>
   );
 }
@@ -228,7 +218,7 @@ function RevealStyles() {
         animation: beatIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
       @keyframes hintPulse {
-        0%, 100% { opacity: 0.35; }
+        0%, 100% { opacity: 0.5; }
         50%      { opacity: 0.9; }
       }
       .continue-hint {

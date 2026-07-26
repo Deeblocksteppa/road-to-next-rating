@@ -12,6 +12,17 @@ export interface Roadmap {
   weeksTarget: number;
 }
 
+// Short (2–4 word) focus phrase per bottleneck — used in the Home/Plan week
+// caption ("Week 2 of 3 — Pressure and feedback"). There's no per-week theme
+// data to derive this from, so it's a fixed label per skill, same pattern as
+// IN_GAME_RULES / RETEST_METRICS below.
+export const WEEK_FOCUS_LABELS: Record<SkillId, string> = {
+  reset: "Pressure and feedback",
+  third_shot_drop: "Volume and feedback",
+  net_defense: "Reflex and repetition",
+  dink_patience: "Patience under pressure",
+};
+
 const IN_GAME_RULES: Record<SkillId, string> = {
   reset:
     "When you're caught mid-court, reset soft instead of attacking — even if you lose the point. You're trading this week's games for next month's level.",

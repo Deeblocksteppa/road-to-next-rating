@@ -43,6 +43,8 @@ export interface Diagnosis {
   mirror: string[];
   bottleneckVerdict: string;
   bottleneckText: string;
-  reframeText: string;
-  thatsWhyText: string;
+  insightHeadline: string; // reveal beat 3 hook — "why it hasn't improved"
+  insightBody: string;     // reveal beat 3 body — the non-obvious mechanism
+  absolution: string;      // reveal beat 4 headline — talent-ceiling → structure reframe
+  absolutionClose: string; // reveal beat 4 close (below divider) — 1 sentence, story-specific
 }

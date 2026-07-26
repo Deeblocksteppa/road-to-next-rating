@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --accent:#D8E34C; --accent-ink:#131408; }
+html,body { margin:0; padding:0; background:#101013; }
+body { font-family:'Instrument Sans',sans-serif; color:#F4F4F2; }
+a { color:#D8E34C; text-decoration:none; }
+a:hover { color:#E6EF7A; }
+::selection { background:#D8E34C; color:#131408; }
+@keyframes rtnrRise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</helmet>
+<section style="padding:48px 56px 96px; display:flex; flex-direction:column; gap:56px; min-width:1280px">
+
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; border-bottom:1px solid #232327; padding-bottom:24px">
+    <div style="display:flex; align-items:center; gap:16px">
+      <svg width="40" height="40" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#0B0B0C" stroke="#2E2E33"></rect><path d="M6 21.5 H15.5" stroke="#63635E" stroke-width="3" stroke-linecap="round" fill="none"></path><path d="M15.5 21.5 L26 10.5" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" fill="none"></path></svg>
+      <div>
+        <div style="font-family:'Archivo',sans-serif; font-stretch:125%; font-weight:800; font-size:18px; letter-spacing:0.06em">ROAD TO NEXT RATING</div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E; margin-top:3px">VISUAL IDENTITY + UI SPEC — V1 · DARK ONLY · 375PX</div>
+      </div>
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">JUL 2026</div>
+  </div>
+
+  <!-- ============ RATIONALE ============ -->
+  <div style="display:flex; gap:24px; align-items:stretch">
+    <div style="width:400px; background:#131315; border:1px solid #232327; border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:12px">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:var(--accent)">01 — PALETTE</div>
+      <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:19px">Kill the gradient. Keep one color, and make it the sport's.</div>
+      <div style="font-size:14px; line-height:1.6; color:#9C9C97">Your read is right: navy + blue→green gradient is the uniform of AI dev tools, and gradients read as marketing, not measurement. The fix isn't a different gradient — it's monochrome. Near-black neutrals carry the whole interface (the Workouts-app register), and a single accent does all the pointing. That accent is optic yellow-green — the color of the ball itself. It's the one hue that says "this sport" without drawing a paddle, and against true neutrals it reads as instrument signal, not decoration. Rule: the accent only ever marks <em>the thing that matters right now</em> — one CTA, one data line, one selected state. Never backgrounds, never headings.</div>
+    </div>
+    <div style="width:400px; background:#131315; border:1px solid #232327; border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:12px">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:var(--accent)">02 — TYPE</div>
+      <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:19px">Three voices: verdict, coach, instrument.</div>
+      <div style="font-size:14px; line-height:1.6; color:#9C9C97"><strong style="color:#F4F4F2">Archivo</strong> (heavy, expanded for the wordmark, tabular for numbers) delivers verdicts and metrics — it has the flat-sided authority of stadium signage without being a sports cliché. <strong style="color:#F4F4F2">Instrument Sans</strong> is the coach's speaking voice: body copy, explanations, buttons. <strong style="color:#F4F4F2">IBM Plex Mono</strong> is the instrument itself — every label, unit, and countdown is mono smallcaps, which is what makes the UI feel calibrated rather than styled. No font is ever italic, and nothing is ever centered except the reveal.</div>
+    </div>
+    <div style="width:400px; background:#131315; border:1px solid #232327; border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:12px">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:var(--accent)">03 — LOGO</div>
+      <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:19px">The mark is the plateau, broken.</div>
+      <div style="font-size:14px; line-height:1.6; color:#9C9C97">No paddle, no ball, no net. The mark is two strokes: a flat gray line — the plateau your user has been living on — and an accent line breaking upward off its end. It's the product's promise drawn in four points, it's legible at 16px, and it doubles as a chart motif across the app (the Progress chart is literally the logo happening slowly). The wordmark is expanded-width Archivo caps: "ROAD TO NEXT" carries the weight, "RATING" sits below in mono as the measured object.</div>
+    </div>
+  </div>
+
+  <!-- ============ COLOR SYSTEM ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#63635E">COLOR SYSTEM</div>
+    <div style="display:flex; gap:24px; align-items:flex-start">
+      <div style="display:flex; flex-direction:column; gap:10px; width:620px">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px">
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600">background</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#0B0B0C</div></div>
+          <div style="background:#131315; border:1px solid #232327; border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600">surface</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#131315</div></div>
+          <div style="background:#1A1A1D; border:1px solid #2E2E33; border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600">surface-2</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#1A1A1D</div></div>
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end; gap:4px"><div style="display:flex; gap:6px"><div style="width:28px; height:14px; border-radius:4px; border:1px solid #232327"></div><div style="width:28px; height:14px; border-radius:4px; border:1px solid #2E2E33"></div></div><div style="font-size:13px; font-weight:600">border / strong</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#232327 · #2E2E33</div></div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px">
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600; color:#F4F4F2">text-primary</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#F4F4F2</div></div>
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600; color:#9C9C97">text-secondary</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#9C9C97</div></div>
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600; color:#63635E">text-muted</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#63635E</div></div>
+          <div style="background:var(--accent); border-radius:12px; padding:14px; height:96px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600; color:#131408">accent / optic</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#131408">#D8E34C</div></div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px">
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:80px; display:flex; flex-direction:column; justify-content:flex-end; gap:6px"><div style="width:100%; height:10px; border-radius:4px; background:rgba(216,227,76,0.12); border:1px solid rgba(216,227,76,0.3)"></div><div style="font-size:13px; font-weight:600">accent-dim</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">accent @ 12%</div></div>
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:80px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600; color:#E3B84C">warning</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#E3B84C</div></div>
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:80px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600; color:#E3654C">danger / regressed</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">#E3654C</div></div>
+          <div style="background:#0B0B0C; border:1px solid #232327; border-radius:12px; padding:14px; height:80px; display:flex; flex-direction:column; justify-content:flex-end"><div style="font-size:13px; font-weight:600; color:#131408; background:var(--accent); border-radius:4px; padding:2px 6px; align-self:flex-start">on-accent</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E; margin-top:4px">#131408</div></div>
+        </div>
+        <div style="font-size:13px; line-height:1.6; color:#9C9C97; max-width:600px; margin-top:6px">Neutrals are true-neutral with a whisper of warmth (no blue cast — that's what made the old version feel like a dev tool). Warning and danger share the accent's lightness and chroma in oklch, so states feel like the same instrument changing readings, not new colors arriving.</div>
+      </div>
+      <div style="flex:1; background:#131315; border:1px solid #232327; border-radius:16px; padding:22px 24px; min-width:480px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E; margin-bottom:12px">TAILWIND CONFIG + SHADCN VARS</div>
+        <pre style="margin:0; font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.65; color:#9C9C97; white-space:pre-wrap">// tailwind.config — theme.extend
+colors: {
+  background: "#0B0B0C",
+  surface: { DEFAULT: "#131315", 2: "#1A1A1D" },
+  line: { DEFAULT: "#232327", strong: "#2E2E33" },
+  ink: { DEFAULT: "#F4F4F2", 2: "#9C9C97", 3: "#63635E" },
+  optic: { DEFAULT: "#D8E34C", ink: "#131408",
+           dim: "rgba(216,227,76,0.12)" },
+  warn: "#E3B84C", danger: "#E3654C",
+},
+fontFamily: {
+  display: ["Archivo", "sans-serif"],
+  sans: ["Instrument Sans", "sans-serif"],
+  mono: ["IBM Plex Mono", "monospace"],
+},
+borderRadius: { card: "20px", btn: "14px" }
+
+/* shadcn/ui — globals.css :root (dark only) */
+--background: 240 4% 5%;   --card: 240 5% 8%;
+--border: 240 5% 15%;      --input: 240 5% 15%;
+--foreground: 60 7% 95%;   --muted-foreground: 60 2% 60%;
+--primary: 64 72% 60%;     --primary-foreground: 69 42% 6%;
+--secondary: 240 5% 11%;   --ring: 64 72% 60%;
+--destructive: 4 73% 59%;  --radius: 0.875rem;</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TYPOGRAPHY ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#63635E">TYPOGRAPHY</div>
+    <div style="display:flex; gap:24px">
+      <div style="width:660px; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:32px; display:flex; flex-direction:column; gap:22px">
+        <div style="display:flex; align-items:baseline; gap:16px"><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; letter-spacing:-0.02em; line-height:1.05">Third-shot drop</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E; white-space:nowrap">DISPLAY · 40/44 → 64 DESKTOP · ARCHIVO 800</div></div>
+        <div style="display:flex; align-items:baseline; gap:16px"><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:64px; line-height:1; font-variant-numeric:tabular-nums">58<span style="font-size:24px; color:#63635E; font-weight:600"> /100</span></div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E; white-space:nowrap">METRIC · 56–72 · TABULAR</div></div>
+        <div style="display:flex; align-items:baseline; gap:16px"><div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:26px; letter-spacing:-0.01em">Week 2 — Pressure and feedback</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E; white-space:nowrap">H1 · 24 → 32</div></div>
+        <div style="display:flex; align-items:baseline; gap:16px"><div style="font-family:'Archivo',sans-serif; font-weight:600; font-size:18px">Drop from the transition zone</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E; white-space:nowrap">H2 · 17 → 20</div></div>
+        <div style="display:flex; align-items:baseline; gap:16px"><div style="font-size:15px; line-height:1.6; color:#9C9C97; max-width:420px">You practice the shot only when a game forces you to — under pressure, from bad positions, never with feedback.</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E; white-space:nowrap">BODY · 15/1.6 → 16</div></div>
+        <div style="display:flex; align-items:baseline; gap:16px"><div style="font-size:13px; color:#9C9C97">Two sessions logged this week. One to go.</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E; white-space:nowrap">SMALL · 13</div></div>
+        <div style="display:flex; align-items:baseline; gap:16px"><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E">RE-TEST OPENS IN 13 DAYS</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E; white-space:nowrap">LABEL · MONO 11 · +14% TRACKING · CAPS</div></div>
+      </div>
+      <!-- LOGO -->
+      <div style="flex:1; min-width:520px; display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:12px">
+          <div style="flex:1; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:32px; display:flex; align-items:center; justify-content:center; gap:18px">
+            <svg width="56" height="56" viewBox="0 0 32 32"><path d="M4 22.5 H15.5" stroke="#63635E" stroke-width="3.2" stroke-linecap="round" fill="none"></path><path d="M15.5 22.5 L28 9.5" stroke="var(--accent)" stroke-width="3.2" stroke-linecap="round" fill="none"></path></svg>
+            <div>
+              <div style="font-family:'Archivo',sans-serif; font-stretch:125%; font-weight:800; font-size:26px; letter-spacing:0.05em; line-height:1">ROAD TO NEXT</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.42em; color:#9C9C97; margin-top:6px">RATING</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px">
+          <div style="width:160px; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; justify-content:center">
+            <div style="width:72px; height:72px; border-radius:18px; background:#131315; border:1px solid #2E2E33; display:flex; align-items:center; justify-content:center"><svg width="40" height="40" viewBox="0 0 32 32"><path d="M4 22.5 H15.5" stroke="#63635E" stroke-width="3.2" stroke-linecap="round" fill="none"></path><path d="M15.5 22.5 L28 9.5" stroke="var(--accent)" stroke-width="3.2" stroke-linecap="round" fill="none"></path></svg></div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">APP ICON</div>
+          </div>
+          <div style="flex:1; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px; justify-content:center">
+            <div style="display:flex; align-items:center; gap:10px"><svg width="20" height="20" viewBox="0 0 32 32"><path d="M4 22.5 H15.5" stroke="#63635E" stroke-width="3.6" stroke-linecap="round" fill="none"></path><path d="M15.5 22.5 L28 9.5" stroke="var(--accent)" stroke-width="3.6" stroke-linecap="round" fill="none"></path></svg><span style="font-family:'Archivo',sans-serif; font-stretch:125%; font-weight:800; font-size:13px; letter-spacing:0.08em">ROAD TO NEXT</span></div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">IN-APP HEADER LOCKUP · MARK SCALES TO 16PX MIN</div>
+          </div>
+        </div>
+        <div style="background:#131315; border:1px solid #232327; border-radius:16px; padding:18px 22px; font-size:13px; line-height:1.6; color:#9C9C97">Construction: two strokes on a 32px grid, round caps, 3px weight. The plateau is always <span style="font-family:'IBM Plex Mono',monospace; color:#63635E">text-muted</span>, the break is always accent — the mark never appears in a single color. Clearspace = the length of the plateau stroke.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ COMPONENTS ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#63635E">CORE COMPONENTS</div>
+    <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start">
+      <div style="width:335px; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">BUTTONS · H52 · R14</div>
+        <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer" style-hover="background:#E6EF7A" style-active="transform:scale(0.98)">Start today's session</div>
+        <div style="height:52px; border-radius:14px; background:#1A1A1D; border:1px solid #2E2E33; color:#F4F4F2; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer" style-hover="border-color:#4A4A50">Log a session</div>
+        <div style="height:44px; border-radius:14px; color:#9C9C97; display:flex; align-items:center; justify-content:center; font-weight:500; font-size:14px; cursor:pointer" style-hover="color:#F4F4F2">Skip for now</div>
+        <div style="height:52px; border-radius:14px; background:#131315; border:1px solid #232327; color:#63635E; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px">Session logged today · done</div>
+      </div>
+      <div style="width:335px; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">OPTION BUTTON · MIN-H64 · R16</div>
+        <div style="min-height:64px; border-radius:16px; background:#131315; border:1px solid #232327; padding:14px 18px; display:flex; align-items:center; font-size:15px; line-height:1.4; color:#F4F4F2; cursor:pointer" style-hover="border-color:#4A4A50; background:#17171A">I drive it instead and hope</div>
+        <div style="min-height:64px; border-radius:16px; background:rgba(216,227,76,0.08); border:1px solid var(--accent); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:15px; line-height:1.4; color:#F4F4F2; cursor:pointer">
+          <span>I drop again the same way, without changing anything</span>
+          <span style="width:10px; height:10px; border-radius:50%; background:var(--accent); flex-shrink:0"></span>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E; margin-top:6px">INPUT · H48 · R12</div>
+        <div style="height:48px; border-radius:12px; background:#131315; border:1px solid #2E2E33; padding:0 16px; display:flex; align-items:center; color:#63635E; font-size:15px">Your current rating, e.g. 3.5</div>
+      </div>
+      <div style="width:335px; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:16px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">PROGRESS BAR · 3PX / 6PX</div>
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <div style="height:3px; border-radius:2px; background:#232327; overflow:hidden"><div style="height:100%; width:58%; background:var(--accent); border-radius:2px"></div></div>
+          <div style="height:6px; border-radius:3px; background:#232327; overflow:hidden"><div style="height:100%; width:38%; background:var(--accent); border-radius:3px"></div></div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">BADGES · MONO 10 · R6</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:5px 9px; border-radius:6px; background:rgba(216,227,76,0.12); color:var(--accent)">ON TRACK</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:5px 9px; border-radius:6px; background:rgba(227,184,76,0.12); color:#E3B84C">DUE TODAY</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:5px 9px; border-radius:6px; background:rgba(227,101,76,0.12); color:#E3654C">PLATEAU</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:5px 9px; border-radius:6px; background:#1A1A1D; color:#63635E; border:1px solid #232327">LOCKED</span>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">CARD · SURFACE · R20 · P20</div>
+        <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:6px">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#63635E">CURRENT BOTTLENECK</div>
+          <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:20px">Third-shot drop</div>
+        </div>
+      </div>
+      <div style="width:335px; background:#0B0B0C; border:1px solid #232327; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:16px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.12em; color:#63635E">TAB BAR · TEXT-ONLY · H64</div>
+        <div style="border-top:1px solid #232327; background:#0B0B0C; display:flex; height:64px">
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:var(--accent); border-radius:1px"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#F4F4F2">HOME</span></div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PLAN</span></div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PROGRESS</span></div>
+        </div>
+        <div style="font-size:13px; line-height:1.6; color:#9C9C97">No icons in the tab bar — three mono labels with an accent tick above the active one. Text-forward, unambiguous, and it keeps the paddle/ball iconography problem from re-entering through the back door.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREENS ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#63635E">SCREENS · 375PX</div>
+    <div style="display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start">
+
+      <!-- LANDING -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">LANDING</div>
+        <div data-screen-label="Landing" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; align-items:center; gap:10px; padding-top:20px">
+            <svg width="20" height="20" viewBox="0 0 32 32"><path d="M4 22.5 H15.5" stroke="#63635E" stroke-width="3.6" stroke-linecap="round" fill="none"></path><path d="M15.5 22.5 L28 9.5" stroke="var(--accent)" stroke-width="3.6" stroke-linecap="round" fill="none"></path></svg>
+            <span style="font-family:'Archivo',sans-serif; font-stretch:125%; font-weight:800; font-size:12px; letter-spacing:0.08em">ROAD TO NEXT</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:20px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; color:#63635E">FOR PLAYERS STUCK AT 3.0–4.0</div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:38px; line-height:1.08; letter-spacing:-0.02em; text-wrap:balance">You don't have ten weaknesses. You have one.</div>
+            <div style="font-size:15px; line-height:1.6; color:#9C9C97; text-wrap:pretty">Twelve questions. One diagnosis: the skill holding your rating down, why it hasn't moved — and the three weeks that fix it.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:14px; padding-bottom:12px">
+            <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer" style-hover="background:#E6EF7A">Start the assessment</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E; text-align:center">12 QUESTIONS · 4 MINUTES · FREE</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ASSESSMENT -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">ASSESSMENT</div>
+        <div data-screen-label="Assessment question" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; align-items:center; gap:16px; padding-top:16px">
+            <div style="width:36px; height:36px; border-radius:12px; border:1px solid #2E2E33; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#9C9C97; font-size:16px" style-hover="border-color:#4A4A50">‹</div>
+            <div style="flex:1; height:3px; border-radius:2px; background:#232327; overflow:hidden"><div style="height:100%; width:58%; background:var(--accent); border-radius:2px"></div></div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#63635E">07/12</div>
+          </div>
+          <div style="margin-top:44px; display:flex; flex-direction:column; gap:14px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; color:#63635E">UNDER PRESSURE</div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:24px; line-height:1.25; letter-spacing:-0.01em; text-wrap:balance">Your third-shot drop lands short twice in a row. What actually happens next?</div>
+          </div>
+          <div style="margin-top:32px; display:flex; flex-direction:column; gap:12px">
+            <div style="min-height:64px; border-radius:16px; background:#131315; border:1px solid #232327; padding:14px 18px; display:flex; align-items:center; font-size:15px; line-height:1.45; color:#F4F4F2; cursor:pointer" style-hover="border-color:#4A4A50; background:#17171A">I stop dropping and drive everything</div>
+            <div style="min-height:64px; border-radius:16px; background:rgba(216,227,76,0.08); border:1px solid var(--accent); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:15px; line-height:1.45; color:#F4F4F2; cursor:pointer"><span>I keep dropping the same way and hope it comes back</span><span style="width:10px; height:10px; border-radius:50%; background:var(--accent); flex-shrink:0"></span></div>
+            <div style="min-height:64px; border-radius:16px; background:#131315; border:1px solid #232327; padding:14px 18px; display:flex; align-items:center; font-size:15px; line-height:1.45; color:#F4F4F2; cursor:pointer" style-hover="border-color:#4A4A50; background:#17171A">I adjust one thing — grip pressure or contact point</div>
+            <div style="min-height:64px; border-radius:16px; background:#131315; border:1px solid #232327; padding:14px 18px; display:flex; align-items:center; font-size:15px; line-height:1.45; color:#F4F4F2; cursor:pointer" style-hover="border-color:#4A4A50; background:#17171A">I lob to reset and avoid the shot for the rest of the game</div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer; margin-bottom:8px" style-hover="background:#E6EF7A">Next</div>
+        </div>
+      </div>
+
+      <!-- COMPUTATION -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">REVEAL — COMPUTATION</div>
+        <div data-screen-label="Reveal — computation" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px; padding:0 4px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E; animation:rtnrRise .5s ease both">READING YOUR ANSWERS</div>
+            <div style="display:flex; flex-direction:column; gap:16px">
+              <div style="display:flex; align-items:center; gap:12px; animation:rtnrRise .5s ease both; animation-delay:.3s"><span style="width:6px; height:6px; border-radius:50%; background:#2E2E33; flex-shrink:0"></span><span style="font-size:16px; color:#63635E">Twelve answers, one direction.</span></div>
+              <div style="display:flex; align-items:center; gap:12px; animation:rtnrRise .5s ease both; animation-delay:1.5s"><span style="width:6px; height:6px; border-radius:50%; background:#2E2E33; flex-shrink:0"></span><span style="font-size:16px; color:#63635E">Cross-checked against 3.5 plateau patterns.</span></div>
+              <div style="display:flex; align-items:center; gap:12px; animation:rtnrRise .5s ease both; animation-delay:2.7s"><span style="width:6px; height:6px; border-radius:50%; background:#2E2E33; flex-shrink:0"></span><span style="font-size:16px; color:#63635E">One skill explains all of them.</span></div>
+            </div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:34px; letter-spacing:-0.02em; color:#F4F4F2; animation:rtnrRise .5s ease both; animation-delay:4s">Found it.</div>
+          </div>
+          <div style="display:flex; justify-content:center; padding-bottom:16px; animation:rtnrRise .5s ease both; animation-delay:4.6s">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E">CONTINUING…</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Three reasoning lines surface one at a time over ~5s, landing on "Found it.", then auto-advances into the mirror. No spinner, no percentage — the pause is the product doing something serious.</div>
+      </div>
+
+      <!-- MIRROR -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">REVEAL — MIRROR · BEAT 1/5</div>
+        <div data-screen-label="Reveal — mirror" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; gap:5px; padding-top:16px">
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:28px; padding:0 2px">
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E">WHAT YOU TOLD US</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:24px; letter-spacing:-0.01em; line-height:1.2">In your own words —</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:20px">
+              <div style="border-left:2px solid #2E2E33; padding-left:16px"><div style="font-size:16px; line-height:1.5; color:#F4F4F2; text-wrap:pretty">When a drop lands short, you keep dropping the same way and hope it comes back.</div></div>
+              <div style="border-left:2px solid #2E2E33; padding-left:16px"><div style="font-size:16px; line-height:1.5; color:#F4F4F2; text-wrap:pretty">You only practice the shot when a game forces you to.</div></div>
+              <div style="border-left:2px solid #2E2E33; padding-left:16px"><div style="font-size:16px; line-height:1.5; color:#F4F4F2; text-wrap:pretty">You've never once tracked where your drops actually land.</div></div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center; padding-bottom:16px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E">TAP TO CONTINUE</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Beat 1 is their own answers, reflected back — no diagnosis, no judgment. It earns the right to deliver the verdict on the next beat: they can't argue with words they just chose.</div>
+      </div>
+
+      <!-- REVEAL A -->
+      <div style="display:flex; flex-direction:column; gap:10px" id="1a">
+        <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 8px; border-radius:6px; background:#1A1A1D; border:1px solid #2E2E33; color:#F4F4F2">1a</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">REVEAL — VERDICT BEAT</span></div>
+        <div data-screen-label="Reveal — verdict" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; gap:5px; padding-top:16px">
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:24px; padding:0 8px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E">YOUR BOTTLENECK</div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.04; letter-spacing:-0.02em; text-wrap:balance">Third-shot<br>drop</div>
+            <div style="width:44px; height:1px; background:#2E2E33"></div>
+            <div style="font-size:15px; line-height:1.6; color:#9C9C97; max-width:280px; text-wrap:balance">One skill is holding your rating at 3.5. This is it.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding-bottom:16px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E">TAP TO CONTINUE</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Wrapped's structure, none of its energy: darker-than-app background, story-progress ticks, one idea, user controls the pace. The skill name is the only large thing on screen.</div>
+      </div>
+
+      <!-- REVEAL B -->
+      <div style="display:flex; flex-direction:column; gap:10px" id="1b">
+        <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 8px; border-radius:6px; background:#1A1A1D; border:1px solid #2E2E33; color:#F4F4F2">1b</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">REVEAL — INSIGHT BEAT</span></div>
+        <div data-screen-label="Reveal — insight" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; gap:5px; padding-top:16px">
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px; padding:0 4px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E">WHY IT HASN'T IMPROVED</div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:25px; line-height:1.32; letter-spacing:-0.01em; text-wrap:pretty">You've hit thousands of drops. Almost none of them counted.</div>
+            <div style="font-size:15.5px; line-height:1.68; color:#9C9C97; text-wrap:pretty">You only practice this shot when a game forces you to — under pressure, from bad positions, with no feedback on where it landed. Two years of play taught your drop to survive, not to improve. Repetition was never the problem. Unmeasured repetition is.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding-bottom:16px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E">TAP TO CONTINUE</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">The "that's exactly me" beat. Left-aligned, reads like a coach's note, not an award. No score yet — the number would soften the sentence.</div>
+      </div>
+
+      <!-- ABSOLUTION -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">REVEAL — ABSOLUTION · BEAT 4/5</div>
+        <div data-screen-label="Reveal — absolution" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; gap:5px; padding-top:16px">
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#2E2E33"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:26px; padding:0 2px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E">THE PART THAT MATTERS</div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:29px; line-height:1.28; letter-spacing:-0.015em; text-wrap:pretty">This was never a talent ceiling. It's a structure problem — and structure is the one thing you can actually rebuild.</div>
+            <div style="width:44px; height:1px; background:#2E2E33"></div>
+            <div style="font-size:15px; line-height:1.6; color:#9C9C97; text-wrap:pretty">You didn't plateau because you're not good enough. You plateaued because nothing was pointed at the right thing. That changes now.</div>
+          </div>
+          <div style="display:flex; justify-content:center; padding-bottom:16px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E">TAP TO CONTINUE</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">The emotional core. After the weight of the verdict and insight, this is the exhale — it moves the fault from the player to the absence of structure, which is exactly what the plan supplies.</div>
+      </div>
+
+      <!-- READINESS -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">READINESS</div>
+        <div data-screen-label="Readiness" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; gap:5px; padding-top:16px">
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+            <div style="flex:1; height:2px; border-radius:1px; background:#F4F4F2"></div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:26px">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E">READINESS FOR 4.0</div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:96px; line-height:1; font-variant-numeric:tabular-nums">58<span style="font-size:28px; font-weight:600; color:#63635E"> /100</span></div>
+            <div style="display:flex; flex-direction:column; gap:10px">
+              <div style="height:6px; border-radius:3px; background:#232327; overflow:hidden"><div style="height:100%; width:58%; background:var(--accent); border-radius:3px"></div></div>
+              <div style="display:flex; justify-content:space-between"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#63635E">3.0</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#63635E">4.0</span></div>
+            </div>
+            <div style="font-size:15px; line-height:1.6; color:#9C9C97; text-wrap:pretty">Your drop breaks down under pressure before it breaks down technically. The plan starts there.</div>
+          </div>
+          <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer; margin-bottom:8px" style-hover="background:#E6EF7A">See my 3-week plan</div>
+        </div>
+      </div>
+
+      <!-- HOME -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">HOME</div>
+        <div data-screen-label="Home" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; padding:24px; gap:16px; overflow:hidden">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding-top:16px">
+              <div style="display:flex; align-items:center; gap:10px">
+                <svg width="20" height="20" viewBox="0 0 32 32"><path d="M4 22.5 H15.5" stroke="#63635E" stroke-width="3.6" stroke-linecap="round" fill="none"></path><path d="M15.5 22.5 L28 9.5" stroke="var(--accent)" stroke-width="3.6" stroke-linecap="round" fill="none"></path></svg>
+                <span style="font-family:'Archivo',sans-serif; font-stretch:125%; font-weight:800; font-size:12px; letter-spacing:0.08em">ROAD TO NEXT</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:14px">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#63635E">DAY 8 / 21</span>
+                <div style="width:32px; height:32px; border-radius:50%; border:1px solid #2E2E33; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#9C9C97" style-hover="border-color:#4A4A50; color:#F4F4F2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"></circle><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></div>
+              </div>
+            </div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:22px; display:flex; flex-direction:column; gap:8px; margin-top:8px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">CURRENT BOTTLENECK</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:27px; letter-spacing:-0.01em">Third-shot drop</div>
+              <div style="font-size:13px; color:#9C9C97">Week 2 of 3 — Pressure and feedback</div>
+            </div>
+            <div style="display:flex; gap:16px">
+              <div style="flex:1.2; background:#131315; border:1px solid #232327; border-radius:20px; padding:20px 22px; display:flex; flex-direction:column; gap:10px">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#63635E">READINESS</div>
+                <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; font-variant-numeric:tabular-nums">58</div>
+                <div style="height:4px; border-radius:2px; background:#232327; overflow:hidden"><div style="height:100%; width:58%; background:var(--accent); border-radius:2px"></div></div>
+              </div>
+              <div style="flex:1; background:#131315; border:1px solid #232327; border-radius:20px; padding:20px 22px; display:flex; flex-direction:column; gap:10px; justify-content:space-between">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#63635E">SESSIONS<br>THIS WEEK</div>
+                <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:26px; line-height:1">2<span style="color:#63635E; font-weight:600; font-size:18px">/3</span></div>
+                <div style="display:flex; gap:6px"><span style="width:10px; height:10px; border-radius:50%; background:var(--accent)"></span><span style="width:10px; height:10px; border-radius:50%; background:var(--accent)"></span><span style="width:10px; height:10px; border-radius:50%; border:1px solid #2E2E33; box-sizing:border-box"></span></div>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="height:56px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; gap:10px; font-weight:600; font-size:15px; cursor:pointer" style-hover="background:#E6EF7A">Start today's session<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.75">18 MIN</span></div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#63635E; text-align:center; padding-bottom:4px">RE-TEST OPENS IN 13 DAYS</div>
+          </div>
+          <div style="border-top:1px solid #232327; display:flex; height:64px; flex-shrink:0">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer"><div style="width:16px; height:2px; background:var(--accent); border-radius:1px"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#F4F4F2">HOME</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer" style-hover="background:#131315"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PLAN</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer" style-hover="background:#131315"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PROGRESS</span></div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Three-second read, top to bottom: what's broken → where I stand → what I do today. Nothing else earned a slot.</div>
+      </div>
+
+      <!-- MY PLAN -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">MY PLAN</div>
+        <div data-screen-label="My Plan" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; padding:24px; gap:14px; overflow:hidden">
+            <div style="display:flex; align-items:flex-end; justify-content:space-between; padding-top:16px">
+              <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E; margin-bottom:6px">WEEK 2 OF 3</div>
+                <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:24px; letter-spacing:-0.01em">Pressure and feedback</div>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; color:var(--accent); padding-bottom:4px">2/3 SESSIONS</span>
+            </div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:18px 20px; display:flex; gap:16px; align-items:flex-start">
+              <div style="width:26px; height:26px; border-radius:9px; background:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px"><span style="color:var(--accent-ink); font-size:14px; font-weight:700">✓</span></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:5px">
+                <div style="font-family:'Archivo',sans-serif; font-weight:600; font-size:17px; color:#63635E; text-decoration:line-through">Drop from the transition zone</div>
+                <div style="font-size:13px; line-height:1.5; color:#63635E">40 balls · score every 10 · target: kitchen, below net height</div>
+              </div>
+            </div>
+            <div style="background:#131315; border:1px solid #2E2E33; border-radius:20px; padding:18px 20px; display:flex; gap:16px; align-items:flex-start; cursor:pointer" style-hover="border-color:#4A4A50">
+              <div style="width:26px; height:26px; border-radius:9px; border:1.5px solid #4A4A50; flex-shrink:0; margin-top:2px; box-sizing:border-box"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:5px">
+                <div style="font-family:'Archivo',sans-serif; font-weight:600; font-size:17px">Drop under fatigue</div>
+                <div style="font-size:13px; line-height:1.5; color:#9C9C97">3 rounds · 10 drops after 30s of fast dinking · count makes</div>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:5px 9px; border-radius:6px; background:rgba(227,184,76,0.12); color:#E3B84C; flex-shrink:0">DUE TODAY</span>
+            </div>
+            <div style="border:1px solid #2E2E33; border-radius:20px; padding:18px 20px; display:flex; flex-direction:column; gap:8px; background:rgba(216,227,76,0.04)">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:var(--accent)">IN-GAME RULE — THIS WEEK</div>
+              <div style="font-size:15px; line-height:1.55; color:#F4F4F2; text-wrap:pretty">Every third shot is a drop. No driving your way out of trouble — you're allowed to lose games this week.</div>
+            </div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:18px 20px; display:flex; flex-direction:column; gap:8px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">RE-TEST METRIC</div>
+              <div style="font-size:14px; line-height:1.55; color:#9C9C97"><span style="color:#F4F4F2; font-weight:600">7 of 10 drops</span> into the kitchen from the baseline, measured cold. You're at <span style="color:#F4F4F2; font-weight:600">5 of 10</span>.</div>
+            </div>
+            <div style="flex:1"></div>
+          </div>
+          <div style="border-top:1px solid #232327; display:flex; height:64px; flex-shrink:0">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer" style-hover="background:#131315"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">HOME</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer"><div style="width:16px; height:2px; background:var(--accent); border-radius:1px"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#F4F4F2">PLAN</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer" style-hover="background:#131315"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PROGRESS</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PROGRESS — FULL</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:3px 8px; border-radius:6px; background:rgba(216,227,76,0.12); color:var(--accent)">PAID</span></div>
+        <div data-screen-label="Progress" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; padding:24px; gap:14px; overflow:hidden">
+            <div style="padding-top:16px">
+              <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:24px; letter-spacing:-0.01em">Progress</div>
+            </div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:14px">
+              <div style="display:flex; justify-content:space-between; align-items:baseline">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">READINESS — 6 WEEKS</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent)">+17</div>
+              </div>
+              <svg width="100%" height="120" viewBox="0 0 300 120" preserveAspectRatio="none" style="display:block">
+                <line x1="0" y1="30" x2="300" y2="30" stroke="#1A1A1D" stroke-width="1"></line>
+                <line x1="0" y1="60" x2="300" y2="60" stroke="#1A1A1D" stroke-width="1"></line>
+                <line x1="0" y1="90" x2="300" y2="90" stroke="#1A1A1D" stroke-width="1"></line>
+                <line x1="0" y1="24" x2="300" y2="24" stroke="#2E2E33" stroke-width="1" stroke-dasharray="3 4"></line>
+                <polyline points="10,86 66,80 122,82 178,68 234,58 290,44" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <circle cx="290" cy="44" r="4" fill="var(--accent)"></circle>
+              </svg>
+              <div style="display:flex; justify-content:space-between">
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">JUN 3</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">RE-TEST LINE ···· 80</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">JUL 14</span>
+              </div>
+            </div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:14px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">RE-TEST HISTORY</div>
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Baseline drop test</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">JUN 24</span></div>
+                <span style="font-family:'Archivo',sans-serif; font-weight:700; font-size:17px; font-variant-numeric:tabular-nums">3<span style="color:#63635E">/10</span></span>
+              </div>
+              <div style="height:1px; background:#232327"></div>
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Mid-plan check</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">JUL 8</span></div>
+                <span style="font-family:'Archivo',sans-serif; font-weight:700; font-size:17px; font-variant-numeric:tabular-nums">5<span style="color:#63635E">/10</span> <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); font-weight:500">+2</span></span>
+              </div>
+              <div style="height:1px; background:#232327"></div>
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600; color:#63635E">Full re-test</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">JUL 28</span></div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:5px 9px; border-radius:6px; background:#1A1A1D; color:#9C9C97; border:1px solid #232327">SCHEDULED</span>
+              </div>
+            </div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; display:flex; align-items:center; justify-content:space-between">
+              <div style="display:flex; flex-direction:column; gap:4px">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">STREAK</div>
+                <div style="font-size:14px; color:#9C9C97"><span style="font-family:'Archivo',sans-serif; font-weight:700; font-size:17px; color:#F4F4F2">5 weeks</span> hitting target</div>
+              </div>
+              <div style="display:flex; gap:6px">
+                <span style="width:12px; height:12px; border-radius:4px; background:var(--accent)"></span><span style="width:12px; height:12px; border-radius:4px; background:var(--accent)"></span><span style="width:12px; height:12px; border-radius:4px; background:var(--accent)"></span><span style="width:12px; height:12px; border-radius:4px; background:var(--accent)"></span><span style="width:12px; height:12px; border-radius:4px; background:var(--accent)"></span><span style="width:12px; height:12px; border-radius:4px; border:1px solid #2E2E33; box-sizing:border-box"></span>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+          </div>
+          <div style="border-top:1px solid #232327; display:flex; height:64px; flex-shrink:0">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer" style-hover="background:#131315"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">HOME</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer" style-hover="background:#131315"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PLAN</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer"><div style="width:16px; height:2px; background:var(--accent); border-radius:1px"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#F4F4F2">PROGRESS</span></div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Kalo's chart-first structure, stripped of its cheerfulness: one line, one dashed target, integers only. The chart's gray-then-rising shape deliberately echoes the logo.</div>
+      </div>
+
+      <!-- PROGRESS EMPTY -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PROGRESS — DAY ONE (EMPTY)</div>
+        <div data-screen-label="Progress empty" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; padding:24px; gap:16px; overflow:hidden">
+            <div style="padding-top:16px"><div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:24px; letter-spacing:-0.01em">Progress</div></div>
+            <div style="border:1px solid var(--accent); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:12px; background:rgba(216,227,76,0.05)">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:var(--accent)">YOUR FIRST RE-TEST</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:40px; letter-spacing:-0.01em; line-height:1">Jul 28</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#9C9C97">IN 13 DAYS · WEEK 3 OF 3</div>
+              <div style="font-size:14px; line-height:1.55; color:#9C9C97; text-wrap:pretty; margin-top:2px">This is the day you find out if your drop moved. Everything until then is building toward it.</div>
+            </div>
+            <div style="display:flex; gap:16px">
+              <div style="flex:1; background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:8px"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#63635E">SESSIONS<br>DONE</div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:32px; line-height:1">4</div></div>
+              <div style="flex:1; background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:8px"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#63635E">INTO THE<br>PLAN</div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:32px; line-height:1">Day 8</div></div>
+            </div>
+            <div style="flex:1; border:1px dashed #2E2E33; border-radius:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; text-align:center">
+              <svg width="120" height="40" viewBox="0 0 120 40"><line x1="4" y1="30" x2="116" y2="30" stroke="#232327" stroke-width="1.5" stroke-linecap="round"></line><circle cx="4" cy="30" r="3.5" fill="#63635E"></circle></svg>
+              <div style="font-size:13.5px; line-height:1.5; color:#63635E; max-width:230px">Your readiness line starts on Jul 28. One point today — the climb comes after your first re-test.</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #232327; display:flex; height:64px; flex-shrink:0">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">HOME</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PLAN</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:var(--accent); border-radius:1px"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#F4F4F2">PROGRESS</span></div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Day one is honest: no fake chart. It shows what's true (sessions, days in) and turns the empty chart into a countdown to an event the user now wants to reach.</div>
+      </div>
+
+      <!-- DELTA PAID -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">RE-TEST DELTA</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:3px 8px; border-radius:6px; background:rgba(216,227,76,0.12); color:var(--accent)">PAID</span></div>
+        <div data-screen-label="Delta paid" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E">RE-TEST COMPLETE</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:34px; letter-spacing:-0.02em; line-height:1.05">Your drop moved.</div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:14px">
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:72px; line-height:1; font-variant-numeric:tabular-nums; color:#63635E">58</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:24px; color:#63635E">→</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:72px; line-height:1; font-variant-numeric:tabular-nums">74</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--accent); padding-bottom:8px">+16</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0; background:#0B0B0C; border:1px solid #232327; border-radius:20px; padding:6px 20px">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0"><span style="font-size:15px; font-weight:600">Third-shot drop</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px"><span style="color:#63635E">3/10</span> <span style="color:#63635E">→</span> 5/10 <span style="color:var(--accent)">+2</span></span></div>
+              <div style="height:1px; background:#232327"></div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0"><span style="font-size:15px; font-weight:600">Drop under pressure</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px"><span style="color:#63635E">4/10 →</span> 6/10 <span style="color:var(--accent)">+2</span></span></div>
+              <div style="height:1px; background:#232327"></div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0"><span style="font-size:15px; font-weight:600">Reset consistency</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px"><span style="color:#63635E">5/10 →</span> 6/10 <span style="color:var(--accent)">+1</span></span></div>
+            </div>
+          </div>
+          <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer; margin-bottom:8px" style-hover="background:#E6EF7A">See what to fix next</div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">The payoff. Old score ghosted in muted, new score full-weight, per-skill movement itemized. This is what a subscriber is really buying: proof the work worked.</div>
+      </div>
+
+      <!-- DELTA FREE -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">RE-TEST DELTA</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:3px 8px; border-radius:6px; background:#1A1A1D; color:#9C9C97; border:1px solid #232327">FREE</span></div>
+        <div data-screen-label="Delta free" style="width:375px; height:812px; background:#060607; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#63635E">RE-TEST COMPLETE</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:34px; letter-spacing:-0.02em; line-height:1.05">Your drop moved.</div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:14px">
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:72px; line-height:1; font-variant-numeric:tabular-nums; color:#63635E">58</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:24px; color:#63635E">→</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:72px; line-height:1; font-variant-numeric:tabular-nums">74</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--accent); padding-bottom:8px">+16</div>
+            </div>
+            <div style="position:relative; background:#0B0B0C; border:1px solid #232327; border-radius:20px; padding:6px 20px; overflow:hidden">
+              <div style="filter:blur(6px); opacity:0.5; pointer-events:none">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0"><span style="font-size:15px; font-weight:600">Third-shot drop</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px">3/10 → 5/10 +2</span></div>
+                <div style="height:1px; background:#232327"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0"><span style="font-size:15px; font-weight:600">Drop under pressure</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px">4/10 → 6/10 +2</span></div>
+                <div style="height:1px; background:#232327"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0"><span style="font-size:15px; font-weight:600">Reset consistency</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px">5/10 → 6/10 +1</span></div>
+              </div>
+              <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:linear-gradient(rgba(6,6,7,0.35),rgba(6,6,7,0.6))">
+                <div style="display:flex; align-items:center; gap:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="10" rx="2" stroke="#9C9C97" stroke-width="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#9C9C97" stroke-width="2"></path></svg><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#9C9C97">WHICH SKILLS MOVED</span></div>
+                <div style="font-size:13px; color:#9C9C97; text-align:center; max-width:230px; text-wrap:pretty">See the movement in each skill — and where it came from.</div>
+              </div>
+            </div>
+          </div>
+          <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer; margin-bottom:8px" style-hover="background:#E6EF7A">See the full breakdown</div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Free users get the number — the honest, shareable truth that it moved. The per-skill breakdown is teased in place (blurred, labeled), so the paywall lands at the exact moment desire peaks.</div>
+      </div>
+
+      <!-- PAYWALL -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PAYWALL</div>
+        <div data-screen-label="Paywall" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px">
+            <div style="display:flex; flex-direction:column; gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; color:#63635E">YOU'RE IMPROVING — KEEP THE RECEIPTS</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; letter-spacing:-0.02em; line-height:1.1">See every point you earn from here.</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; gap:12px; align-items:flex-start"><span style="color:var(--accent); font-size:14px; line-height:1.5">▪</span><span style="font-size:14.5px; line-height:1.45; color:#F4F4F2">Per-skill re-test deltas — what moved, and how much</span></div>
+              <div style="display:flex; gap:12px; align-items:flex-start"><span style="color:var(--accent); font-size:14px; line-height:1.5">▪</span><span style="font-size:14.5px; line-height:1.45; color:#F4F4F2">Your readiness chart and every past re-test</span></div>
+              <div style="display:flex; gap:12px; align-items:flex-start"><span style="color:var(--accent); font-size:14px; line-height:1.5">▪</span><span style="font-size:14.5px; line-height:1.45; color:#F4F4F2">Drill history and week-over-week streaks</span></div>
+              <div style="display:flex; gap:12px; align-items:flex-start"><span style="color:var(--accent); font-size:14px; line-height:1.5">▪</span><span style="font-size:14.5px; line-height:1.45; color:#F4F4F2">Your next bottleneck, sequenced — what to fix after this</span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px">
+              <div style="position:relative; border:1px solid var(--accent); border-radius:16px; padding:16px 18px; background:rgba(216,227,76,0.05); display:flex; align-items:center; justify-content:space-between">
+                <div style="display:flex; flex-direction:column; gap:3px"><span style="font-weight:600; font-size:16px">Annual</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#9C9C97">$79 / year · $6.58 per month</span></div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; padding:4px 8px; border-radius:6px; background:var(--accent); color:var(--accent-ink)">SAVE 49%</span></div>
+              </div>
+              <div style="border:1px solid #2E2E33; border-radius:16px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between"><div style="display:flex; flex-direction:column; gap:3px"><span style="font-weight:600; font-size:16px; color:#9C9C97">Monthly</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#63635E">$12.99 / month</span></div><div style="width:20px; height:20px; border-radius:50%; border:1.5px solid #2E2E33"></div></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:2px">
+              <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer" style-hover="background:#E6EF7A">Continue — $79/year</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#63635E; text-align:center">YOUR DIAGNOSIS, PLAN, AND HOME STAY FREE · CANCEL ANYTIME</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Placed at peak motivation, right after the free delta — not on entry. Annual is the default (accent border, "SAVE 49%"). The reassurance line makes clear the free product isn't being taken away.</div>
+      </div>
+
+      <!-- PROGRESS FREE (LOCKED) -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PROGRESS — LOCKED</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; padding:3px 8px; border-radius:6px; background:#1A1A1D; color:#9C9C97; border:1px solid #232327">FREE</span></div>
+        <div data-screen-label="Progress locked" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; padding:24px; gap:14px; overflow:hidden">
+            <div style="padding-top:16px"><div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:24px; letter-spacing:-0.01em">Progress</div></div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; display:flex; align-items:baseline; justify-content:space-between"><div style="display:flex; flex-direction:column; gap:6px"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#63635E">READINESS NOW</div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:40px; line-height:1; font-variant-numeric:tabular-nums">74</div></div><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent)">+16 SINCE START</div></div>
+            <div style="position:relative; background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; overflow:hidden">
+              <div style="filter:blur(7px); opacity:0.45; pointer-events:none">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E; margin-bottom:14px">READINESS OVER TIME</div>
+                <svg width="100%" height="110" viewBox="0 0 300 110" preserveAspectRatio="none"><polyline points="10,80 80,72 150,60 220,50 290,34" fill="none" stroke="var(--accent)" stroke-width="2.5"></polyline></svg>
+              </div>
+              <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:linear-gradient(rgba(19,19,21,0.4),rgba(19,19,21,0.7))">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="10" rx="2" stroke="#F4F4F2" stroke-width="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#F4F4F2" stroke-width="2"></path></svg>
+                <div style="font-size:14px; color:#F4F4F2; font-weight:600">Your readiness line, over time</div>
+                <div style="font-size:13px; color:#9C9C97; text-align:center; max-width:240px; text-wrap:pretty">You've moved 16 points. Unlock Progress to watch the whole climb.</div>
+              </div>
+            </div>
+            <div style="position:relative; background:#131315; border:1px solid #232327; border-radius:20px; padding:20px; overflow:hidden">
+              <div style="filter:blur(7px); opacity:0.45; pointer-events:none">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E; margin-bottom:14px">RE-TEST HISTORY · STREAK</div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0"><span>Baseline</span><span>3/10</span></div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0"><span>Re-test 1</span><span>5/10</span></div>
+              </div>
+              <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:linear-gradient(rgba(19,19,21,0.4),rgba(19,19,21,0.7))">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="10" rx="2" stroke="#9C9C97" stroke-width="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#9C9C97" stroke-width="2"></path></svg>
+                <div style="font-size:13px; color:#9C9C97">Re-test history & streaks</div>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer" style-hover="background:#E6EF7A">Unlock Progress — $79/year</div>
+          </div>
+          <div style="border-top:1px solid #232327; display:flex; height:64px; flex-shrink:0">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">HOME</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:transparent"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">PLAN</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px"><div style="width:16px; height:2px; background:var(--accent); border-radius:1px"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#F4F4F2">PROGRESS</span></div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Locked treatment (used everywhere): real structure blurred behind a dim scrim, a lock, and a one-line teaser naming what's under it. The current number stays visible — desire, not resentment. Never a hard empty box.</div>
+      </div>
+
+      <!-- SAVE GATE -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">AUTH — SAVE GATE</div>
+        <div data-screen-label="Save gate" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px">
+            <div style="display:flex; flex-direction:column; gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; color:#63635E">YOUR DIAGNOSIS IS READY</div>
+              <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; letter-spacing:-0.02em; line-height:1.1">Keep what you just found.</div>
+              <div style="font-size:14.5px; line-height:1.55; color:#9C9C97; text-wrap:pretty">Save your bottleneck and 3-week plan to your account so it's here tomorrow. Free — always.</div>
+            </div>
+            <div style="background:#131315; border:1px solid #232327; border-radius:16px; padding:16px 18px; display:flex; flex-direction:column; gap:8px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#63635E">SAVING</div>
+              <div style="display:flex; align-items:center; gap:10px"><span style="width:8px; height:8px; border-radius:50%; background:var(--accent)"></span><span style="font-size:15px; font-weight:600">Third-shot drop</span><span style="color:#63635E; font-size:13px">· 3-week plan · Day 8</span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <div style="height:52px; border-radius:14px; background:#1A1A1D; border:1px solid #2E2E33; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:600; font-size:15px; cursor:pointer" style-hover="border-color:#4A4A50"><span style="font-family:'Archivo',sans-serif; font-weight:800; font-size:15px; color:#F4F4F2">G</span>Continue with Google</div>
+              <div style="display:flex; align-items:center; gap:12px"><div style="flex:1; height:1px; background:#232327"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">OR</span><div style="flex:1; height:1px; background:#232327"></div></div>
+              <div style="height:48px; border-radius:12px; background:#131315; border:1px solid #2E2E33; padding:0 16px; display:flex; align-items:center; color:#63635E; font-size:15px">Email address</div>
+              <div style="height:48px; border-radius:12px; background:#131315; border:1px solid #2E2E33; padding:0 16px; display:flex; align-items:center; color:#63635E; font-size:15px">Create a password</div>
+              <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer" style-hover="background:#E6EF7A">Save my plan</div>
+            </div>
+            <div style="font-size:13px; color:#9C9C97; text-align:center">Already have an account? <a href="#">Sign in</a></div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Not a signup wall — a save action. It comes after the value is delivered, shows exactly what's being kept, and frames account creation as protecting something already earned.</div>
+      </div>
+
+      <!-- SIGN IN -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">AUTH — SIGN IN</div>
+        <div data-screen-label="Sign in" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; align-items:center; gap:10px; padding-top:20px">
+            <svg width="20" height="20" viewBox="0 0 32 32"><path d="M4 22.5 H15.5" stroke="#63635E" stroke-width="3.6" stroke-linecap="round" fill="none"></path><path d="M15.5 22.5 L28 9.5" stroke="var(--accent)" stroke-width="3.6" stroke-linecap="round" fill="none"></path></svg>
+            <span style="font-family:'Archivo',sans-serif; font-stretch:125%; font-weight:800; font-size:12px; letter-spacing:0.08em">ROAD TO NEXT</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px">
+            <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; letter-spacing:-0.02em; line-height:1.1">Welcome back.</div>
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <div style="height:48px; border-radius:12px; background:#131315; border:1px solid #2E2E33; padding:0 16px; display:flex; align-items:center; color:#63635E; font-size:15px">Email address</div>
+              <div style="height:48px; border-radius:12px; background:#131315; border:1px solid #2E2E33; padding:0 16px; display:flex; align-items:center; justify-content:space-between; color:#63635E; font-size:15px">Password<a href="#" style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em">FORGOT?</a></div>
+              <div style="height:52px; border-radius:14px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; cursor:pointer" style-hover="background:#E6EF7A">Sign in</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px"><div style="flex:1; height:1px; background:#232327"></div><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#63635E">OR</span><div style="flex:1; height:1px; background:#232327"></div></div>
+            <div style="height:52px; border-radius:14px; background:#1A1A1D; border:1px solid #2E2E33; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:600; font-size:15px; cursor:pointer" style-hover="border-color:#4A4A50"><span style="font-family:'Archivo',sans-serif; font-weight:800; font-size:15px; color:#F4F4F2">G</span>Continue with Google</div>
+          </div>
+          <div style="font-size:13px; color:#9C9C97; text-align:center; padding-bottom:8px">New here? <a href="#">Take the assessment</a></div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Returning-user minimum: wordmark, two fields, one primary action. Nothing to decide.</div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#63635E">SETTINGS</div>
+        <div data-screen-label="Settings" style="width:375px; height:812px; background:#0B0B0C; border:1px solid #2E2E33; border-radius:28px; overflow:hidden; display:flex; flex-direction:column; padding:24px; box-sizing:border-box">
+          <div style="display:flex; align-items:center; gap:16px; padding-top:16px">
+            <div style="width:36px; height:36px; border-radius:12px; border:1px solid #2E2E33; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#9C9C97; font-size:16px" style-hover="border-color:#4A4A50">‹</div>
+            <div style="font-family:'Archivo',sans-serif; font-weight:700; font-size:22px; letter-spacing:-0.01em">Settings</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:24px; margin-top:28px; overflow:hidden">
+            <div style="display:flex; flex-direction:column; gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">ACCOUNT</div>
+              <div style="background:#131315; border:1px solid #232327; border-radius:16px; overflow:hidden">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 18px"><span style="font-size:15px; color:#9C9C97">Email</span><span style="font-size:15px; color:#F4F4F2">alex@email.com</span></div>
+                <div style="height:1px; background:#232327"></div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 18px; cursor:pointer" style-hover="background:#17171A"><span style="font-size:15px; color:#9C9C97">Display name</span><span style="display:flex; align-items:center; gap:8px; font-size:15px; color:#F4F4F2">Alex M.<span style="color:#63635E">›</span></span></div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">SUBSCRIPTION</div>
+              <div style="background:#131315; border:1px solid #232327; border-radius:16px; overflow:hidden">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 18px"><span style="font-size:15px; color:#9C9C97">Plan</span><span style="font-size:15px; color:#F4F4F2">Annual · renews Apr 2027</span></div>
+                <div style="height:1px; background:#232327"></div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 18px; cursor:pointer" style-hover="background:#17171A"><span style="font-size:15px; color:var(--accent)">Manage subscription</span><span style="color:var(--accent)">›</span></div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.06em; color:#63635E; padding-left:2px">CANCEL, CHANGE PLAN, OR UPDATE BILLING</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.16em; color:#63635E">NOTIFICATIONS</div>
+              <div style="background:#131315; border:1px solid #232327; border-radius:16px; display:flex; align-items:center; justify-content:space-between; padding:15px 18px; gap:16px">
+                <span style="font-size:15px; color:#F4F4F2; line-height:1.4">Email me when my re-test opens</span>
+                <div style="width:44px; height:26px; border-radius:13px; background:var(--accent); flex-shrink:0; position:relative; cursor:pointer"><div style="position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; background:#131408"></div></div>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <div style="height:48px; border-radius:12px; background:#131315; border:1px solid #2E2E33; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; color:#F4F4F2; cursor:pointer" style-hover="border-color:#4A4A50">Sign out</div>
+              <div style="display:flex; align-items:center; justify-content:center; padding:6px; font-size:14px; color:#E3654C; cursor:pointer" style-hover="color:#E98572">Delete account</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:12.5px; line-height:1.55; color:#9C9C97; max-width:375px">Deliberately the plainest screen in the app. Accent appears only on the two things a person came here to do — Manage subscription and (for free users, in that same slot) Upgrade. Manage subscription and Delete account are both one tap from the top, never buried. Free users see "Free · Upgrade to unlock Progress" in the Plan row instead.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#D8E34C&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#D8E34C&quot;,&quot;#E3B84C&quot;,&quot;#E3654C&quot;,&quot;#7CD0A8&quot;],&quot;section&quot;:&quot;Identity&quot;}}">
+class Component extends DCLogic {
+  applyAccent() {
+    const a = this.props.accent ?? '#D8E34C';
+    document.documentElement.style.setProperty('--accent', a);
+  }
+  componentDidMount() { this.applyAccent(); }
+  componentDidUpdate() { this.applyAccent(); }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

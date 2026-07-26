@@ -25,7 +25,7 @@ function getRootCauseFlag(questionId: string, optionId: string): RootCauseId | n
   return opt?.rootCauseFlag ?? null;
 }
 
-function scoreSkills(answers: AnswerMap): SkillScore[] {
+export function scoreSkills(answers: AnswerMap): SkillScore[] {
   // net_hold and transition_reset both measure reset — average them
   const netHoldLevel = getSkillLevel("net_hold", answers["net_hold"] ?? "");
   const transitionLevel = getSkillLevel("transition_reset", answers["transition_reset"] ?? "");
@@ -122,7 +122,9 @@ export function diagnose(answers: AnswerMap): Diagnosis {
     mirror,
     bottleneckVerdict: story?.bottleneckVerdict ?? `Right now, ${bottleneckLabel} is the single biggest thing holding your game back.`,
     bottleneckText: story?.bottleneckText ?? `The data points clearly to ${bottleneckLabel} as your primary bottleneck right now.`,
-    reframeText: story?.reframeText ?? FALLBACK.reframeText,
-    thatsWhyText: story?.thatsWhyText ?? "",
+    insightHeadline: story?.insightHeadline ?? FALLBACK.insightHeadline,
+    insightBody: story?.insightBody ?? FALLBACK.insightBody,
+    absolution: story?.absolution ?? FALLBACK.absolution,
+    absolutionClose: story?.absolutionClose ?? FALLBACK.absolutionClose,
   };
 }
