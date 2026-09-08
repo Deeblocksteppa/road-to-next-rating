@@ -90,7 +90,7 @@ export default function LoginPage({
 
       <p className="pb-2 text-center text-[13px] text-ink-2">
         New here?{" "}
-        <Link href="/" className="underline underline-offset-4">
+        <Link href="/start" className="underline underline-offset-4">
           Take the assessment
         </Link>
       </p>

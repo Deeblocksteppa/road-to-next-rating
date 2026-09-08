@@ -227,7 +227,7 @@ export default async function HomePage() {
       ) : (
         <p className="mt-2 rounded-2xl border border-dashed border-line p-4 text-sm text-ink-2">
           No diagnosis yet.{" "}
-          <Link href="/" className="underline underline-offset-4">
+          <Link href="/start" className="underline underline-offset-4">
             Take the assessment
           </Link>
           .

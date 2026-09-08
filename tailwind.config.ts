@@ -34,12 +34,30 @@ const config: Config = {
 
         // ── RTNR design tokens (raw hex) — see design/DESIGN_SYSTEM.md ──
         surface: { DEFAULT: "#131315", 2: "#1A1A1D" },
-        line: { DEFAULT: "#232327", strong: "#2E2E33", hover: "#4A4A50" },
+        // `line` (#232327) is ~rgba(255,255,255,0.08) over the app ground and
+        // stays the in-app card edge. `soft` is the lighter 0.06 rule used
+        // between marketing sections; `hair` is the exact 0.08 edge every
+        // marketing screenshot card carries now that it sits on the page
+        // ground directly rather than inside a presentation surface.
+        line: {
+          DEFAULT: "#232327",
+          soft: "rgba(255,255,255,0.06)",
+          // The card hairline on the marketing site. Translucent rather than a
+          // flat hex so the same edge holds over both marketing grounds
+          // (`background` and the raised `#0E0E10`) without being re-picked.
+          hair: "rgba(255,255,255,0.08)",
+          strong: "#2E2E33",
+          hover: "#4A4A50",
+        },
         // ink-2/ink-3 raised from the original spec (#9C9C97 / #63635E) for
         // legibility — ink-3 was 3.25:1 against #0B0B0C, below WCAG AA's 4.5:1
         // floor for small text. New values: ink-3 ~4.96:1, ink-2 ~9.06:1,
         // ink (unchanged) ~17.86:1 — same warm-neutral hue, ordering preserved.
-        ink: { DEFAULT: "#F4F4F2", 2: "#B0B0AB", 3: "#80807B" },
+        //
+        // ink-1 (~13.8:1) sits between ink and ink-2 and exists for marketing
+        // body copy, which a cold visitor scans rather than studies. In-app
+        // secondary text stays on ink-2; this tier is not a replacement for it.
+        ink: { DEFAULT: "#F4F4F2", 1: "#D8D8D4", 2: "#B0B0AB", 3: "#80807B" },
         optic: {
           DEFAULT: "#D8E34C",
           hover: "#E6EF7A",

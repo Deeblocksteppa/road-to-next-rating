@@ -157,7 +157,7 @@ export default async function PlanPage() {
       ) : (
         <p className="rounded-2xl border border-dashed border-line p-4 text-sm text-ink-2">
           No plan yet.{" "}
-          <Link href="/" className="underline underline-offset-4">
+          <Link href="/start" className="underline underline-offset-4">
             Take the assessment
           </Link>
           .

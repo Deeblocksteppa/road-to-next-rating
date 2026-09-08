@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-10T01:42:57Z",
+  "title": "Design System: Road to Next Rating",
+  "extensions": {
+    "colorMeta": {
+      "optic": {
+        "role": "primary",
+        "displayName": "Optic Yellow-Green",
+        "canonical": "oklch(84% 0.19 111)",
+        "tonalRamp": [
+          "#3F420A",
+          "#686E11",
+          "#929A18",
+          "#BBC61F",
+          "#D5E038",
+          "#DEE765",
+          "#E8EE91",
+          "#F1F5BD"
+        ]
+      },
+      "warn": {
+        "role": "state",
+        "displayName": "Warn Amber",
+        "canonical": "oklch(78% 0.14 78)",
+        "tonalRamp": [
+          "#42320A",
+          "#6E5411",
+          "#9A7518",
+          "#C6971F",
+          "#E0B138",
+          "#E7C265",
+          "#EED391",
+          "#F5E5BD"
+        ]
+      },
+      "danger": {
+        "role": "state",
+        "displayName": "Danger Coral",
+        "canonical": "oklch(66% 0.17 30)",
+        "tonalRamp": [
+          "#42140A",
+          "#6E2111",
+          "#9A2E18",
+          "#C63B1F",
+          "#E05438",
+          "#E77A65",
+          "#EEA091",
+          "#F5C6BD"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "App Base Black",
+        "canonical": "#0B0B0C",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Card Surface",
+        "canonical": "#131315",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Raised Surface",
+        "canonical": "#1A1A1D",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "reveal-bg": {
+        "role": "neutral",
+        "displayName": "Reveal Black",
+        "canonical": "#060607",
+        "tonalRamp": [
+          "#060607",
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Primary Ink",
+        "canonical": "#F4F4F2",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Body Ink",
+        "canonical": "#B0B0AB",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#80807B",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Default Line",
+        "canonical": "#232327",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Line",
+        "canonical": "#2E2E33",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      },
+      "ink-1": {
+        "role": "neutral",
+        "displayName": "Body Ink (marketing)",
+        "canonical": "#D8D8D4",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#D8D8D4",
+          "#F4F4F2"
+        ]
+      },
+      "line-soft": {
+        "role": "neutral",
+        "displayName": "Soft Rule",
+        "canonical": "rgba(255,255,255,0.06)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#131315",
+          "#1A1A1D",
+          "#232327",
+          "#2E2E33",
+          "#80807B",
+          "#B0B0AB",
+          "#F4F4F2"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Archivo Display",
+        "purpose": "Verdicts, headlines, big claims. Stadium-signage authority; wordmark uses font-stretch 125%."
+      },
+      "metric": {
+        "displayName": "Archivo Metric",
+        "purpose": "The big number \u2014 readiness score, re-test deltas. Always tabular-nums."
+      },
+      "body": {
+        "displayName": "Instrument Sans Body",
+        "purpose": "The coach's speaking voice \u2014 explanations, buttons, descriptions."
+      },
+      "label": {
+        "displayName": "IBM Plex Mono Label",
+        "purpose": "Every eyebrow, unit, badge, and countdown. Always uppercase, always tracked wide \u2014 the instrument reading."
+      },
+      "display-desktop": {
+        "displayName": "Archivo Display (desktop)",
+        "purpose": "Top of the display voice \u2014 80px on the marketing hero and the accent close."
+      },
+      "h1-desktop": {
+        "displayName": "Archivo H1 (desktop)",
+        "purpose": "Desktop step of H1 \u2014 marketing section headings."
+      },
+      "display-md": {
+        "displayName": "Archivo Display (md)",
+        "purpose": "Mid step of the display voice \u2014 64px."
+      },
+      "marketing-h3": {
+        "displayName": "Archivo Marketing H3",
+        "purpose": "Step headings inside How It Works \u2014 deliberately close to the section heading so the screenshot stays the star."
+      }
+    },
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one accent-colored action per screen (e.g. \"Start the assessment\").",
+      "html": "<button class=\"ds-btn-primary\">Start the assessment</button>",
+      "css": ".ds-btn-primary { height: 52px; padding: 0 20px; border-radius: 14px; background: #D8E34C; color: #131408; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; } .ds-btn-primary:hover { background: #E6EF7A; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #D8E34C; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral action alongside a primary CTA (e.g. \"Continue with Google\").",
+      "html": "<button class=\"ds-btn-secondary\">Continue with Google</button>",
+      "css": ".ds-btn-secondary { height: 52px; padding: 0 20px; border-radius: 14px; background: #1A1A1D; color: #F4F4F2; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; border: 1px solid #2E2E33; cursor: pointer; transition: border-color 0.15s ease; } .ds-btn-secondary:hover { border-color: #4A4A50; } .ds-btn-secondary:focus-visible { outline: 2px solid #D8E34C; outline-offset: 2px; }"
+    },
+    {
+      "name": "Option Select Button",
+      "kind": "button",
+      "refersTo": "option-select",
+      "description": "Signature assessment-question control. Selected state shows an accent border and a right-aligned accent dot.",
+      "html": "<button class=\"ds-option\">A real mix of both</button>\n<button class=\"ds-option ds-option--selected\">I drill specific weaknesses with a plan<span class=\"ds-option__dot\"></span></button>",
+      "css": ".ds-option { display: flex; align-items: center; justify-content: space-between; min-height: 64px; width: 100%; padding: 14px 18px; border-radius: 16px; background: #131315; border: 1px solid #232327; color: #F4F4F2; font-family: 'Instrument Sans', sans-serif; font-size: 15px; line-height: 1.42; text-align: left; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; } .ds-option:hover { border-color: #4A4A50; background: #17171A; } .ds-option--selected { background: rgba(216,227,76,0.08); border-color: #D8E34C; } .ds-option__dot { width: 10px; height: 10px; min-width: 10px; border-radius: 9999px; background: #D8E34C; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Base content panel. An accent-tinted variant marks a callout worth noticing (e.g. the in-game-rule card).",
+      "html": "<div class=\"ds-card\"><span class=\"ds-card__eyebrow\">Current Bottleneck</span><h3 class=\"ds-card__title\">The reset</h3></div>\n<div class=\"ds-card ds-card--accent\"><span class=\"ds-card__eyebrow ds-card__eyebrow--accent\">In-Game Rule \u2014 This Week</span><p class=\"ds-card__body\">Every third shot is a drop. No exceptions.</p></div>",
+      "css": ".ds-card { border-radius: 20px; padding: 20px; background: #131315; border: 1px solid #232327; display: flex; flex-direction: column; gap: 8px; } .ds-card--accent { border-color: #D8E34C; background: rgba(216,227,76,0.05); } .ds-card__eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #80807B; } .ds-card__eyebrow--accent { color: #D8E34C; } .ds-card__title { font-family: Archivo, sans-serif; font-size: 20px; font-weight: 700; color: #F4F4F2; margin: 0; } .ds-card__body { font-family: 'Instrument Sans', sans-serif; font-size: 15px; line-height: 1.6; color: #B0B0AB; margin: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard field. Focus ring is the accent color (--ring binds to optic).",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"Email\" />",
+      "css": ".ds-input { height: 48px; width: 100%; padding: 0 16px; border-radius: 12px; background: #131315; border: 1px solid #2E2E33; color: #F4F4F2; font-family: 'Instrument Sans', sans-serif; font-size: 15px; } .ds-input::placeholder { color: #80807B; } .ds-input:focus-visible { outline: 2px solid #D8E34C; outline-offset: 1px; border-color: #D8E34C; }"
+    },
+    {
+      "name": "Locked Card",
+      "kind": "custom",
+      "refersTo": "locked-card",
+      "description": "The free-tier tease treatment: real content blurred behind a scrim, never a hard empty box. Used on Progress and Re-test Delta for free users.",
+      "html": "<div class=\"ds-locked\"><div class=\"ds-locked__content\"><p>Readiness \u2014 6 Weeks chart placeholder</p></div><div class=\"ds-locked__scrim\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\"><rect x=\"4\" y=\"10\" width=\"16\" height=\"10\" rx=\"2\" stroke=\"#9C9C97\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" stroke=\"#9C9C97\" stroke-width=\"2\"/></svg><p class=\"ds-locked__teaser\">Your readiness line, over time</p></div></div>",
+      "css": ".ds-locked { position: relative; overflow: hidden; border-radius: 20px; border: 1px solid #232327; background: #131315; padding: 20px; } .ds-locked__content { pointer-events: none; user-select: none; opacity: 0.45; filter: blur(7px); } .ds-locked__scrim { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 0 24px; text-align: center; background: linear-gradient(to bottom, rgba(19,19,21,0.4), rgba(19,19,21,0.7)); } .ds-locked__teaser { max-width: 240px; font-family: 'Instrument Sans', sans-serif; font-size: 13px; line-height: 1.4; color: #B0B0AB; margin: 0; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Text-only bottom navigation, deliberately iconless. Active indicator is a short accent tick above the label.",
+      "html": "<nav class=\"ds-tabbar\"><a class=\"ds-tabbar__item ds-tabbar__item--active\"><span class=\"ds-tabbar__tick\"></span>Home</a><a class=\"ds-tabbar__item\">Plan</a><a class=\"ds-tabbar__item\">Progress</a></nav>",
+      "css": ".ds-tabbar { display: flex; height: 64px; border-top: 1px solid #232327; background: #0B0B0C; } .ds-tabbar__item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #80807B; text-decoration: none; transition: background 0.15s ease; } .ds-tabbar__item:hover { background: #131315; } .ds-tabbar__item--active { color: #F4F4F2; } .ds-tabbar__tick { width: 16px; height: 2px; border-radius: 9999px; background: #D8E34C; } .ds-tabbar__item:not(.ds-tabbar__item--active) .ds-tabbar__tick { background: transparent; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Small status chip. Color follows the shared state-color family so new states read as the instrument's reading changing, not new colors arriving.",
+      "html": "<span class=\"ds-badge ds-badge--optic\">On Track</span> <span class=\"ds-badge ds-badge--warn\">Due Today</span> <span class=\"ds-badge ds-badge--danger\">Plateau</span>",
+      "css": ".ds-badge { display: inline-block; padding: 5px 9px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase; } .ds-badge--optic { color: #D8E34C; background: rgba(216,227,76,0.12); } .ds-badge--warn { color: #E3B84C; background: rgba(227,184,76,0.12); } .ds-badge--danger { color: #E3654C; background: rgba(227,101,76,0.12); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Plateau, Broken",
+    "overview": "The whole interface is the logo happening at every scale. A flat, muted line \u2014 the rating a player has been stuck on \u2014 sits quietly under everything: near-black neutrals, mono labels, no shadows, no gradients, nothing raising its hand. Then, at the one moment that actually matters \u2014 the diagnosis, the accent CTA, the readiness number, the chart's rising line \u2014 a single optic yellow-green breaks upward off that flat line and takes the only color in the room. Calm and flat until the break; the break gets all the weight.\n\nThis is a deliberate rejection of two adjacent registers: the AI-dev-tool blue/navy gradient (reads as \"software,\" not \"coaching\"), and the shouty fitness-app rainbow (reads as noise, not authority). Instead it borrows the workout-app register \u2014 stadium-signage type, tabular numbers, calibrated instrument labeling \u2014 because the product's whole claim is precision: not \"here are ten drills,\" but \"here is the one reading that matters.\" Mono labels in particular are what make the UI feel measured rather than decorated.",
+    "keyCharacteristics": [
+      "Monochrome-plus-one: every screen is near-black neutrals; optic yellow-green appears in exactly one place at a time.",
+      "Flat by construction: no shadows, no gradients; depth is tonal layering only.",
+      "Three voices, one job each: Archivo for verdicts, Instrument Sans for the coach's speaking voice, IBM Plex Mono for the instrument reading.",
+      "Nothing is centered except the reveal \u2014 the one screen where the whole UI stops and looks straight at the player.",
+      "The break (accent) is earned, not decorative: CTA, one data line, one selected state \u2014 never a background, never a heading."
+    ],
+    "rules": [
+      {
+        "name": "The Kill-the-Gradient Rule",
+        "body": "No gradients anywhere in the UI chrome. Gradients read as marketing; a blue-toward-green gradient specifically reads as \"AI dev tool,\" which is the one register this product must not occupy.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "Optic yellow-green never appears twice with two different meanings on the same screen, and never as a background fill behind body copy or a heading color. If nothing on a screen currently matters most, nothing is accented.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numbers-Are-Tabular Rule",
+        "body": "Every metric and score uses tabular-nums so digits never shift width mid-count or mid-comparison.",
+        "section": "typography"
+      },
+      {
+        "name": "The Nothing-Italic Rule",
+        "body": "No italic anywhere in the system; emphasis comes from scale, weight, or the accent color, never from slant.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "No box-shadow is ever used. If a surface needs to read as \"above\" another, it gets a lighter neutral and/or a stronger border \u2014 never a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Break Exception",
+        "body": "The marketing site's closing section is the single sanctioned inversion: the whole surface goes optic with optic-ink type on it. Scoped to that one section, on that one surface. It does not license accent fields anywhere else, and never inside the app.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do keep the accent to exactly one meaning per screen \u2014 one CTA, one data line, or one selected state, never more than one at a time.",
+      "Do use tabular-nums on every metric and score so digits align across a transition (old \u2192 new, countdowns).",
+      "Do uppercase and letter-space every mono label (0.10\u20130.22em depending on context) \u2014 this is what makes the UI read as calibrated rather than styled.",
+      "Do keep the locked/blur treatment honest: blur real content, keep the current headline number visible, never show a hard empty state on a paywalled card.",
+      "Do reserve reveal-bg (#060607) for the reveal and delta screens only \u2014 it signals \"the app just went quiet to tell you something.\""
+    ],
+    "donts": [
+      "Don't use a gradient anywhere in UI chrome \u2014 it reads as marketing, and specifically as \"AI dev tool\" in this palette.",
+      "Don't add a box-shadow to anything; depth comes from tonal layering and border weight only.",
+      "Don't italicize any text, or center any layout other than the reveal sequence.",
+      "Don't let the accent touch a background fill behind body copy or become a heading color \u2014 it marks a point, it never paints a surface.",
+      "Don't introduce a second accent hue for a new state; new states (warn, danger) must share the accent's lightness/chroma family so they read as \"the same instrument, different reading.\""
+    ]
+  }
+}

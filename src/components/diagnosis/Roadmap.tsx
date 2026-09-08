@@ -3,29 +3,31 @@
 import { Drill } from "@/lib/drills";
 import { Roadmap } from "@/lib/roadmap";
 
+/**
+ * The 3-week plan, shown once at the end of the anonymous funnel.
+ *
+ * Deliberately built in the same language as the signed-in `/plan` tab: the
+ * two screens show the same content — drills, the in-game rule, the re-test —
+ * and a player who sees one and then the other should recognise the second as
+ * the same object, not as a different product. Labels, card shape, the
+ * accent-tinted in-game rule and the primary button all match that screen.
+ */
 export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommit: () => void }) {
   return (
-    <main
-      className="min-h-[100dvh] w-full bg-[#080b12] text-slate-100"
-      style={{
-        backgroundImage:
-          "radial-gradient(120% 80% at 50% -10%, #0e1726 0%, #080b12 55%, #06080d 100%)",
-      }}
-    >
+    <main className="min-h-[100dvh] w-full bg-background text-ink">
       <RoadmapStyles />
       <div className="roadmap-in mx-auto w-full max-w-[600px] space-y-10 px-6 py-16 md:py-20">
-
         {/* Header */}
-        <div className="space-y-3 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-teal-400/80">
+        <div className="space-y-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
             Your plan
           </p>
-          <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-slate-50 md:text-5xl">
+          <h1 className="font-display text-[24px] font-bold leading-[1.25] tracking-[-0.01em] text-ink md:text-[32px] md:leading-[1.15]">
             {roadmap.goalLabel}
           </h1>
-          <p className="text-[17px] leading-relaxed text-slate-400">
+          <p className="text-pretty text-[15px] leading-[1.6] text-ink-2 md:text-[16px]">
             Your one job for the next {roadmap.weeksTarget} weeks: fix{" "}
-            <span className="font-medium text-slate-200">{roadmap.bottleneckLabel}</span>.
+            <span className="font-medium text-ink">{roadmap.bottleneckLabel}</span>.
           </p>
         </div>
 
@@ -33,10 +35,10 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
 
         {/* Drills */}
         <div className="space-y-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
             2x a week · 15 min each
           </p>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {roadmap.weeklyDrills.map((drill) => (
               <DrillCard key={drill.id} drill={drill} hasPartner={roadmap.hasPartner} />
             ))}
@@ -45,40 +47,39 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
 
         <Divider />
 
-        {/* In-game rule */}
-        <div className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">
+        {/*
+          The in-game rule is the accent-tinted card variant from DESIGN.md
+          §Components — the treatment reserved for a moment the product wants
+          to point at without spending a full CTA on it. It replaces a
+          gradient hairline, which the Kill-the-Gradient rule forbids outright.
+        */}
+        <section className="flex flex-col gap-2 rounded-2xl border border-optic bg-optic/[0.04] px-5 py-[18px]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-optic">
             In your games
           </p>
-          <div className="flex gap-4">
-            <span className="mt-1 w-0.5 shrink-0 self-stretch rounded-full bg-gradient-to-b from-emerald-400/70 to-transparent" />
-            <p className="text-[16px] leading-relaxed text-slate-300">{roadmap.inGameRule}</p>
-          </div>
-        </div>
+          <p className="text-pretty text-[15px] leading-[1.55] text-ink">{roadmap.inGameRule}</p>
+        </section>
 
         <Divider />
 
         {/* Re-test */}
-        <div className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">
+        <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface px-5 py-[18px]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
             Re-test in {roadmap.weeksTarget} weeks
           </p>
-          <p className="text-[16px] leading-relaxed text-slate-300">{roadmap.retestMetric}</p>
-          <p className="text-[13px] text-slate-300">
-            🗓 Come back and re-take the assessment. We&apos;ll show you what moved.
+          <p className="text-[14px] leading-[1.55] text-ink-2">{roadmap.retestMetric}</p>
+          {/* No calendar emoji: the system carries no iconography at all — the
+              tab bar is text-only for the same reason. */}
+          <p className="text-[13px] leading-[1.5] text-ink-3">
+            Come back and re-take the assessment. We&apos;ll show you what moved.
           </p>
-        </div>
+        </section>
 
-        {/* CTA */}
+        {/* CTA — the one accent-carrying element on this screen. */}
         <div className="pb-8 pt-2">
           <button
             onClick={onCommit}
-            className={[
-              "w-full rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500",
-              "py-4 text-[16px] font-medium text-white",
-              "outline-none focus-visible:outline-none",
-              "transition-all duration-150 hover:opacity-90 active:scale-[0.99]",
-            ].join(" ")}
+            className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-optic active:scale-[0.98]"
           >
             I&apos;m in — let&apos;s go
           </button>
@@ -92,25 +93,32 @@ function DrillCard({ drill, hasPartner }: { drill: Drill; hasPartner: boolean })
   const showSoloBadge = drill.requiresPartner && !hasPartner;
 
   return (
-    <div className="space-y-2 rounded-xl border border-slate-700/60 bg-slate-800/20 p-5">
+    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface px-5 py-[18px]">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[15px] font-semibold leading-snug text-slate-100">{drill.name}</p>
+        <p className="font-display text-[17px] font-semibold leading-[1.3] text-ink">
+          {drill.name}
+        </p>
         <div className="flex shrink-0 items-center gap-2">
+          {/*
+            Neutral, not `warn`. The state colours are a scale — warn means
+            "due today", danger means "regressed" — and a solo variant is
+            neither; it is a note about which version you are being given.
+          */}
           {showSoloBadge && (
-            <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-400">
+            <span className="shrink-0 rounded-xs border border-line-strong bg-surface-2 px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.1em] text-ink-3">
               Solo version
             </span>
           )}
-          <span className="text-[12px] text-slate-500">{drill.duration}</span>
+          <span className="font-mono text-[11px] tabular-nums text-ink-3">{drill.duration}</span>
         </div>
       </div>
-      <p className="text-[14px] leading-relaxed text-slate-400">{drill.description}</p>
+      <p className="text-[14px] leading-[1.55] text-ink-2">{drill.description}</p>
     </div>
   );
 }
 
 function Divider() {
-  return <div className="h-px w-full bg-slate-800" />;
+  return <div className="h-px w-full bg-line" />;
 }
 
 function RoadmapStyles() {

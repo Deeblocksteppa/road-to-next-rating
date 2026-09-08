@@ -1,177 +1,78 @@
-"use client";
-
-import Link from "next/link";
-import { useState } from "react";
-import { Assessment } from "@/components/assessment/Assessment";
-import { Computing } from "@/components/assessment/Computing";
-import { Reveal } from "@/components/diagnosis/Reveal";
-import { RoadmapScreen } from "@/components/diagnosis/Roadmap";
-import { CommittedScreen } from "@/components/diagnosis/Committed";
-import { SaveGate } from "@/components/auth/SaveGate";
-import { LogoFull } from "@/components/brand/Logo";
-import { diagnose } from "@/lib/engine";
-import { generateRoadmap, Roadmap } from "@/lib/roadmap";
-import { QUESTIONS } from "@/lib/questions";
-import { AnswerMap, Diagnosis } from "@/lib/types";
+import type { Metadata } from "next";
 import {
-  saveAssessment,
-  saveDiagnosis,
-  savePlan,
-  getPendingIds,
-  clearPendingIds,
-} from "@/lib/persistence";
+  FinalCta,
+  Footer,
+  Hero,
+  HowItWorks,
+  Plan,
+  Pricing,
+  Problem,
+  Progress,
+  SiteHeader,
+} from "@/components/marketing/sections";
+import { StatRow } from "@/components/marketing/StatRow";
 
-type Phase =
-  | "landing"
-  | "assessment"
-  | "computing"
-  | "reveal"
-  | "roadmap"
-  | "savegate"
-  | "committed";
+/**
+ * The public storefront. A server component on purpose: it is the first thing
+ * cold traffic from a social link hits, so it ships as static HTML and can
+ * export the link-preview metadata a client component cannot.
+ *
+ * The anonymous assessment funnel lives at /start.
+ */
+export const metadata: Metadata = {
+  title: "Road to Next Rating — find the one skill capping your pickleball rating",
+  description:
+    "You don't have ten weaknesses. You have one. Twelve questions finds the skill holding your rating at 3.5, why it hasn't moved, and the three weeks that fix it. Free.",
+  openGraph: {
+    title: "You don't have ten weaknesses. You have one.",
+    description:
+      "Twelve questions finds the one skill capping your pickleball rating — and the three weeks that fix it. Free, no signup.",
+    siteName: "Road to Next Rating",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "You don't have ten weaknesses. You have one.",
+    description:
+      "Twelve questions finds the one skill capping your pickleball rating — and the three weeks that fix it. Free, no signup.",
+  },
+};
 
-export default function Home() {
-  const [phase, setPhase] = useState<Phase>("landing");
-  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
-  const [answers, setAnswers] = useState<AnswerMap | null>(null);
-  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
-
-  function handleAssessmentComplete(ans: AnswerMap) {
-    const diag = diagnose(ans);
-    setDiagnosis(diag);
-    setAnswers(ans);
-    setPhase("computing");
-
-    // Persist the assessment + diagnosis as unclaimed rows (best-effort — the
-    // UX continues regardless; the ids are stashed in localStorage for claim).
-    (async () => {
-      try {
-        const assessmentId = await saveAssessment(ans);
-        await saveDiagnosis(assessmentId, diag, ans);
-      } catch (err) {
-        console.error("Failed to save assessment/diagnosis:", err);
-      }
-    })();
-  }
-
-  function handleRevealNext() {
-    if (diagnosis && answers) {
-      const generated = generateRoadmap(diagnosis, answers);
-      setRoadmap(generated);
-      setPhase("roadmap");
-
-      // Persist the plan, linked to the diagnosis saved earlier.
-      const diagnosisId = getPendingIds().diagnosis;
-      if (diagnosisId) {
-        savePlan(diagnosisId, generated).catch((err) =>
-          console.error("Failed to save plan:", err)
-        );
-      }
-    }
-  }
-
-  function handleReset() {
-    clearPendingIds();
-    setPhase("landing");
-    setDiagnosis(null);
-    setAnswers(null);
-    setRoadmap(null);
-  }
-
-  if (phase === "assessment") {
-    return <Assessment onComplete={handleAssessmentComplete} />;
-  }
-
-  if (phase === "computing") {
-    return <Computing onDone={() => setPhase("reveal")} />;
-  }
-
-  if (phase === "reveal" && diagnosis) {
-    return <Reveal diagnosis={diagnosis} onNext={handleRevealNext} />;
-  }
-
-  if (phase === "roadmap" && roadmap) {
-    return <RoadmapScreen roadmap={roadmap} onCommit={() => setPhase("savegate")} />;
-  }
-
-  if (phase === "savegate" && roadmap) {
-    return (
-      <SaveGate
-        bottleneckLabel={roadmap.bottleneckLabel}
-        weeksTarget={roadmap.weeksTarget}
-        onSkip={() => setPhase("committed")}
-      />
-    );
-  }
-
-  if (phase === "committed" && roadmap) {
-    return (
-      <CommittedScreen
-        roadmap={roadmap}
-        onBackToPlan={() => setPhase("roadmap")}
-        onStartOver={handleReset}
-      />
-    );
-  }
-
-  // Landing
+export default function MarketingHome() {
   return (
-    <main className="relative flex min-h-[100dvh] w-full flex-col bg-background px-6 text-ink">
-      <LandingStyles />
+    <div className="min-h-[100dvh] bg-background text-ink">
+      {/*
+        Visible only on focus. On a ~7,500px page with eight tabbable elements
+        and no in-page nav, a keyboard user otherwise tabs the whole banner
+        before reaching the one thing the page is asking them to do.
+      */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-6 focus:z-50 focus:inline-flex focus:h-[52px] focus:items-center focus:rounded-lg focus:bg-optic focus:px-7 focus:text-[15px] focus:font-semibold focus:text-optic-ink"
+      >
+        Skip to content
+      </a>
 
-      <header className="landing-in flex items-center pt-5">
-        <LogoFull />
-      </header>
+      <SiteHeader />
 
-      <div className="landing-in flex flex-1 flex-col justify-center gap-5 py-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-          For players stuck at 3.0–4.0
-        </p>
-        <h1
-          className="text-balance font-display text-[38px] font-extrabold leading-[1.08] tracking-[-0.02em] md:text-[56px] md:leading-[1.05]"
-        >
-          You don&apos;t have ten weaknesses. You have one.
-        </h1>
-        <p className="text-pretty text-[15px] leading-[1.6] text-ink-2 md:text-base">
-          Twelve questions. One diagnosis: the skill holding your rating down,
-          why it hasn&apos;t moved — and the three weeks that fix it.
-        </p>
-      </div>
-
-      <div className="landing-in flex flex-col gap-3.5 pb-6">
-        <button
-          onClick={() => setPhase("assessment")}
-          className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
-        >
-          Start the assessment
-        </button>
-        <p className="text-center font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3">
-          {QUESTIONS.length} questions · 4 minutes · free
-        </p>
-        <p className="text-center text-[13px] text-ink-2">
-          Already have an account?{" "}
-          <Link href="/login" className="underline underline-offset-4">
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </main>
-  );
-}
-
-function LandingStyles() {
-  return (
-    <style>{`
-      @keyframes landingIn {
-        from { opacity: 0; transform: translateY(14px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      .landing-in {
-        animation: landingIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .landing-in { animation: none; }
-      }
-    `}</style>
+      {/*
+        `main` starts at the hero, not after it. The hero was previously the
+        page's `<header>` — the banner landmark — while holding the h1, the
+        lede and the primary CTA, so a screen-reader user jumping to `main`
+        landed past all three. StatRow sat between `</header>` and `<main>`,
+        inside no landmark at all.
+      */}
+      <main id="main">
+        <Hero />
+        <StatRow />
+        <Problem />
+        <HowItWorks />
+        <Plan />
+        <Progress />
+        <Pricing />
+        <FinalCta />
+      </main>
+      <Footer />
+    </div>
   );
 }

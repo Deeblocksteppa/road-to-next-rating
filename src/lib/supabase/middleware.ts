@@ -65,8 +65,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Already logged in and visiting an auth screen → send to the app.
-  if (user && (pathname === "/login" || pathname === "/signup")) {
+  // Already logged in and visiting an auth screen or the public marketing
+  // site → send to the app. A signed-in player has no reason to read the
+  // storefront; "/" is for cold traffic.
+  if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/home";
     url.search = "";

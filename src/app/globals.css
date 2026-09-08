@@ -59,3 +59,43 @@
     color: #131408;
   }
 }
+
+/*
+ * Marketing site motion. Two moments only: the hero's staggered entrance on
+ * load, and a single fade-and-rise as sections scroll into view. Both are
+ * exponential ease-out with no bounce and no scale.
+ *
+ * Content is visible by default — `data-rise="out"` is set by JS only after
+ * the IntersectionObserver is confirmed, so no-JS, crawlers, and observer
+ * failures can never strand a section at opacity 0.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-rise] {
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--rise-delay, 0ms),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--rise-delay, 0ms);
+  }
+  [data-rise="out"] {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  [data-rise="in"] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @keyframes heroIn {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .hero-in {
+    animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--hero-delay, 0ms);
+  }
+}
