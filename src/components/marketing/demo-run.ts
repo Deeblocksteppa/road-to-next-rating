@@ -3,6 +3,15 @@ import { QUESTIONS } from "@/lib/questions";
 import type { AnswerMap, RootCauseId } from "@/lib/types";
 
 /**
+ * The two labels every surface carrying this run has to show, next to the
+ * numbers themselves. PRODUCT.md: no customers exist, so nothing on the site
+ * may read as a customer result — one wording, owned here, so no readout can
+ * soften it independently.
+ */
+export const EXAMPLE_LABEL = "Example assessment — illustrative answers";
+export const RETEST_LABEL = "Illustrative re-test — not a customer result";
+
+/**
  * One complete pass through the real diagnostic engine, used as the source of
  * every number the marketing site's readouts display.
  *
@@ -48,22 +57,47 @@ export const DEMO_RANKED_SKILLS = [...scoreSkills(DEMO_ANSWERS)].sort(
 
 /**
  * The same player's re-test, three weeks later, with the plan's actual target
- * fixed — both questions that feed the reset score move to their top option.
+ * moved — both questions that feed the reset score step up one option, from
+ * "pops it up" to "gets it back but it floats", from "stuck mid-court" to
+ * "most of the time, but pushed back a lot".
+ *
+ * One option, not the top one. Three weeks of drilling a shot that has been
+ * failing for years is a partial improvement, and a re-test that showed full
+ * mastery would be the "more impressive number" this file exists to rule out.
  *
  * Nothing here is a claimed outcome. It is the engine answering a second
- * answer set: fix the skill this plan drills and `diagnose` returns 70, and
+ * answer set: move the skill this plan drills and `diagnose` returns 66, and
  * the bottleneck hands over to dink patience, which is the "next bottleneck
  * becomes the next three weeks" the section already describes in prose. The
  * improvement is the model's arithmetic, not a result anyone has measured —
- * every surface showing it is labelled an example run, per PRODUCT.md.
+ * every surface showing it is labelled illustrative, per PRODUCT.md.
  */
 export const DEMO_RETEST_ANSWERS: AnswerMap = {
   ...DEMO_ANSWERS,
-  transition_reset: "a", // resets softly into the kitchen and keeps coming
-  net_hold: "a", // gets to the net and stays there
+  transition_reset: "b", // gets it back but it floats
+  net_hold: "b", // most of the time, but pushed back a lot
 };
 
 export const DEMO_RETEST_DIAGNOSIS = diagnose(DEMO_RETEST_ANSWERS);
+
+/*
+ * Loud on purpose, at build time: the re-test is only an honest illustration
+ * of this plan while every answer that changed feeds the skill the plan
+ * targets. Move any other answer — to make the delta bigger, say — and the
+ * build fails rather than the page quietly showing a second player.
+ */
+for (const id of Object.keys(DEMO_RETEST_ANSWERS)) {
+  if (DEMO_RETEST_ANSWERS[id] === DEMO_ANSWERS[id]) continue;
+  const question = QUESTIONS.find((q) => q.id === id);
+  if (question?.measures !== DEMO_DIAGNOSIS.bottleneck) {
+    throw new Error(
+      `demo-run: re-test changes "${id}", which does not measure the diagnosed bottleneck`
+    );
+  }
+}
+if (DEMO_RETEST_DIAGNOSIS.readiness <= DEMO_DIAGNOSIS.readiness) {
+  throw new Error("demo-run: the re-test did not move readiness");
+}
 
 /**
  * Before/after for each skill, in the baseline's worst-first order so the row

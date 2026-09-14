@@ -421,9 +421,11 @@ export function Progress() {
         One landscape object, the same shape as steps 01 and 02, rather than
         two phone captures side by side. The captures were of two different app
         surfaces — one on the app ground, one on `reveal-bg` — so they read as
-        two different greys no markup could reconcile, and their crops could
-        not be squared without exposing a "0 weeks" streak card on one or
-        slicing a CTA in half on the other. See `RetestReadout` for the numbers.
+        two different greys no markup could reconcile; their crops could not be
+        squared without exposing a "0 weeks" streak card on one or slicing a
+        CTA in half on the other; and they showed a second player (68 → 81 on
+        hands at the net) under a page whose every other number is the reset
+        player at 63. See `RetestReadout` and `demo-run.ts` for the numbers.
       */}
       <RiseIn delay={80} className="mt-12 md:mt-14">
         <RetestReadout />

@@ -75,22 +75,6 @@ export const SHOTS = {
     label: "Home — recapture needed",
     alt: "The app's home screen showing the current bottleneck, the readiness score, sessions completed this week, and the button that starts today's session.", // eslint-disable-line -- accurate for the intended capture, not the current file
   },
-  progress: {
-    src: "/marketing/progress.png",
-    ready: true,
-    w: 1124,
-    h: 2130,
-    label: "Progress — readiness over time",
-    alt: "The app's progress screen showing a rising readiness line, and a re-test history listing a baseline of 68 and a full re-test of 81, up 13.",
-  },
-  delta: {
-    src: "/marketing/retest-delta.png",
-    ready: true,
-    w: 1179,
-    h: 2069,
-    label: "Re-test — what moved",
-    alt: "The app's re-test screen showing readiness moving from 68 to 81, up 13, with a per-skill breakdown of how each of the four skills changed.",
-  },
 } satisfies Record<string, Shot>;
 
 export type ShotKey = keyof typeof SHOTS;

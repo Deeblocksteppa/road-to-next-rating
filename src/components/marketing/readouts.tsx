@@ -5,6 +5,8 @@ import {
   DEMO_RETEST_DIAGNOSIS,
   DEMO_RETEST_SKILLS,
   DEMO_SIGNALS,
+  EXAMPLE_LABEL,
+  RETEST_LABEL,
   ROOT_CAUSE_TITLES,
 } from "./demo-run";
 
@@ -37,7 +39,12 @@ function Readout({
   className = "",
 }: {
   eyebrow: string;
-  /** Right-hand instrument line — what this run is, or what it was scored from. */
+  /**
+   * Right-hand instrument line: the run's provenance label (`EXAMPLE_LABEL`
+   * or `RETEST_LABEL`). It sits in the panel's own header so it cannot be
+   * separated from the numbers it qualifies at any viewport — at 375px the
+   * header wraps and the label drops under the eyebrow, still inside the card.
+   */
   meta: string;
   children: React.ReactNode;
   /** Ambient optic field behind the panel. Hero only — one per page. */
@@ -64,7 +71,10 @@ function Readout({
           <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.14em] text-ink-2">
             {eyebrow}
           </span>
-          <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.12em] tabular-nums text-ink-3">
+          {/* `ink-2`, not `ink-3`: this is the line that says the numbers are
+              not a customer's, so it is not allowed to be the dimmest thing in
+              the panel. */}
+          <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.12em] text-ink-2">
             {meta}
           </span>
         </figcaption>
@@ -145,8 +155,8 @@ export function ScoreReadout({ glow = false }: { glow?: boolean }) {
   return (
     <Readout
       glow={glow}
-      eyebrow="Example readout — the reading"
-      meta={`${DEMO_RANKED_SKILLS.length} skills scored`}
+      eyebrow={`The reading — ${DEMO_RANKED_SKILLS.length} skills scored`}
+      meta={EXAMPLE_LABEL}
     >
       <div className="grid gap-8 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-12">
         <div className="md:self-center">
@@ -226,7 +236,7 @@ export function GapLedger() {
   const maxGap = Math.max(...DEMO_RANKED_SKILLS.map((s) => s.gap));
 
   return (
-    <Readout eyebrow="Weighted gap — all four skills" meta="Example run">
+    <Readout eyebrow="Weighted gap — all four skills" meta={EXAMPLE_LABEL}>
       {/*
         The formula runs above the rows, not under them. It is the sentence
         that makes this object credible — `×1.4` means nothing until you have
@@ -342,7 +352,7 @@ export function GapLedger() {
  */
 export function RootCauseReadout() {
   return (
-    <Readout eyebrow="Training signals — the second axis" meta="Example run">
+    <Readout eyebrow="Training signals — the second axis" meta={EXAMPLE_LABEL}>
       <ul>
         {DEMO_SIGNALS.map((signal, i) => (
           <li
@@ -409,20 +419,22 @@ export function RootCauseReadout() {
  * exposing a "0 weeks" streak card or slicing a CTA in half. Rendered, the
  * object has one ground, one width and no crop to negotiate.
  *
- * It also fixes a number. The captures showed 68 → 81 (+13), which matched
- * neither the 63 this page's own engine returns for the example run nor
- * anything a single-bottleneck fix can produce: take the two questions the
- * reset is scored from to their top option and `diagnose` returns 70. Every
- * figure below is that second pass, so the claim cannot drift from the model.
+ * It also fixes a number. The captures showed a different player entirely
+ * (68 → 81 on hands at the net), which matched neither the 63 this page's own
+ * engine returns for the example run nor anything a single-bottleneck fix can
+ * produce. Every figure below is the engine's second pass over the same
+ * answers with only the diagnosed skill's questions moved (`demo-run.ts`
+ * enforces that at build time), so the claim cannot drift from the model.
  */
 export function RetestReadout() {
   const before = DEMO_DIAGNOSIS.readiness;
   const after = DEMO_RETEST_DIAGNOSIS.readiness;
   const delta = after - before;
+  const fixed = SKILL_TITLES[DEMO_DIAGNOSIS.bottleneck];
   const nextBottleneck = SKILL_TITLES[DEMO_RETEST_DIAGNOSIS.bottleneck];
 
   return (
-    <Readout eyebrow="Re-test — what moved" meta="Example run · 3 weeks later">
+    <Readout eyebrow="Re-test — what moved, 3 weeks later" meta={RETEST_LABEL}>
       <div className="grid gap-8 md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] md:gap-12">
         <div className="md:self-center">
           <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-ink-3">
@@ -515,7 +527,7 @@ export function RetestReadout() {
         computed fact rather than a promise.
       */}
       <p className="mt-6 border-t border-line pt-4 font-mono text-[12px] leading-[1.5] tracking-[0.02em] text-ink-2">
-        The reset clears · {nextBottleneck} becomes the next three weeks
+        {fixed} clears · {nextBottleneck} becomes the next three weeks
       </p>
     </Readout>
   );
