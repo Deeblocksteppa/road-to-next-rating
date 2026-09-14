@@ -102,7 +102,7 @@ export function SaveGate({
         </h1>
         <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">
           Save your bottleneck and {weeksTarget}-week plan to your account so
-          it&apos;s here tomorrow. Free — always.
+          it&apos;s here tomorrow. No card, nothing to pay.
         </p>
       </div>
 

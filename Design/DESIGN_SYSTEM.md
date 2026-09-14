@@ -209,7 +209,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 | DUE TODAY | `warn` | `rgba(227,184,76,0.12)` |
 | PLATEAU | `danger` | `rgba(227,101,76,0.12)` |
 | LOCKED / SCHEDULED | `ink-3` / `ink-2` | `surface-2`, border `line` |
-| SAVE 49% (paywall) | `optic-ink` | solid `optic` |
+| SAVE 17% (paywall) | `optic-ink` | solid `optic` |
 
 ### Other elements
 
@@ -311,12 +311,12 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 ### Paywall
 - Eyebrow `YOU'RE IMPROVING — KEEP THE RECEIPTS` → Archivo 800 30px **"See every point you earn from here."**
 - 4 accent-bullet feature lines (per-skill deltas / readiness chart & history / drill history & streaks / next bottleneck sequenced).
-- **Plan selector:** *Annual* card (selected — accent border, tint): "$79 / year · $6.58 per month" + `SAVE 49%` badge. *Monthly* card (muted): "$12.99 / month" + empty radio.
+- **Plan selector:** *Annual* card (selected — accent border, tint): "$79 / year · equivalent to $6.58 per month" + `SAVE 17%` badge. *Monthly* card (muted): "$7.99 / month · billed monthly" + empty radio.
 - Primary **"Continue — $79/year"** + mono caption "YOUR DIAGNOSIS, PLAN, AND HOME STAY FREE · CANCEL ANYTIME".
 - *Placed at peak motivation, right after the free delta — not on entry. Annual is default.*
 
 ### Save Gate (auth)
-- Eyebrow `YOUR DIAGNOSIS IS READY` → Archivo 800 30px **"Keep what you just found."** → body: "Save your bottleneck and 3-week plan to your account so it's here tomorrow. Free — always."
+- Eyebrow `YOUR DIAGNOSIS IS READY` → Archivo 800 30px **"Keep what you just found."** → body: "Save your bottleneck and 3-week plan to your account so it's here tomorrow. No card, nothing to pay." (originally "Free — always." — dropped with the rest of the permanence language)
 - "Saving" card: accent dot + "Third-shot drop · 3-week plan · Day 8".
 - Auth stack: **"Continue with Google"** (secondary, "G" glyph) → "OR" divider → Email input → "Create a password" input → primary **"Save my plan"**.
 - Footer: "Already have an account? Sign in".

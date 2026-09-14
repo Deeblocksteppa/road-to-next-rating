@@ -46,11 +46,12 @@ export default function Terms() {
         </p>
         <p>
           <strong className="font-semibold text-ink">What it costs.</strong> The
-          assessment, your diagnosis, your first three-week plan, guided sessions, and your
-          current readiness are free, with no card required. A subscription — $79 per year
-          or $12.99 per month — adds your readiness history, per-skill re-test deltas,
-          streaks, and sequenced next bottlenecks. Cancel any time; cancelling stops future
-          billing and leaves the free product intact.
+          assessment, your diagnosis, every three-week plan, guided sessions, re-tests with
+          the headline score change, and your current readiness are free, with no card
+          required. A subscription — $79 per year or $7.99 per month — adds per-skill
+          re-test deltas, your readiness chart and re-test history, and session streaks.
+          Cancel any time; cancelling stops future billing and leaves the free product
+          intact.
         </p>
         <p>
           <strong className="font-semibold text-ink">Injury.</strong> This is physical

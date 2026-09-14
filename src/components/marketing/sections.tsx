@@ -441,38 +441,94 @@ export function Progress() {
 
 /* ─────────────────────────── Pricing ─────────────────────────── */
 
+/**
+ * Every line below was checked against the code that gates it, not against
+ * earlier copy. The facts, as of this writing:
+ *
+ *   – `/retest` and `submitRetest` have no subscription check: anyone can
+ *     re-test, and every re-test retires the old plan and writes a new one.
+ *     There is no "first plan"; every plan is free.
+ *   – `recordDrillSession` has no subscription check either. Logging never
+ *     runs out.
+ *   – The Delta screen shows the headline score change (old → new, +N) to
+ *     everyone and locks only the per-skill rows. Progress shows the current
+ *     readiness and "+N since start" to everyone once there is a re-test, and
+ *     locks the chart, the history list and the streak card.
+ *   – The next bottleneck is diagnosed and planned for on every re-test
+ *     regardless of tier, so it is not a paid feature and is not listed as
+ *     one.
+ *
+ * Nothing here says "always" or "forever": neither is a commitment the
+ * product has made, and the copy should not make it on the product's behalf.
+ */
 const FREE = [
-  "The full 12-question assessment",
-  "Your complete diagnosis — bottleneck and root cause",
-  "Your first three-week plan",
-  "Guided sessions with drill demos and logging",
-  "Your home screen and current readiness",
+  "The full 12-question assessment and your diagnosis",
+  "A three-week plan for your bottleneck — and a new one after every re-test",
+  "Guided sessions with drill demos and logging, for as long as you train",
+  "Re-tests, with the headline score change: old reading, new reading, and the difference",
+  "Your current readiness on Home and Progress",
 ];
 
 const PAID = [
-  "Your readiness chart over time",
-  "Per-skill deltas on every re-test",
-  "Full re-test history and drill streaks",
-  "Your next bottlenecks, sequenced",
+  "Per-skill deltas on every re-test — which of the four skills moved, and by how much",
+  "Your readiness chart across every re-test, with your logged sessions beneath it",
+  "Re-test history, labelled by plan cycle",
+  "Weekly session streaks",
 ];
+
+/** A price line: the amount at display weight, and the billing basis under it in mono. */
+function PriceLine({
+  amount,
+  unit,
+  basis,
+  mark,
+}: {
+  amount: string;
+  unit: string;
+  basis: string;
+  /** Optional neutral chip — the annual line's "better value" mark. */
+  mark?: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div>
+        <p className="font-display text-[32px] font-extrabold leading-none tracking-[-0.01em] tabular-nums text-ink">
+          {amount}
+          <span className="text-[15px] font-semibold tracking-normal text-ink-2">{unit}</span>
+        </p>
+        <p className="mt-2 font-mono text-[11px] uppercase leading-[1.5] tracking-[0.12em] tabular-nums text-ink-3">
+          {basis}
+        </p>
+      </div>
+      {mark ? (
+        <span className="inline-flex shrink-0 items-center rounded-xs border border-line-strong px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.10em] text-ink-2">
+          {mark}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 export function Pricing() {
   return (
     <Section id="pricing" className="border-t border-line-soft">
       <RiseIn className="max-w-[52ch]">
         <SectionLabel>Pricing</SectionLabel>
-        <SectionHeading className="mt-5">The diagnosis is free. Always.</SectionHeading>
+        <SectionHeading className="mt-5">
+          The diagnosis is free. So is every plan after it.
+        </SectionHeading>
         <Body className="mt-4">
-          No card, no trial clock. Paying only adds the record of what changed over time.
+          No card to start. Paying adds the record: how each re-test compared to the
+          last, skill by skill, kept over time.
         </Body>
       </RiseIn>
 
       <RiseIn delay={80} className="mt-10 grid gap-5 md:mt-12 md:grid-cols-2 md:gap-6">
         {/*
           Free carries the accent, because it is the only card on this page the
-          visitor can act on. Pointing the accent at a tier that says "offered
-          inside the app — never before" made the loudest element on the page
-          the one thing nobody can buy, under a heading reading "free. Always."
+          visitor can act on. Pointing the accent at a tier that is offered
+          inside the app made the loudest element on the page the one thing
+          nobody here can buy.
         */}
         <div className="flex flex-col rounded-2xl border border-optic bg-[rgba(216,227,76,0.05)] p-6 md:p-8">
           {/* Not `text-optic`: DESIGN.md forbids the accent as a heading
@@ -480,14 +536,11 @@ export function Pricing() {
               rank this tier, and its CTA is the one thing in the pricing
               viewport that should carry the accent. */}
           <h3 className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.16em] text-ink-2">
-            Free forever
+            Free
           </h3>
-          <p className="mt-5 font-display text-[32px] font-extrabold leading-none tracking-[-0.01em] text-ink">
-            $0
-          </p>
-          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3">
-            No card · nothing to enter
-          </p>
+          <div className="mt-5">
+            <PriceLine amount="$0" unit="" basis="No card · no trial clock" />
+          </div>
           <ul className="mt-8 flex flex-col gap-3.5">
             {FREE.map((item) => (
               <li key={item} className="flex gap-3 text-[15px] leading-[1.55] text-ink-1">
@@ -506,20 +559,28 @@ export function Pricing() {
           </div>
         </div>
 
-        {/* Paid — stated plainly, never louder than the free action. */}
+        {/*
+          Paid — stated plainly, never louder than the free action. Both
+          billing options sit at the same display weight: the monthly price
+          used to be a mono footnote after the annual one, which hid the
+          lower-commitment way in behind the higher-commitment one. Annual is
+          marked as the better value with a neutral chip, not with the accent.
+        */}
         <div className="flex flex-col rounded-2xl border border-line bg-surface p-6 md:p-8">
           <h3 className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.16em] text-ink-3">
             The record
           </h3>
-          <div className="mt-5 flex items-baseline gap-2">
-            <p className="font-display text-[32px] font-extrabold leading-none tracking-[-0.01em] tabular-nums text-ink">
-              $79
-            </p>
-            <p className="text-[15px] text-ink-2">/ year</p>
+          <div className="mt-5 flex flex-col gap-4 divide-y divide-line">
+            <PriceLine
+              amount="$79"
+              unit="/year"
+              basis="Equivalent to $6.58/month · billed annually"
+              mark="Best value · save 17%"
+            />
+            <div className="pt-4">
+              <PriceLine amount="$7.99" unit="/month" basis="Billed monthly" />
+            </div>
           </div>
-          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] tabular-nums text-ink-3">
-            $6.58 per month · or $12.99 monthly
-          </p>
           <ul className="mt-8 flex flex-col gap-3.5">
             {PAID.map((item) => (
               <li key={item} className="flex gap-3 text-[15px] leading-[1.55] text-ink-2">
@@ -532,8 +593,17 @@ export function Pricing() {
             ))}
           </ul>
           <div className="mt-auto pt-8">
+            {/*
+              What actually happens at the moment the two tiers diverge. The
+              offer itself appears inside the app: on the Delta screen after a
+              re-test, on Progress once there is a re-test to chart, and as a
+              row in Settings. It is never in the way of training.
+            */}
             <p className="text-[14px] leading-[1.5] text-ink-2">
-              Offered inside the app once you have a re-test worth charting — never before.
+              After a re-test, everyone sees the new score and how far it moved.
+              Subscribers also see which skills moved, and each re-test joins a chart
+              and history that build from there. The offer appears inside the app; it
+              is never required to keep training.
             </p>
           </div>
         </div>
@@ -541,7 +611,8 @@ export function Pricing() {
 
       <RiseIn delay={140} className="mt-8">
         <Label className="text-center">
-          Your diagnosis, plan, and daily sessions stay free · cancel anytime
+          No card to start · cancel anytime · cancelling stops billing and keeps the
+          free tier
         </Label>
       </RiseIn>
 

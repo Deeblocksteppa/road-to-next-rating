@@ -7,11 +7,15 @@ import { startCheckout } from "@/app/paywall/actions";
 
 type Plan = "annual" | "monthly";
 
+/*
+ * Only what the subscription actually unlocks. "Your next bottleneck,
+ * sequenced" used to be the fourth line, but every re-test diagnoses and
+ * plans for the next bottleneck regardless of tier — it was never gated.
+ */
 const FEATURES = [
-  "Per-skill re-test deltas — what moved, and how much",
-  "Your readiness chart and every past re-test",
-  "Drill history and week-over-week streaks",
-  "Your next bottleneck, sequenced — what to fix after this",
+  "Per-skill re-test deltas — which skills moved, and how much",
+  "Your readiness chart across every re-test, with logged sessions beneath it",
+  "Re-test history and week-over-week session streaks",
 ];
 
 export function PaywallView({ returnTo }: { returnTo: string }) {
@@ -74,14 +78,14 @@ export function PaywallView({ returnTo }: { returnTo: string }) {
             selected={plan === "annual"}
             onSelect={() => setPlan("annual")}
             name="Annual"
-            price="$79 / year · $6.58 per month"
-            badge="SAVE 49%"
+            price="$79 / year · equivalent to $6.58 per month"
+            badge="SAVE 17%"
           />
           <PlanCard
             selected={plan === "monthly"}
             onSelect={() => setPlan("monthly")}
             name="Monthly"
-            price="$12.99 / month"
+            price="$7.99 / month · billed monthly"
           />
         </div>
 
@@ -96,7 +100,7 @@ export function PaywallView({ returnTo }: { returnTo: string }) {
               ? "Taking you to checkout…"
               : plan === "annual"
                 ? "Continue — $79/year"
-                : "Continue — $12.99/month"}
+                : "Continue — $7.99/month"}
           </button>
           {error && (
             <p role="alert" className="text-center text-[13px] leading-[1.45] text-danger">
