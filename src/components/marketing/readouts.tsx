@@ -2,6 +2,8 @@ import { SKILL_TITLES } from "@/lib/diagnoses";
 import {
   DEMO_DIAGNOSIS,
   DEMO_RANKED_SKILLS,
+  DEMO_RETEST_DIAGNOSIS,
+  DEMO_RETEST_SKILLS,
   DEMO_SIGNALS,
   ROOT_CAUSE_TITLES,
 } from "./demo-run";
@@ -390,6 +392,131 @@ export function RootCauseReadout() {
           Paired with {SKILL_TITLES[DEMO_DIAGNOSIS.bottleneck]} → one plan
         </p>
       </div>
+    </Readout>
+  );
+}
+
+/* ──────────────── 4. The re-test (proof it moved) ──────────────── */
+
+/**
+ * The same run, re-scored after the plan — the section's whole claim as one
+ * landscape object instead of two phone captures.
+ *
+ * It replaced a pair of screenshots that could not be made to match: they were
+ * captures of two different app surfaces, so one sat on the app ground
+ * (#0B0B0C) and the other on `reveal-bg` (#060607) and read as two different
+ * greys side by side, and their crops could not be squared without either
+ * exposing a "0 weeks" streak card or slicing a CTA in half. Rendered, the
+ * object has one ground, one width and no crop to negotiate.
+ *
+ * It also fixes a number. The captures showed 68 → 81 (+13), which matched
+ * neither the 63 this page's own engine returns for the example run nor
+ * anything a single-bottleneck fix can produce: take the two questions the
+ * reset is scored from to their top option and `diagnose` returns 70. Every
+ * figure below is that second pass, so the claim cannot drift from the model.
+ */
+export function RetestReadout() {
+  const before = DEMO_DIAGNOSIS.readiness;
+  const after = DEMO_RETEST_DIAGNOSIS.readiness;
+  const delta = after - before;
+  const nextBottleneck = SKILL_TITLES[DEMO_RETEST_DIAGNOSIS.bottleneck];
+
+  return (
+    <Readout eyebrow="Re-test — what moved" meta="Example run · 3 weeks later">
+      <div className="grid gap-8 md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] md:gap-12">
+        <div className="md:self-center">
+          <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-ink-3">
+            Readiness for 4.0
+          </p>
+          <div className="mt-3 flex items-baseline gap-3">
+            <span className="font-display text-[40px] font-extrabold leading-none tabular-nums text-ink-3 md:text-[48px]">
+              {before}
+            </span>
+            <span aria-hidden="true" className="font-display text-[24px] leading-none text-ink-3">
+              →
+            </span>
+            <span className="font-display text-[56px] font-extrabold leading-none tabular-nums text-ink md:text-[72px]">
+              {after}
+            </span>
+            <span className="font-mono text-[13px] leading-none tabular-nums text-optic">
+              +{delta}
+            </span>
+          </div>
+
+          {/*
+            One track, two fills: the baseline in neutral, the ground it gained
+            in the accent. The accent marks exactly one thing on this object —
+            movement — which is the only thing the section is claiming.
+          */}
+          <div className="relative mt-5 h-1.5 overflow-hidden rounded-full bg-line">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-optic"
+              style={{ width: `${after}%` }}
+            />
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-line-hover"
+              style={{ width: `${before}%` }}
+            />
+          </div>
+          <div className="mt-2.5 flex justify-between font-mono text-[11px] tracking-[0.1em] text-ink-3">
+            <span>3.0</span>
+            <span>4.0</span>
+          </div>
+        </div>
+
+        <ul className="md:border-l md:border-line md:pl-12">
+          {DEMO_RETEST_SKILLS.map((row, i) => {
+            const moved = row.after > row.before;
+            return (
+              <li
+                key={row.skill}
+                className={`flex items-center gap-3 py-3.5 md:gap-5 md:py-4 ${
+                  i === 0 ? "pt-0 md:pt-0" : "border-t border-line"
+                }`}
+              >
+                <span
+                  className={`min-w-0 flex-1 text-[15px] font-semibold leading-[1.3] md:text-[17px] ${
+                    moved ? "text-ink" : "text-ink-2"
+                  }`}
+                >
+                  {SKILL_TITLES[row.skill]}
+                </span>
+                <span className="shrink-0 font-mono text-[13px] tabular-nums text-ink-3">
+                  {levelText(row.before)}
+                </span>
+                <span aria-hidden="true" className="shrink-0 font-mono text-[13px] text-ink-3">
+                  →
+                </span>
+                <span
+                  className={`w-[1.75rem] shrink-0 font-mono text-[13px] tabular-nums ${
+                    moved ? "text-ink" : "text-ink-3"
+                  }`}
+                >
+                  {levelText(row.after)}
+                  <span className="text-ink-3">/3</span>
+                </span>
+                <span
+                  className={`w-[2.25rem] shrink-0 text-right font-mono text-[13px] tabular-nums ${
+                    moved ? "text-optic" : "text-ink-3"
+                  }`}
+                >
+                  {moved ? `+${levelText(row.after - row.before)}` : "—"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      {/*
+        The handover, straight off the second diagnosis: fixing the reset does
+        not finish the player, it promotes the next-largest gap. This is the
+        section's "then the next bottleneck becomes the next three weeks" as a
+        computed fact rather than a promise.
+      */}
+      <p className="mt-6 border-t border-line pt-4 font-mono text-[12px] leading-[1.5] tracking-[0.02em] text-ink-2">
+        The reset clears · {nextBottleneck} becomes the next three weeks
+      </p>
     </Readout>
   );
 }

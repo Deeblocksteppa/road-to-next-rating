@@ -5,7 +5,7 @@ import { AppShot } from "./AppShot";
 import type { ShotKey } from "./shots";
 import { BreakRule } from "./BreakRule";
 import { RiseIn } from "./RiseIn";
-import { GapLedger, RootCauseReadout, ScoreReadout } from "./readouts";
+import { GapLedger, RetestReadout, RootCauseReadout, ScoreReadout } from "./readouts";
 import {
   Body,
   Cta,
@@ -418,51 +418,15 @@ export function Progress() {
       </RiseIn>
 
       {/*
-        Both captures are the same run (baseline 68 → 81, +13), so the two
-        frames corroborate rather than contradict. Each carries its own short
-        caption: one label shared between two screens made the reader guess
-        which claim mapped to which image.
-
-        The two reveals are picked so the frames render at the *same height*,
-        not just the same width — 1124/(2130×0.76) and 1179/(2069×0.82) are
-        the same ratio, so at any column width the pair is one footprint and
-        the captions sit on one line. Two side-by-side frames that differ only
-        in height read as a mistake rather than as two screens.
+        One landscape object, the same shape as steps 01 and 02, rather than
+        two phone captures side by side. The captures were of two different app
+        surfaces — one on the app ground, one on `reveal-bg` — so they read as
+        two different greys no markup could reconcile, and their crops could
+        not be squared without exposing a "0 weeks" streak card on one or
+        slicing a CTA in half on the other. See `RetestReadout` for the numbers.
       */}
-      <RiseIn
-        delay={80}
-        className="mt-12 grid items-start gap-8 md:mt-14 md:grid-cols-2 md:gap-10 lg:gap-14"
-      >
-        {/* Shown at every width. This was `hidden md:block`, so at 375px the
-            section titled "Proof it moved" showed half its proof — and 927px
-            later the paid tier's first bullet sold "your readiness chart over
-            time", a chart mobile had never been given. */}
-        <div className="mx-auto w-full max-w-[320px] md:max-w-none">
-          <AppShot
-            // 0.76 is the page-ground gap between the re-test history card
-            // and the streak card below it; 0.8 clipped a sliver off the
-            // streak card's top edge inside an otherwise closed frame.
-            shot="progress"
-            reveal={0.76}
-            caption="Readiness over time"
-          />
-        </div>
-        <div className="mx-auto w-full max-w-[320px] md:max-w-none">
-          {/*
-            0.82 centred, not 0.95 from the top. The capture's content runs
-            0.136–0.878 down the source, so 0.95 was paying for a band of
-            empty screen at the bottom and rendering 121px taller than its
-            neighbour. Centring 0.82 keeps every element — eyebrow, headline,
-            68 → 81 +13, all four skill rows, the CTA — with symmetric room,
-            and lands the frame on the same height as the Progress capture.
-          */}
-          <AppShot
-            shot="delta"
-            reveal={0.82}
-            anchor="center"
-            caption="One re-test, skill by skill"
-          />
-        </div>
+      <RiseIn delay={80} className="mt-12 md:mt-14">
+        <RetestReadout />
       </RiseIn>
     </Section>
   );

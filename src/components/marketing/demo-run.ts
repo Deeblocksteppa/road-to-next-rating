@@ -46,6 +46,39 @@ export const DEMO_RANKED_SKILLS = [...scoreSkills(DEMO_ANSWERS)].sort(
   (a, b) => b.gap - a.gap
 );
 
+/**
+ * The same player's re-test, three weeks later, with the plan's actual target
+ * fixed — both questions that feed the reset score move to their top option.
+ *
+ * Nothing here is a claimed outcome. It is the engine answering a second
+ * answer set: fix the skill this plan drills and `diagnose` returns 70, and
+ * the bottleneck hands over to dink patience, which is the "next bottleneck
+ * becomes the next three weeks" the section already describes in prose. The
+ * improvement is the model's arithmetic, not a result anyone has measured —
+ * every surface showing it is labelled an example run, per PRODUCT.md.
+ */
+export const DEMO_RETEST_ANSWERS: AnswerMap = {
+  ...DEMO_ANSWERS,
+  transition_reset: "a", // resets softly into the kitchen and keeps coming
+  net_hold: "a", // gets to the net and stays there
+};
+
+export const DEMO_RETEST_DIAGNOSIS = diagnose(DEMO_RETEST_ANSWERS);
+
+/**
+ * Before/after for each skill, in the baseline's worst-first order so the row
+ * the plan targeted stays on top and its movement reads first.
+ */
+export const DEMO_RETEST_SKILLS = DEMO_RANKED_SKILLS.map((before) => {
+  const after = scoreSkills(DEMO_RETEST_ANSWERS).find((s) => s.skill === before.skill);
+  if (!after) {
+    // Loud on purpose: this runs at build time, so a change to the skill
+    // taxonomy fails the build rather than shipping a readout with a gap.
+    throw new Error(`demo-run: no re-test score for ${before.skill}`);
+  }
+  return { skill: before.skill, before: before.level, after: after.level };
+});
+
 /** Short human titles for the engine's root-cause ids. */
 export const ROOT_CAUSE_TITLES: Record<RootCauseId, string> = {
   open_play_only: "Open play only",
