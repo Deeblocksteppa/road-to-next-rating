@@ -178,7 +178,10 @@ function DataStep({
 }) {
   return (
     <RiseIn>
-      <div className="grid gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end md:gap-x-12 lg:gap-x-16">
+      {/* `items-start`, not `items-end`: every step in this group hangs its
+          text from one top axis, so the heading and the paragraph beside it
+          begin on the same line rather than ending on one. */}
+      <div className="grid gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-x-12 lg:gap-x-16">
         <div>
           <StepMarker index={index} label={label} />
           <h3 className="mt-4 text-balance font-display text-[20px] font-bold leading-[1.3] text-ink md:text-[22px]">
@@ -192,7 +195,15 @@ function DataStep({
   );
 }
 
-/** One step of the mechanism: numbered marker, argument, screenshot. */
+/**
+ * One step of the mechanism: numbered marker, argument, screenshot.
+ *
+ * Text left, visual right — the same hand as the two DataSteps above it. The
+ * side used to be switchable via a `flip` prop, which nothing ever set; the
+ * prop is gone so "these three never alternate" is structural rather than a
+ * default nobody happened to override. The 01/02/03 numerals already carry
+ * the sequence, so alternating sides would only cost alignment discipline.
+ */
 function Step({
   index,
   label,
@@ -201,7 +212,6 @@ function Step({
   shot,
   reveal,
   anchor,
-  flip = false,
 }: {
   index: string;
   label: string;
@@ -210,17 +220,16 @@ function Step({
   shot: ShotKey;
   reveal?: number;
   anchor?: "top" | "center" | number;
-  flip?: boolean;
 }) {
   return (
-    <RiseIn
-      className={`grid items-center gap-y-8 gap-x-10 md:gap-x-14 lg:gap-x-20 ${
-        flip
-          ? "md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]"
-          : "md:grid-cols-[minmax(0,1fr)_minmax(0,440px)]"
-      }`}
-    >
-      <div className={flip ? "md:order-2" : undefined}>
+    /*
+      `items-start`, not `items-center`. Centred, the text block floated 171px
+      below the card's top edge — the two shared no horizontal line, which is
+      what read as disconnected. Top-aligned, the marker and the card's top
+      edge start together.
+    */
+    <RiseIn className="grid items-start gap-y-8 gap-x-10 md:grid-cols-[minmax(0,1fr)_minmax(0,440px)] md:gap-x-14 lg:gap-x-20">
+      <div>
         <StepMarker index={index} label={label} />
         <h3 className="mt-4 text-balance font-display text-[20px] font-bold leading-[1.3] text-ink md:text-[22px]">
           {heading}
@@ -232,7 +241,10 @@ function Step({
         row, so there is no leftover space around the frame to fill with a
         surface. The card is the object; the page ground is its ground.
       */}
-      <div className={`mx-auto w-full max-w-[300px] md:max-w-none ${flip ? "md:order-1" : ""}`}>
+      {/* Full width at 375 like the two readouts above it — a 300px cap here
+          made this step's visual 27px narrower than theirs on the one screen
+          where all three stack into a single column. */}
+      <div className="w-full">
         <AppShot shot={shot} reveal={reveal} anchor={anchor} />
       </div>
     </RiseIn>
