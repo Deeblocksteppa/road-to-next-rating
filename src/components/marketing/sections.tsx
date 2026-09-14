@@ -407,9 +407,15 @@ export function Progress() {
 
       {/*
         Both captures are the same run (baseline 68 → 81, +13), so the two
-        frames corroborate rather than contradict. Captions carry the naming
-        the stage's single label used to do — two screens with one label
-        between them made the reader guess which claim mapped to which image.
+        frames corroborate rather than contradict. Each carries its own short
+        caption: one label shared between two screens made the reader guess
+        which claim mapped to which image.
+
+        The two reveals are picked so the frames render at the *same height*,
+        not just the same width — 1124/(2130×0.76) and 1179/(2069×0.82) are
+        the same ratio, so at any column width the pair is one footprint and
+        the captions sit on one line. Two side-by-side frames that differ only
+        in height read as a mistake rather than as two screens.
       */}
       <RiseIn
         delay={80}
@@ -430,7 +436,20 @@ export function Progress() {
           />
         </div>
         <div className="mx-auto w-full max-w-[320px] md:max-w-none">
-          <AppShot shot="delta" reveal={0.95} caption="One re-test, skill by skill" />
+          {/*
+            0.82 centred, not 0.95 from the top. The capture's content runs
+            0.136–0.878 down the source, so 0.95 was paying for a band of
+            empty screen at the bottom and rendering 121px taller than its
+            neighbour. Centring 0.82 keeps every element — eyebrow, headline,
+            68 → 81 +13, all four skill rows, the CTA — with symmetric room,
+            and lands the frame on the same height as the Progress capture.
+          */}
+          <AppShot
+            shot="delta"
+            reveal={0.82}
+            anchor="center"
+            caption="One re-test, skill by skill"
+          />
         </div>
       </RiseIn>
     </Section>
