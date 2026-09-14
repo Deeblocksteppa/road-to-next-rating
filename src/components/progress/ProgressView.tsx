@@ -232,9 +232,12 @@ function ChartContent({ data }: { data: ChartData }) {
 }
 
 /**
- * The subordinate practice series under the readiness line — the real logged
- * scores that drove the climb. Smaller and more muted than the readiness line,
- * but the same optic accent so it reads as one story.
+ * The subordinate practice series under the readiness line: the scores the
+ * player logged in drill sessions over the same span. Context beside the
+ * climb, not an input to it — readiness is computed from assessment answers
+ * alone, and nothing logged here feeds the engine or the re-test delta.
+ * Smaller and more muted than the readiness line, but the same optic accent
+ * so the two read as one period of work.
  */
 function SessionSeriesBlock({ sessions }: { sessions: SessionSeries }) {
   const { drillName, values, max } = sessions;

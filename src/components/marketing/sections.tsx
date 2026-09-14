@@ -337,8 +337,13 @@ const PLAN_POINTS = [
     body: "Every session names the drill and shows the shot.",
   },
   {
-    title: "Sessions that log real numbers",
-    body: "You log makes out of attempts, so the plan measures something.",
+    // Precise about what a logged session is and is not: it is a practice
+    // record kept beside the plan. The re-test — and every readiness number on
+    // this page — is the twelve questions answered again, and nothing logged
+    // in a session feeds it. The old line ("so the plan measures something")
+    // read as though it did.
+    title: "Sessions you log as you go",
+    body: "Each drill records makes out of attempts, so your practice has a history — kept beside the plan, separate from the re-test.",
   },
   {
     title: "An in-game rule for the week",

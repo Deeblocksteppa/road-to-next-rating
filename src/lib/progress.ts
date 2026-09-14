@@ -18,9 +18,10 @@ export interface HistoryRow {
 
 /**
  * The subordinate practice series shown under the readiness line: a single
- * drill's logged result_values over time, so the readiness climb is backed by
- * the real numbers that drove it. `max` is the drill's ceiling (10 — every log
- * prompt is "out of 10").
+ * drill's logged result_values over time. It is context for the climb, not a
+ * cause of it — readiness comes from assessment answers only, and logged
+ * results never enter the engine or the re-test delta. `max` is the drill's
+ * ceiling (10 — every log prompt is "out of 10").
  */
 export interface SessionSeries {
   drillName: string;

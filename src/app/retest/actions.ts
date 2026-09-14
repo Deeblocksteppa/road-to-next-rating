@@ -2,21 +2,32 @@
 
 import { revalidatePath } from "next/cache";
 
-import { computeDiagnosisDelta, type DiagnosisDelta } from "@/lib/delta";
+import {
+  computeDiagnosisDelta,
+  parseStoredSkillScores,
+  type DiagnosisDelta,
+} from "@/lib/delta";
 import { SKILL_LABELS } from "@/lib/diagnoses";
 import { diagnose, scoreSkills } from "@/lib/engine";
 import { generateRoadmap } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
-import type { AnswerMap, SkillId } from "@/lib/types";
+import type { AnswerMap, SkillId, SkillScore } from "@/lib/types";
 
 export interface RetestResult {
-  delta: DiagnosisDelta;
+  /** The new diagnosis's readiness — always present, delta or not. */
+  readiness: number;
+  /**
+   * Movement since the previous diagnosis, or `null` when there is no
+   * comparable baseline: no previous diagnosis, or one whose per-skill scores
+   * cannot be recovered from either its assessment answers or its stored
+   * `skill_scores`. A null delta renders as a baseline reading, never as a
+   * delta against assumed zeros.
+   */
+  delta: DiagnosisDelta | null;
   previousBottleneck: SkillId;
   previousBottleneckLabel: string;
   newBottleneck: SkillId;
   newBottleneckLabel: string;
-  /** False if the user had no prior diagnosis (delta is then vs. a zero baseline). */
-  hadPrevious: boolean;
   /** Drives the Delta screen's paid/free branch (defaults to free if the row is missing). */
   isPaid: boolean;
 }
@@ -38,32 +49,53 @@ export async function submitRetest(answers: AnswerMap): Promise<RetestResult> {
   // 1. Capture the most recent PREVIOUS diagnosis before inserting the new one.
   const { data: prevDiag } = await supabase
     .from("diagnoses")
-    .select("bottleneck, readiness, assessment_id")
+    .select("bottleneck, readiness, assessment_id, skill_scores")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  let previousScores: ReturnType<typeof scoreSkills> = [];
-  let previousReadiness = 0;
+  /*
+   * The baseline the delta is measured against, resolved in order:
+   *   1. the previous assessment's answers, re-scored — canonical, and
+   *      independent of whatever shape the stored column holds;
+   *   2. the previous diagnosis's stored `skill_scores`, if it validates as a
+   *      complete set of levels;
+   *   3. nothing — `previousScores` stays null and no delta is computed.
+   *
+   * It used to fall through to an empty array, which `computeDiagnosisDelta`
+   * read as level 0 on every skill, so a player whose earlier assessment row
+   * was missing saw "+2" on each skill they had not moved at all. A missing
+   * baseline is now shown as a baseline, never as a fabricated delta — and
+   * that includes the readiness number: a stored readiness with no recoverable
+   * skill levels is not a comparable baseline for this screen.
+   */
+  let previousScores: SkillScore[] | null = null;
+  let previousReadiness: number | null = null;
   let previousBottleneck: SkillId | null = null;
 
   if (prevDiag) {
-    previousReadiness = prevDiag.readiness ?? 0;
     previousBottleneck = prevDiag.bottleneck as SkillId;
 
-    // Recompute the previous skill scores from that assessment's answers — the
-    // canonical, format-independent source (works regardless of what shape the
-    // older skill_scores column happens to hold).
     if (prevDiag.assessment_id) {
       const { data: prevAssessment } = await supabase
         .from("assessments")
         .select("answers")
         .eq("id", prevDiag.assessment_id)
         .maybeSingle();
-      if (prevAssessment?.answers) {
+      if (prevAssessment?.answers && typeof prevAssessment.answers === "object") {
         previousScores = scoreSkills(prevAssessment.answers as AnswerMap);
       }
+    }
+
+    if (!previousScores) {
+      previousScores = parseStoredSkillScores(prevDiag.skill_scores);
+    }
+
+    if (previousScores && typeof prevDiag.readiness === "number") {
+      previousReadiness = prevDiag.readiness;
+    } else {
+      previousScores = null;
     }
   }
 
@@ -120,11 +152,14 @@ export async function submitRetest(answers: AnswerMap): Promise<RetestResult> {
   });
   if (planError) throw planError;
 
-  // 5. Compute the delta (previous vs. new).
-  const delta = computeDiagnosisDelta(
-    { readiness: previousReadiness, skillScores: previousScores },
-    { readiness: newDiagnosis.readiness, skillScores: newScores }
-  );
+  // 5. Compute the delta (previous vs. new) — only against a real baseline.
+  const delta =
+    previousScores && previousReadiness !== null
+      ? computeDiagnosisDelta(
+          { readiness: previousReadiness, skillScores: previousScores },
+          { readiness: newDiagnosis.readiness, skillScores: newScores }
+        )
+      : null;
 
   // 6. Subscription tier — determines which Delta screen variant renders.
   const { data: profile } = await supabase
@@ -140,12 +175,12 @@ export async function submitRetest(answers: AnswerMap): Promise<RetestResult> {
   const effectivePreviousBottleneck = previousBottleneck ?? newDiagnosis.bottleneck;
 
   return {
+    readiness: newDiagnosis.readiness,
     delta,
     previousBottleneck: effectivePreviousBottleneck,
     previousBottleneckLabel: SKILL_LABELS[effectivePreviousBottleneck],
     newBottleneck: newDiagnosis.bottleneck,
     newBottleneckLabel: SKILL_LABELS[newDiagnosis.bottleneck],
-    hadPrevious: Boolean(prevDiag),
     isPaid: profile?.subscription_status === "active",
   };
 }
