@@ -6,7 +6,11 @@ import {
 } from "@/components/progress/ProgressView";
 import { SKILL_LABELS } from "@/lib/diagnoses";
 import { findDrillById } from "@/lib/drill-lookup";
-import { getScoredSessionsByDrill, getWeeklyStreak } from "@/lib/drill-sessions";
+import {
+  getScoredSessionsByDrill,
+  getTotalSessions,
+  getWeeklyStreak,
+} from "@/lib/drill-sessions";
 import { DRILLS } from "@/lib/drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import {
@@ -41,7 +45,7 @@ export default async function ProgressPage() {
     redirect("/login?next=/progress");
   }
 
-  const [diagnosesRes, planRes, profileRes, sessionsRes] = await Promise.all([
+  const [diagnosesRes, planRes, profileRes] = await Promise.all([
     supabase
       .from("diagnoses")
       .select("id, readiness, bottleneck, created_at")
@@ -59,14 +63,21 @@ export default async function ProgressPage() {
       .select("subscription_status")
       .eq("id", user.id)
       .maybeSingle(),
-    // RLS scopes drill_sessions to the caller — count of every session logged.
-    supabase.from("drill_sessions").select("*", { count: "exact", head: true }),
   ]);
 
   const diags = diagnosesRes.data ?? [];
   const plans = planRes.data ?? [];
   const plan = plans[0] ?? null;
-  const sessionsDone = sessionsRes.count ?? 0;
+
+  // Drills in one session = drills on the current plan that still resolve.
+  const drillsPerSession = plan
+    ? ((plan.drill_ids as string[] | null) ?? []).filter((id) =>
+        Boolean(findDrillById(id))
+      ).length
+    : 0;
+  // Completed sessions, not logged drills: this used to be a raw row count,
+  // which read "4 sessions done" after two visits of two drills each.
+  const sessionsDone = await getTotalSessions(supabase, drillsPerSession);
 
   let viewData: ProgressViewData;
 
@@ -94,13 +105,6 @@ export default async function ProgressPage() {
     // ── State 2/3: has re-test history.
     const first = diags[0];
     const last = diags[diags.length - 1];
-
-    // Weekly session target = number of drills on the current plan.
-    const sessionTarget = plan
-      ? ((plan.drill_ids as string[] | null) ?? []).filter((id) =>
-          Boolean(findDrillById(id))
-        ).length
-      : 0;
 
     // The practice series beneath the readiness line: logged scores for the
     // current bottleneck's drills. Picks the drill with the most scored
@@ -131,7 +135,7 @@ export default async function ProgressPage() {
       sessions,
     };
     const history = buildHistoryRows(diags, plans);
-    const streak = await getWeeklyStreak(supabase, sessionTarget);
+    const streak = await getWeeklyStreak(supabase, drillsPerSession);
 
     const isPaid = profileRes.data?.subscription_status === "active";
 

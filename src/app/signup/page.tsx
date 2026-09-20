@@ -4,6 +4,7 @@ import { signup, signInWithGoogle } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 
 export default function SignupPage({
   searchParams,
@@ -63,18 +64,23 @@ export default function SignupPage({
           </Button>
         </form>
 
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
+        {/* Hidden until the provider is really on — see `auth-flags.ts`. */}
+        {GOOGLE_AUTH_ENABLED && (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
 
-        <form action={signInWithGoogle}>
-          <input type="hidden" name="next" value={next} />
-          <Button type="submit" variant="outline" size="lg" className="w-full">
-            Continue with Google
-          </Button>
-        </form>
+            <form action={signInWithGoogle}>
+              <input type="hidden" name="next" value={next} />
+              <Button type="submit" variant="outline" size="lg" className="w-full">
+                Continue with Google
+              </Button>
+            </form>
+          </>
+        )}
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}

@@ -87,22 +87,43 @@ function DayOneState({
         <StatCard line1="Into the" line2="plan" value={`Day ${data.daysElapsed}`} />
       </div>
 
-      <section className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line-strong px-6 py-10 text-center">
-        <svg width="120" height="40" viewBox="0 0 120 40" aria-hidden="true">
+      {/*
+        A modest placeholder, not the page's subject. It used to be `flex-1`,
+        so it stretched to fill everything under the stat cards — a very large
+        dashed box around one sentence, on a screen a new player looks at for
+        three weeks. It now takes only the height its content needs, laid out
+        as a row, so the re-test callout and the stat cards carry the screen.
+
+        The copy says what is true and only that: one reading exists (the
+        baseline), and a line needs a second one. It used to say the line
+        "starts on" the re-test date and, in the next breath, that there was
+        "one point today" — two different answers to when the chart begins.
+      */}
+      <section className="flex items-center gap-4 rounded-2xl border border-dashed border-line-strong px-5 py-4">
+        <svg
+          width="56"
+          height="24"
+          viewBox="0 0 56 24"
+          aria-hidden="true"
+          className="shrink-0"
+        >
           <line
             x1="4"
-            y1="30"
-            x2="116"
-            y2="30"
+            y1="16"
+            x2="52"
+            y2="16"
             stroke="#232327"
             strokeWidth="1.5"
             strokeLinecap="round"
           />
-          <circle cx="4" cy="30" r="3.5" fill="#63635E" />
+          <circle cx="4" cy="16" r="3.5" fill="#80807B" />
         </svg>
-        <p className="max-w-[230px] text-[13.5px] leading-[1.5] text-ink-3">
-          Your readiness line starts on {data.retestDateLabel}. One point today —
-          the climb comes after your first re-test.
+        <p className="text-pretty text-[13px] leading-[1.5] text-ink-3">
+          One point so far: your baseline.{" "}
+          {data.retestDateLabel === "—"
+            ? "Your first re-test adds the second"
+            : `Your first re-test on ${data.retestDateLabel} adds the second`}
+          , and that is when there is a line to read.
         </p>
       </section>
     </>

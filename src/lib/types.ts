@@ -19,6 +19,13 @@ export interface Question {
   id: string;
   prompt: string;
   helperText?: string;
+  /**
+   * A full sentence shown under the prompt, in the body voice. `helperText` is
+   * the mono eyebrow above it and only suits a few words; this is for a
+   * question that owes the player an explanation — what an answer is used for,
+   * or that it can be skipped.
+   */
+  note?: string;
   type: QuestionType;
   measures?: SkillId;
   options?: AnswerOption[];

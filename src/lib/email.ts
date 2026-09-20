@@ -27,11 +27,16 @@ function resend(): Resend {
  */
 export async function sendDrillReminder(
   userEmail: string,
-  drillName: string,
-  duration: string
+  /** Sessions still to do this week, e.g. 2. */
+  sessionsLeft: number,
+  /** "25 minutes, 2 drills" */
+  shape: string,
+  /** "Reset Ladder (15 min), Wall Reset (10 min)" */
+  drillList: string
 ) {
-  const subject = "Today's session is still open";
-  const line = `${drillName} is still due today — ${duration}. Come back and log it when you're ready.`;
+  const subject =
+    sessionsLeft === 1 ? "One session left this week" : `${sessionsLeft} sessions left this week`;
+  const line = `You have ${sessionsLeft} session${sessionsLeft === 1 ? "" : "s"} left this week. One session is ${shape}: ${drillList}. Log it when you're ready.`;
 
   const { data, error } = await resend().emails.send({
     from: FROM,

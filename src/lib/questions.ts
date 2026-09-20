@@ -87,7 +87,11 @@ export const QUESTIONS: Question[] = [
       { id: "a", label: "7–10 — soft and unattackable most of the time", skillLevel: 3 },
       { id: "b", label: "4–6 — about half find the kitchen", skillLevel: 2 },
       { id: "c", label: "1–3 — most sit up or go into the net", skillLevel: 1 },
-      { id: "d", label: "I usually just drive instead, the drop isn't reliable", skillLevel: 0 },
+      // Level 0 covers both ways of having no working drop: attempting it and
+      // landing none, and not attempting it. Without the first half, a player
+      // who goes 0 for 10 had nothing truthful to pick — "1–3" overstated them
+      // and "I just drive" described someone else.
+      { id: "d", label: "0 — none land, or I usually just drive because the drop isn't reliable", skillLevel: 0 },
     ],
   },
   {
@@ -100,7 +104,10 @@ export const QUESTIONS: Question[] = [
       { id: "a", label: "I reset it softly into the kitchen and keep coming", skillLevel: 3 },
       { id: "b", label: "I get it back but it floats and sometimes gets attacked", skillLevel: 2 },
       { id: "c", label: "I pop it up and usually lose the point", skillLevel: 1 },
-      { id: "d", label: "It handcuffs me — I can't really handle it", skillLevel: 0 },
+      // Every way of not getting it back: jammed, into the net, or long. The
+      // old label only named the first, so a player who swings and misses had
+      // to choose between "pops it up" (they don't) and being handcuffed.
+      { id: "d", label: "I don't get it back — it handcuffs me, or goes into the net or out", skillLevel: 0 },
     ],
   },
   {
@@ -126,13 +133,23 @@ export const QUESTIONS: Question[] = [
       { id: "a", label: "I stay patient and speed up only when they give me a ball that's actually attackable", skillLevel: 3 },
       { id: "b", label: "I just keep it going and wait for them to miss", skillLevel: 2 },
       { id: "c", label: "I get impatient and force a speed-up too early", skillLevel: 1 },
-      { id: "d", label: "I make the first unforced error — net or out", skillLevel: 1 },
+      // The rally can also end on the player's dink without being a miss: it
+      // sits up and gets put away. Same level as an outright error — both are
+      // the soft game breaking down before patience is even tested.
+      { id: "d", label: "My dink breaks down first — into the net, out, or it sits up and gets attacked", skillLevel: 1 },
     ],
   },
   {
     id: "lose_reason",
     prompt: "In your own words: when you lose a game you feel like you should have won, what usually went wrong?",
+    // Optional, and says so. The engine does not read this answer: no rule
+    // scores it, and it never moves the bottleneck, the root cause or the
+    // readiness number. Its one use is `buildMirror`, which quotes it back on
+    // the first reveal screen. Asking for a personal explanation as a required
+    // step implied the result weighed it, which it never did.
+    helperText: "Optional",
+    note: "This doesn't change your diagnosis. We show it back to you, in your own words, on the first screen of your result. Skip it if you'd rather.",
     type: "text",
-    required: true,
+    required: false,
   },
 ];

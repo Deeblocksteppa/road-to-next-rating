@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { claimPendingRecords } from "@/lib/persistence";
 import { createClient } from "@/lib/supabase/client";
+import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 
 /**
  * Post-roadmap Save Gate. Creates an account, then claims the anonymous
@@ -133,21 +134,26 @@ export function SaveGate({
       ) : (
         <>
           <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleGoogle}
-              className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover disabled:pointer-events-none disabled:opacity-60"
-            >
-              <span className="font-display text-[15px] font-extrabold">G</span>
-              Continue with Google
-            </button>
+            {/* Hidden until the provider is really on — see `auth-flags.ts`. */}
+            {GOOGLE_AUTH_ENABLED && (
+              <>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleGoogle}
+                  className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover disabled:pointer-events-none disabled:opacity-60"
+                >
+                  <span className="font-display text-[15px] font-extrabold">G</span>
+                  Continue with Google
+                </button>
 
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-line" />
-              <span className="font-mono text-[10px] text-ink-3">OR</span>
-              <div className="h-px flex-1 bg-line" />
-            </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-line" />
+                  <span className="font-mono text-[10px] text-ink-3">OR</span>
+                  <div className="h-px flex-1 bg-line" />
+                </div>
+              </>
+            )}
 
             <form onSubmit={handleEmailSignup} className="flex flex-col gap-3">
               <label htmlFor="email" className="sr-only">

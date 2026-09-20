@@ -2,6 +2,7 @@
 
 import { Drill } from "@/lib/drills";
 import { Roadmap } from "@/lib/roadmap";
+import { SESSIONS_PER_WEEK, sessionShape } from "@/lib/session-plan";
 
 /**
  * The 3-week plan, shown once at the end of the anonymous funnel.
@@ -35,9 +36,18 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
 
         {/* Drills */}
         <div className="space-y-5">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-            2x a week · 15 min each
-          </p>
+          {/* Computed, never typed: this line used to read "2x a week · 15 min
+              each" above a 15-minute drill and a 10-minute one. */}
+          <div className="space-y-2">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+              {SESSIONS_PER_WEEK} sessions a week · {sessionShape(roadmap.weeklyDrills)} each
+            </p>
+            <p className="text-[14px] leading-[1.55] text-ink-2">
+              One session is {roadmap.weeklyDrills.length === 2 ? "both" : "all"} of these,
+              back to back, on the same day. Book the court or the partner for the
+              whole thing.
+            </p>
+          </div>
           <div className="space-y-3">
             {roadmap.weeklyDrills.map((drill) => (
               <DrillCard key={drill.id} drill={drill} hasPartner={roadmap.hasPartner} />

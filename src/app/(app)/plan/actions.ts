@@ -38,8 +38,10 @@ export async function logDrillSession(planId: string, drillId: string) {
  * is a server action and the input is untrusted.
  *
  * Returns the week's session count *after* the write so the guided flow's
- * confirmation screen can show a real "3 of 6 this week" without a round trip
- * back to the server. Returns null when the caller isn't entitled to log.
+ * confirmation screen can show a real "1 of 2 this week" without a round trip
+ * back to the server. A session only counts once every drill on the plan is
+ * logged for the day, so this number moves on the last drill, not on each one.
+ * Returns null when the caller isn't entitled to log.
  */
 export async function logGuidedSession(
   planId: string,
@@ -61,14 +63,13 @@ export async function logGuidedSession(
   revalidatePath("/plan");
   revalidatePath("/home");
 
-  // Total = the plan's prescribed drill count, matching Home's "sessions this
-  // week" denominator.
+  // Drills per session = the plan's prescribed drill count.
   const { data: plan } = await supabase
     .from("plans")
     .select("drill_ids")
     .eq("id", planId)
     .maybeSingle();
-  const total = ((plan?.drill_ids as string[] | null) ?? []).length;
+  const drillsPerSession = ((plan?.drill_ids as string[] | null) ?? []).length;
 
-  return getWeeklyProgress(supabase, planId, total);
+  return getWeeklyProgress(supabase, planId, drillsPerSession);
 }

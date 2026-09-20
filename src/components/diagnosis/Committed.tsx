@@ -1,6 +1,7 @@
 "use client";
 
 import { Roadmap } from "@/lib/roadmap";
+import { weeklyCommitment } from "@/lib/session-plan";
 
 /**
  * The funnel's closing confirmation, after the plan has been saved.
@@ -39,7 +40,7 @@ export function CommittedScreen({
             one thing this screen points at is the button. */}
         <div className="flex flex-col rounded-2xl border border-line bg-surface px-5 py-[18px]">
           <SummaryRow label="Your bottleneck" value={roadmap.bottleneckLabel} first />
-          <SummaryRow label="Your plan" value="2 sessions a week · 15 min each" />
+          <SummaryRow label="Your plan" value={weeklyCommitment(roadmap.weeklyDrills)} />
           <SummaryRow label="Duration" value={`${roadmap.weeksTarget} weeks`} />
           <SummaryRow label="Re-test date" value={retestLabel} />
         </div>

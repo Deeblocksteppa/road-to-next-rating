@@ -155,12 +155,14 @@ export default async function SettingsPage() {
             Sign out
           </button>
         </form>
-        <button
-          type="button"
-          className="flex items-center justify-center py-1.5 text-[14px] text-danger transition-colors hover:text-danger-hover"
+        {/* A link to the confirmation step. This was a styled button with no
+            handler — it looked destructive and did nothing at all. */}
+        <Link
+          href="/settings/delete"
+          className="flex h-11 items-center justify-center text-[14px] text-danger transition-colors hover:text-danger-hover"
         >
           Delete account
-        </button>
+        </Link>
       </div>
     </main>
   );

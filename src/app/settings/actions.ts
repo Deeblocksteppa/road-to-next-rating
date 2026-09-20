@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getStripe, periodEndISO } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 /** Persists the re-test email reminder toggle. */
@@ -152,4 +153,85 @@ export async function resumeSubscription(): Promise<CancelResult> {
   revalidatePath("/settings/manage");
 
   return { ok: true };
+}
+
+export type DeleteAccountResult = { error: string } | undefined;
+
+/**
+ * Permanently deletes the caller's account.
+ *
+ * What goes, and why nothing is orphaned: deleting the `auth.users` row
+ * cascades to `profiles` (its primary key references auth.users ON DELETE
+ * CASCADE), and every app table hangs off `profiles` the same way —
+ * `assessments`, `diagnoses`, `plans` and `drill_sessions` all carry
+ * `user_id … references profiles (id) on delete cascade`. The child links
+ * cascade too (diagnoses → assessments, plans → diagnoses, drill_sessions →
+ * plans), so there is no ordering problem. Those five are every table in the
+ * schema. Anonymous funnel rows that were never claimed have a null `user_id`
+ * and were never this user's, so they are untouched.
+ *
+ * What does not go: the Stripe Customer and its invoices stay in Stripe —
+ * billing records have to outlive the account. A live subscription is
+ * cancelled outright FIRST, and the deletion is aborted if that fails: a
+ * deleted user still being billed is the one outcome worse than a failed
+ * delete.
+ *
+ * The id deleted is always the verified session's own. Nothing from the
+ * client chooses it; `confirmation` only re-checks the typed word.
+ */
+export async function deleteAccount(confirmation: string): Promise<DeleteAccountResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/settings/delete");
+
+  if (confirmation.trim().toUpperCase() !== "DELETE") {
+    return { error: "Type DELETE to confirm." };
+  }
+
+  let subscriptionCancelled = false;
+
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("stripe_subscription_id, subscription_status")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.stripe_subscription_id) {
+      try {
+        await getStripe().subscriptions.cancel(profile.stripe_subscription_id);
+        subscriptionCancelled = true;
+      } catch (err) {
+        // Already gone in Stripe is fine; anything else stops the deletion.
+        const code = (err as { code?: string } | null)?.code;
+        if (code !== "resource_missing") throw err;
+      }
+    }
+
+    const { error } = await createAdminClient().auth.admin.deleteUser(user.id);
+    if (error) throw error;
+  } catch (err) {
+    console.error("deleteAccount failed", err);
+    // Say only what is true: the data is still here either way, but if Stripe
+    // had already confirmed the cancellation, that part did happen.
+    return {
+      error: subscriptionCancelled
+        ? "We couldn't finish deleting your account. Your data is still here, but your subscription has been cancelled. Please try again in a minute."
+        : "We couldn't delete your account just now, and nothing was changed. Please try again in a minute.",
+    };
+  }
+
+  // The user no longer exists, so this can only clear the local cookie; a
+  // failure here changes nothing that matters.
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    /* ignore */
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/login?notice=deleted");
 }

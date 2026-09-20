@@ -9,16 +9,34 @@ import { ShotDemo } from "@/components/session/ShotDemo";
 
 type Step = "brief" | "active" | "log" | "done";
 
-export interface GuidedSessionProps {
-  planId: string;
-  drillId: string;
-  drillName: string;
-  /** Skill title from SKILL_TITLES — the bottleneck this drill serves. */
-  skillTitle: string;
+/** One drill of the session, as the flow needs it. */
+export interface GuidedDrill {
+  id: string;
+  name: string;
   instructions: string;
   duration: string;
   durationMinutes: number;
   logPrompt: string;
+}
+
+/** A row of the session outline — every drill on the plan, done or not. */
+export interface OutlineItem {
+  id: string;
+  name: string;
+  duration: string;
+  doneToday: boolean;
+}
+
+export interface GuidedSessionProps {
+  planId: string;
+  /** Skill title from SKILL_TITLES — the bottleneck these drills serve. */
+  skillTitle: string;
+  /** "25 minutes, 2 drills" — the whole session, not what is left of it. */
+  sessionShape: string;
+  /** Every drill in today's session, in order, with what is already logged. */
+  outline: OutlineItem[];
+  /** The drills still to run today, in order. Never empty. */
+  drills: GuidedDrill[];
   /** Weekly count as of page load, shown if the log write returns nothing. */
   fallbackWeekly: WeeklyProgress;
 }
@@ -30,26 +48,54 @@ function formatClock(totalSeconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+/**
+ * One session = every drill on the plan, same day (`session-plan.ts`). The
+ * flow loops brief → timer → log once per remaining drill and only reaches
+ * the confirmation after the last one, because that is the moment the session
+ * actually counts. Each drill is written as it is logged, so quitting halfway
+ * loses nothing: Home offers "Finish today's session" and this route resumes
+ * at the first drill not yet logged today.
+ */
 export function GuidedSession(props: GuidedSessionProps) {
+  const [index, setIndex] = useState(0);
   const [step, setStep] = useState<Step>("brief");
   const [selected, setSelected] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weekly, setWeekly] = useState<WeeklyProgress>(props.fallbackWeekly);
+  // Drill ids logged during this visit, so the outline ticks them off.
+  const [loggedNow, setLoggedNow] = useState<string[]>([]);
+
+  const drill = props.drills[index];
+  const isLast = index === props.drills.length - 1;
+  const outline = props.outline.map((item) => ({
+    ...item,
+    doneToday: item.doneToday || loggedNow.includes(item.id),
+  }));
+  const position = outline.findIndex((item) => item.id === drill.id) + 1;
 
   return (
     <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
       {step === "brief" && (
-        <BriefScreen {...props} onBegin={() => setStep("active")} />
+        <BriefScreen
+          drill={drill}
+          skillTitle={props.skillTitle}
+          sessionShape={props.sessionShape}
+          outline={outline}
+          position={position}
+          onBegin={() => setStep("active")}
+        />
       )}
 
       {step === "active" && (
-        <ActiveScreen {...props} onFinish={() => setStep("log")} />
+        // Keyed by drill so the second drill gets its own fresh deadline.
+        <ActiveScreen key={drill.id} drill={drill} onFinish={() => setStep("log")} />
       )}
 
       {step === "log" && (
         <LogScreen
-          {...props}
+          drill={drill}
+          isLast={isLast}
           selected={selected}
           onSelect={setSelected}
           pending={pending}
@@ -59,13 +105,24 @@ export function GuidedSession(props: GuidedSessionProps) {
             setPending(true);
             setError(null);
             try {
-              const result = await logGuidedSession(
-                props.planId,
-                props.drillId,
-                selected
-              );
-              if (result) setWeekly(result);
-              setStep("done");
+              const result = await logGuidedSession(props.planId, drill.id, selected);
+              // null means the server refused the write (signed out, or not
+              // this user's plan). It used to fall through to "Session
+              // logged", which is the one thing this screen must never say
+              // about a number that was not saved.
+              if (!result) {
+                setError("Couldn't save that — you may have been signed out. Sign in and try again.");
+                return;
+              }
+              setWeekly(result);
+              setLoggedNow((ids) => [...ids, drill.id]);
+              setSelected(null);
+              if (isLast) {
+                setStep("done");
+              } else {
+                setIndex((i) => i + 1);
+                setStep("brief");
+              }
             } catch {
               // Keep them on the log screen with their number intact — a failed
               // write should never look like a successful session.
@@ -84,13 +141,20 @@ export function GuidedSession(props: GuidedSessionProps) {
 
 /* ── Screen 1 — Brief ───────────────────────────────────────────── */
 function BriefScreen({
-  drillId,
-  drillName,
+  drill,
   skillTitle,
-  instructions,
-  duration,
+  sessionShape,
+  outline,
+  position,
   onBegin,
-}: GuidedSessionProps & { onBegin: () => void }) {
+}: {
+  drill: GuidedDrill;
+  skillTitle: string;
+  sessionShape: string;
+  outline: OutlineItem[];
+  position: number;
+  onBegin: () => void;
+}) {
   return (
     <>
       <header className="flex items-center justify-between pt-4">
@@ -110,28 +174,69 @@ function BriefScreen({
           </svg>
         </Link>
         <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
-          {duration}
+          Drill {position} of {outline.length} · {drill.duration}
         </span>
       </header>
 
       <div className="flex flex-col gap-2.5">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-2">
-          Today&apos;s session
+          Today&apos;s session · {sessionShape}
         </p>
         <h1 className="font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em]">
-          {drillName}
+          {drill.name}
         </h1>
         <p className="text-[13px] text-ink">{skillTitle}</p>
       </div>
 
-      <p className="text-[15px] leading-[1.6] text-ink">{instructions}</p>
+      {/*
+        The whole session, so nobody finds out about the second drill after
+        finishing the first. The current drill reads in `ink`; logged ones are
+        struck through. No accent: the one thing this screen points at is Begin.
+      */}
+      {outline.length > 1 && (
+        <ol className="flex flex-col rounded-xl border border-line bg-surface px-4">
+          {outline.map((item, i) => {
+            const current = item.id === drill.id;
+            return (
+              <li
+                key={item.id}
+                className={`flex items-center justify-between gap-3 py-2.5 ${
+                  i === 0 ? "" : "border-t border-line"
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  <span className="w-4 shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
+                    {item.doneToday ? "✓" : i + 1}
+                  </span>
+                  <span
+                    className={`text-[14px] font-semibold leading-[1.3] ${
+                      item.doneToday
+                        ? "text-ink-3 line-through"
+                        : current
+                          ? "text-ink"
+                          : "text-ink-2"
+                    }`}
+                  >
+                    {item.name}
+                  </span>
+                </span>
+                <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] tabular-nums text-ink-3">
+                  {item.duration}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      <p className="text-[15px] leading-[1.6] text-ink">{drill.instructions}</p>
 
       <div className="flex-1" />
 
       {/* Shot demo sits centered in the empty space below the description. It
           renders nothing for drills whose animation isn't built yet, in which
           case the two spacers simply collapse into one. */}
-      <ShotDemo drillId={drillId} />
+      <ShotDemo drillId={drill.id} />
 
       <div className="flex-1" />
 
@@ -139,7 +244,7 @@ function BriefScreen({
         onClick={onBegin}
         className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
       >
-        Begin
+        {position === 1 ? "Begin" : `Begin drill ${position}`}
       </button>
     </>
   );
@@ -147,11 +252,13 @@ function BriefScreen({
 
 /* ── Screen 2 — Active / timer ──────────────────────────────────── */
 function ActiveScreen({
-  drillName,
-  instructions,
-  durationMinutes,
+  drill,
   onFinish,
-}: GuidedSessionProps & { onFinish: () => void }) {
+}: {
+  drill: GuidedDrill;
+  onFinish: () => void;
+}) {
+  const { name: drillName, instructions, durationMinutes } = drill;
   const total = durationMinutes * 60;
 
   // Count against a fixed wall-clock deadline rather than decrementing once per
@@ -211,6 +318,14 @@ function ActiveScreen({
 
       <p className="text-[15px] leading-[1.6] text-ink">{instructions}</p>
 
+      {/* What the clock running out means, stated once for every drill: a
+          target in the instructions is something to work toward, not a gate
+          the timer can fail you at. */}
+      <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-3">
+        When the clock hits zero, stop where you are and log it. Falling short
+        of a target still counts.
+      </p>
+
       <div className="flex-1" />
 
       <button
@@ -225,13 +340,16 @@ function ActiveScreen({
 
 /* ── Screen 3 — Log result ──────────────────────────────────────── */
 function LogScreen({
-  logPrompt,
+  drill,
+  isLast,
   selected,
   onSelect,
   pending,
   error,
   onSubmit,
-}: GuidedSessionProps & {
+}: {
+  drill: GuidedDrill;
+  isLast: boolean;
   selected: number | null;
   onSelect: (n: number) => void;
   pending: boolean;
@@ -242,12 +360,12 @@ function LogScreen({
     <>
       <header className="pt-4">
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-          Log your result
+          Log your result · {drill.name}
         </span>
       </header>
 
       <h1 className="font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em]">
-        {logPrompt}
+        {drill.logPrompt}
       </h1>
 
       {/* 0–10 across two rows. Option-select visual language (radius-xl,
@@ -284,7 +402,7 @@ function LogScreen({
         disabled={selected === null || pending}
         className="flex h-[52px] w-full items-center justify-center rounded-lg border border-transparent bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:border-line disabled:bg-surface disabled:text-ink-3"
       >
-        {pending ? "Logging…" : "Log session"}
+        {pending ? "Logging…" : isLast ? "Log and finish session" : "Log and go to next drill"}
       </button>
     </>
   );
@@ -309,7 +427,7 @@ function DoneScreen({ weekly }: { weekly: WeeklyProgress }) {
           Session logged.
         </h1>
         <p className="text-[15px] leading-[1.6] text-ink-2">
-          {weekly.completed} of {weekly.total} this week.
+          {weekly.completed} of {weekly.total} sessions this week.
         </p>
       </div>
 

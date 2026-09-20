@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { QUESTIONS } from "@/lib/questions";
 import { AnswerMap, Question } from "@/lib/types";
 
@@ -13,7 +13,17 @@ export function Assessment({ onComplete }: Props) {
   const [answers, setAnswers] = useState<AnswerMap>({});
   // Track pending selection briefly for the tap-then-advance feel
   const [selected, setSelected] = useState<string | null>(null);
-  const textRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  // What is typed into each text question, keyed by question id.
+  //
+  // The fields used to be uncontrolled — one shared ref, `defaultValue`, no
+  // `name`, `id` or `autocomplete`. React itself never carried text between
+  // questions (the subtree is re-keyed per question, and a run through all
+  // twelve shows each field mounting empty), but three anonymous text fields
+  // are indistinguishable to a mobile browser's autofill, which is the likely
+  // source of a "3.5" turning up in the last one. Controlled state keyed by
+  // question id makes carry-over impossible by construction, and the named,
+  // autocomplete-off fields below stop the browser offering it.
+  const [drafts, setDrafts] = useState<AnswerMap>({});
 
   const question = QUESTIONS[index];
   const total = QUESTIONS.length;
@@ -36,8 +46,7 @@ export function Assessment({ onComplete }: Props) {
   }
 
   function handleTextContinue() {
-    const el = textRef.current;
-    const value = el?.value.trim() ?? "";
+    const value = (drafts[question.id] ?? answers[question.id] ?? "").trim();
     if (!value && question.required) return;
     const next = { ...answers, [question.id]: value };
     setAnswers(next);
@@ -50,8 +59,9 @@ export function Assessment({ onComplete }: Props) {
     setIndex((i) => i - 1);
   }
 
-  // Pre-fill text input when navigating back
-  const currentText = answers[question.id] ?? "";
+  // This question's own draft, else its saved answer (navigating back), else
+  // empty. Never another question's text.
+  const currentText = drafts[question.id] ?? answers[question.id] ?? "";
 
   return (
     <main className="relative min-h-[100dvh] w-full bg-background text-ink">
@@ -94,6 +104,10 @@ export function Assessment({ onComplete }: Props) {
             {question.prompt}
           </h2>
 
+          {question.note && (
+            <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">{question.note}</p>
+          )}
+
           <div className="mt-4">
             {question.options ? (
               <OptionList
@@ -104,8 +118,8 @@ export function Assessment({ onComplete }: Props) {
             ) : (
               <TextEntry
                 question={question}
-                defaultValue={currentText}
-                inputRef={textRef}
+                value={currentText}
+                onChange={(text) => setDrafts((d) => ({ ...d, [question.id]: text }))}
                 onContinue={handleTextContinue}
                 isLast={index === total - 1}
               />
@@ -170,18 +184,20 @@ function OptionList({
 /* ── Text / textarea entry ──────────────────────────────────────── */
 function TextEntry({
   question,
-  defaultValue,
-  inputRef,
+  value,
+  onChange,
   onContinue,
   isLast,
 }: {
   question: Question;
-  defaultValue: string;
-  inputRef: React.MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+  value: string;
+  onChange: (text: string) => void;
   onContinue: () => void;
   isLast?: boolean;
 }) {
   const isLong = question.id === "lose_reason";
+  const empty = value.trim() === "";
+  const blocked = empty && question.required;
 
   const baseClass = [
     "w-full rounded-md border border-line-strong bg-surface px-4 py-3.5",
@@ -190,31 +206,45 @@ function TextEntry({
     "transition-colors duration-200 resize-none",
   ].join(" ");
 
+  // Named per question and opted out of autofill: see the note on `drafts`.
+  const fieldProps = {
+    id: `q-${question.id}`,
+    name: `q-${question.id}`,
+    autoComplete: "off",
+    value,
+    placeholder: "Type your answer…",
+    "aria-label": question.prompt,
+  } as const;
+
   return (
     <div className="flex flex-col gap-4">
       {isLong ? (
         <textarea
-          ref={inputRef as React.MutableRefObject<HTMLTextAreaElement>}
-          defaultValue={defaultValue}
+          {...fieldProps}
+          onChange={(e) => onChange(e.target.value)}
           rows={5}
-          placeholder="Type your answer…"
           className={baseClass}
         />
       ) : (
         <input
-          ref={inputRef as React.MutableRefObject<HTMLInputElement>}
+          {...fieldProps}
           type="text"
-          defaultValue={defaultValue}
-          placeholder="Type your answer…"
+          onChange={(e) => onChange(e.target.value)}
           className={`h-12 ${baseClass}`}
           onKeyDown={(e) => e.key === "Enter" && onContinue()}
         />
       )}
       <button
         onClick={onContinue}
-        className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+        disabled={blocked}
+        className="flex h-[52px] w-full items-center justify-center rounded-lg border border-transparent bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:border-line disabled:bg-surface disabled:text-ink-3"
       >
-        {isLast ? "See my diagnosis" : "Continue"}
+        {/* An optional question left blank is a skip, and the button says so. */}
+        {isLast
+          ? empty && !question.required
+            ? "Skip and see my diagnosis"
+            : "See my diagnosis"
+          : "Continue"}
       </button>
     </div>
   );

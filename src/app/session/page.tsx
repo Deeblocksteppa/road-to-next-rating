@@ -4,10 +4,8 @@ import { redirect } from "next/navigation";
 import { GuidedSession } from "@/components/session/GuidedSession";
 import { SKILL_TITLES } from "@/lib/diagnoses";
 import { findDrillById, parseDurationMinutes } from "@/lib/drill-lookup";
-import {
-  getCompletedThisWeekDrillIds,
-  getWeeklyProgress,
-} from "@/lib/drill-sessions";
+import { getCompletedTodayDrillIds, getWeeklyProgress } from "@/lib/drill-sessions";
+import { sessionShape } from "@/lib/session-plan";
 import { createClient } from "@/lib/supabase/server";
 import type { SkillId } from "@/lib/types";
 
@@ -17,10 +15,12 @@ import type { SkillId } from "@/lib/types";
  * Lives outside the (app) route group deliberately: this is a focused,
  * one-way flow, so it gets no tab bar — same reasoning as /settings.
  *
- * Drill selection: the first drill on the plan not yet logged this week. That
- * matches what the Plan screen strikes through and what Home's "sessions this
- * week" counts, so "Start today's session" always opens the thing that screen
- * says is still outstanding.
+ * A session is every drill on the plan, same day (`session-plan.ts`), so this
+ * route runs them all, in plan order, one brief → timer → log loop per drill.
+ * It used to open only the first drill not yet logged this week, under a Home
+ * button that promised the combined length of both. Drills already logged
+ * today are skipped, so leaving halfway and coming back resumes the session
+ * rather than restarting it.
  */
 export default async function SessionPage() {
   const supabase = await createClient();
@@ -57,16 +57,19 @@ export default async function SessionPage() {
     .map((id) => findDrillById(id))
     .filter((d): d is NonNullable<typeof d> => Boolean(d));
 
-  const [completedThisWeek, weekly] = await Promise.all([
-    getCompletedThisWeekDrillIds(supabase, plan.id),
+  const [completedToday, weekly] = await Promise.all([
+    getCompletedTodayDrillIds(supabase, plan.id),
     getWeeklyProgress(supabase, plan.id, planDrills.length),
   ]);
 
-  const drill = planDrills.find((d) => !completedThisWeek.has(d.id));
+  const remaining = planDrills.filter((d) => !completedToday.has(d.id));
+  const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
+  const startedToday = remaining.length < planDrills.length;
 
-  // Everything on the plan is logged for the week. Restrained dead-end rather
-  // than dropping them into a session that would dedup into a no-op.
-  if (!drill) {
+  // Nothing to run: today's session is finished, or the week's target is met
+  // and nothing is half-done. Restrained dead-end rather than dropping them
+  // into a flow that would dedup into a no-op.
+  if (remaining.length === 0 || (weekComplete && !startedToday)) {
     return (
       <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
         <div className="flex-1" />
@@ -75,10 +78,12 @@ export default async function SessionPage() {
             Nothing due
           </p>
           <h1 className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em]">
-            You&apos;re done for the week.
+            {weekComplete ? "You're done for the week." : "Today's session is done."}
           </h1>
           <p className="text-[15px] leading-[1.6] text-ink-2">
-            All {weekly.total} sessions logged. Rest counts too.
+            {weekComplete
+              ? `All ${weekly.total} sessions logged. Rest counts too.`
+              : `${weekly.completed} of ${weekly.total} sessions this week. The next one is any other day.`}
           </p>
         </div>
         <div className="flex-1" />
@@ -97,13 +102,22 @@ export default async function SessionPage() {
   return (
     <GuidedSession
       planId={plan.id as string}
-      drillId={drill.id}
-      drillName={drill.name}
       skillTitle={bottleneck ? SKILL_TITLES[bottleneck] : ""}
-      instructions={drill.description}
-      duration={drill.duration}
-      durationMinutes={parseDurationMinutes(drill.duration)}
-      logPrompt={drill.logPrompt}
+      sessionShape={sessionShape(planDrills)}
+      outline={planDrills.map((d) => ({
+        id: d.id,
+        name: d.name,
+        duration: d.duration,
+        doneToday: completedToday.has(d.id),
+      }))}
+      drills={remaining.map((d) => ({
+        id: d.id,
+        name: d.name,
+        instructions: d.description,
+        duration: d.duration,
+        durationMinutes: parseDurationMinutes(d.duration),
+        logPrompt: d.logPrompt,
+      }))}
       fallbackWeekly={weekly}
     />
   );

@@ -21,12 +21,12 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       id: "reset_ladder",
       name: "Reset Ladder",
       description:
-        "Partner drives hard balls at your feet from mid-court. Your only job: reset soft into the kitchen. Do 10 in a row before advancing. Focus on absorbing pace, not attacking.",
+        "Partner drives hard balls at your feet from mid-court. Reset each one soft into the kitchen: absorb the pace, don't attack. Count clean resets in a row. At 10, move up a rung — partner hits harder or steps a stride closer — and restart the count. A miss restarts it on the same rung. If the timer ends first, stop there and log your last 10.",
       duration: "15 min",
-      logPrompt: "Out of 10 resets, how many stayed low?",
+      logPrompt: "Of your last 10 resets, how many stayed low?",
       requiresPartner: true,
       soloVariant:
-        "Drop-feed yourself off the bounce from mid-court and reset into a target zone near the kitchen line. 3 sets of 10.",
+        "Drop-feed yourself off the bounce from mid-court and reset into a target zone near the kitchen line. Work in sets of 10 and keep the count. When the timer ends, stop where you are and log how many of your last 10 landed in the zone.",
     },
     {
       id: "reset_wall",
@@ -34,7 +34,7 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       description:
         "Stand 7–8 feet from a wall. Drive the ball into the wall and reset your own return softly. Builds the soft-hands reflex under self-generated pace.",
       duration: "10 min",
-      logPrompt: "Out of 10 resets, how many stayed low?",
+      logPrompt: "Of your last 10 resets, how many stayed low?",
       requiresPartner: false,
       soloVariant: "This drill is already solo.",
     },

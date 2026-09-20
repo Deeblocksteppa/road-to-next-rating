@@ -3,10 +3,15 @@ import { redirect } from "next/navigation";
 
 import { ClaimOnLoad } from "@/components/auth/ClaimOnLoad";
 import { Logo } from "@/components/brand/Logo";
+import { TodaySession, todayState } from "@/components/home/TodaySession";
 import { monthDay } from "@/lib/date-format";
 import { SKILL_TITLES } from "@/lib/diagnoses";
 import { findDrillById } from "@/lib/drill-lookup";
-import { getWeeklyProgress, startOfWeekUTC } from "@/lib/drill-sessions";
+import {
+  getCompletedTodayDrillIds,
+  getWeeklyProgress,
+  startOfWeekUTC,
+} from "@/lib/drill-sessions";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { WEEK_FOCUS_LABELS } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
@@ -44,9 +49,12 @@ export default async function HomePage() {
         .filter((d): d is NonNullable<typeof d> => Boolean(d))
     : [];
 
-  const weekly = plan
-    ? await getWeeklyProgress(supabase, plan.id, planDrills.length)
-    : { completed: 0, total: 0 };
+  const [weekly, completedToday] = plan
+    ? await Promise.all([
+        getWeeklyProgress(supabase, plan.id, planDrills.length),
+        getCompletedTodayDrillIds(supabase, plan.id),
+      ])
+    : [{ completed: 0, total: 0 }, new Set<string>()];
 
   const timeline =
     plan && plan.retest_date
@@ -55,18 +63,14 @@ export default async function HomePage() {
 
   const bottleneck = diagnosis?.bottleneck as SkillId | undefined;
 
-  // Combined duration of today's session — sum of the plan's drill durations
-  // ("15 min" + "15 min" → "30 MIN").
-  const sessionMinutes = planDrills.reduce(
-    (sum, d) => sum + (parseInt(d.duration, 10) || 0),
-    0
+  // Same derivation the card and button use, so the caption under them can
+  // never disagree with what they say.
+  const { todayDone, allDone } = todayState(
+    planDrills,
+    Array.from(completedToday),
+    weekly.total > 0 && weekly.completed >= weekly.total
   );
-
-  // "/session" always resolves to the first undone drill for the week and
-  // dead-ends politely once none are left — but the CTA itself still read as
-  // launchable in that state. Reflect done-ness here instead of only
-  // downstream.
-  const allDone = weekly.total > 0 && weekly.completed >= weekly.total;
+  const sessionsLeft = Math.max(0, weekly.total - weekly.completed);
   const nextWeekStart = new Date(startOfWeekUTC().getTime() + 7 * 24 * 60 * 60 * 1000);
   // "Close" means within the week the re-test window opens — past that,
   // "next sessions unlock Monday" is the more useful thing to tell them.
@@ -88,7 +92,9 @@ export default async function HomePage() {
   // (retest countdown, or nothing if there's no retest date yet); once the
   // week is done, the button itself goes quiet so this line always has
   // something forward-looking to say instead.
-  const caption = allDone
+  const caption = todayDone && !allDone
+    ? `${sessionsLeft} MORE SESSION${sessionsLeft === 1 ? "" : "S"} THIS WEEK — ANY OTHER DAY`
+    : allDone
     ? timeline === null
       ? nextUnlockText
       : timeline.daysUntilRetest <= 0
@@ -193,30 +199,11 @@ export default async function HomePage() {
             </section>
           </div>
 
-          <div className="flex-1" />
-
-          {allDone ? (
-            <button
-              type="button"
-              disabled
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-lg border border-line bg-surface text-[15px] font-semibold text-ink-3"
-            >
-              All sessions done this week
-              <span aria-hidden="true">✓</span>
-            </button>
-          ) : (
-            <Link
-              href="/session"
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
-            >
-              Start today&apos;s session
-              {sessionMinutes > 0 && (
-                <span className="font-mono text-[11px] opacity-75">
-                  {sessionMinutes} MIN
-                </span>
-              )}
-            </Link>
-          )}
+          <TodaySession
+            drills={planDrills}
+            completedToday={Array.from(completedToday)}
+            weekComplete={weekly.total > 0 && weekly.completed >= weekly.total}
+          />
 
           {caption && (
             <p className="pb-1 text-center font-mono text-[11px] tracking-[0.14em] text-ink-3">

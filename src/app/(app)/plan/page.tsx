@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { logDrillSession } from "@/app/(app)/plan/actions";
+import { SessionDrills } from "@/components/plan/SessionDrills";
 import { findDrillById } from "@/lib/drill-lookup";
-import {
-  getCompletedThisWeekDrillIds,
-  getCompletedTodayDrillIds,
-  getWeeklyProgress,
-} from "@/lib/drill-sessions";
+import { getCompletedTodayDrillIds, getWeeklyProgress } from "@/lib/drill-sessions";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { WEEK_FOCUS_LABELS } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
@@ -45,13 +41,12 @@ export default async function PlanPage() {
         .filter((d): d is NonNullable<typeof d> => Boolean(d))
     : [];
 
-  const [completedToday, completedThisWeek, weekly] = plan
+  const [completedToday, weekly] = plan
     ? await Promise.all([
         getCompletedTodayDrillIds(supabase, plan.id),
-        getCompletedThisWeekDrillIds(supabase, plan.id),
         getWeeklyProgress(supabase, plan.id, planDrills.length),
       ])
-    : [new Set<string>(), new Set<string>(), { completed: 0, total: 0 }];
+    : [new Set<string>(), { completed: 0, total: 0 }];
 
   const timeline =
     plan && plan.retest_date ? getPlanTimeline(plan.created_at, plan.retest_date) : null;
@@ -80,59 +75,12 @@ export default async function PlanPage() {
 
       {plan ? (
         <>
-          <div className="flex flex-col gap-3">
-            {planDrills.length === 0 && (
-              <p className="text-sm text-ink-2">No drills on this plan.</p>
-            )}
-            {planDrills.map((drill) => {
-              const doneWeek = completedThisWeek.has(drill.id);
-              const doneToday = completedToday.has(drill.id);
-
-              if (doneWeek) {
-                return (
-                  <div
-                    key={drill.id}
-                    className="flex items-start gap-4 rounded-2xl border border-line bg-surface px-5 py-[18px]"
-                  >
-                    <span className="mt-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-sm bg-optic">
-                      <span className="text-sm font-bold text-optic-ink">✓</span>
-                    </span>
-                    <div className="flex flex-1 flex-col gap-1">
-                      <p className="font-display text-[17px] font-semibold text-ink-3 line-through">
-                        {drill.name}
-                      </p>
-                      <p className="text-[13px] leading-[1.5] text-ink-3">
-                        {drill.duration} · {drill.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <form key={drill.id} action={logDrillSession.bind(null, plan.id, drill.id)}>
-                  <button
-                    type="submit"
-                    disabled={doneToday}
-                    className="flex w-full items-start gap-4 rounded-2xl border border-line-strong bg-surface px-5 py-[18px] text-left transition-colors hover:border-line-hover disabled:pointer-events-none"
-                  >
-                    <span className="mt-0.5 h-[26px] w-[26px] shrink-0 rounded-sm border-[1.5px] border-line-hover box-border" />
-                    <div className="flex flex-1 flex-col gap-1">
-                      <p className="font-display text-[17px] font-semibold text-ink">
-                        {drill.name}
-                      </p>
-                      <p className="text-[13px] leading-[1.5] text-ink-2">
-                        {drill.duration} · {drill.description}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-xs bg-warn/[0.12] px-[9px] py-[5px] font-mono text-[10px] tracking-[0.1em] text-warn">
-                      DUE TODAY
-                    </span>
-                  </button>
-                </form>
-              );
-            })}
-          </div>
+          <SessionDrills
+            planId={plan.id as string}
+            drills={planDrills}
+            completedToday={Array.from(completedToday)}
+            weekly={weekly}
+          />
 
           {plan.in_game_rule && (
             <section className="flex flex-col gap-2 rounded-2xl border border-optic bg-optic/[0.04] px-5 py-[18px]">

@@ -85,6 +85,76 @@ export async function signInWithGoogle(formData: FormData) {
   }
 }
 
+/**
+ * Password reset, step one: email the link.
+ *
+ * Always lands on the same "if there is an account…" confirmation. Supabase
+ * itself answers success for an unknown address; the only thing surfaced
+ * differently is rate limiting, which says nothing about whether the account
+ * exists. The link returns through /auth/callback, which leaves a recovery
+ * session in the cookie and forwards to /reset-password.
+ */
+export async function requestPasswordReset(formData: FormData) {
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin");
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    redirect(`/forgot-password?error=${encodeURIComponent("Enter your email address.")}`);
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+  });
+
+  if (error) {
+    console.error("requestPasswordReset failed", error.status, error.message);
+    if (error.status === 429) {
+      redirect(
+        `/forgot-password?error=${encodeURIComponent(
+          "Too many reset requests. Wait a few minutes and try again."
+        )}`
+      );
+    }
+  }
+
+  redirect("/forgot-password?sent=1");
+}
+
+/** Password reset, step two: set the new password on the recovery session. */
+export async function updatePassword(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect(
+      `/forgot-password?error=${encodeURIComponent(
+        "That reset link is invalid or has expired. Request a new one."
+      )}`
+    );
+  }
+
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (password.length < 8) {
+    redirect(`/reset-password?error=${encodeURIComponent("Use at least 8 characters.")}`);
+  }
+  if (password !== confirm) {
+    redirect(`/reset-password?error=${encodeURIComponent("Those two passwords don't match.")}`);
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    redirect(`/reset-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/", "layout");
+  redirect(AFTER_AUTH);
+}
+
 /** Sign out and return to the sign in screen. */
 export async function signOut() {
   const supabase = await createClient();

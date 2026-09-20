@@ -1,6 +1,12 @@
 import { findDrillById } from "@/lib/drill-lookup";
 import { startOfTodayUTC, startOfWeekUTC } from "@/lib/drill-sessions";
 import { sendDrillReminder } from "@/lib/email";
+import {
+  SESSIONS_PER_WEEK,
+  countSessions,
+  sessionShape,
+  type LoggedDrill,
+} from "@/lib/session-plan";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface ReminderRunSummary {
@@ -18,11 +24,12 @@ export interface ReminderRunSummary {
  * Daily drill-reminder pass. Emails every user who:
  *   • has drill_reminder_enabled on,
  *   • has an active (not completed/abandoned) plan with drills,
- *   • has NOT logged any session today, and
- *   • still has at least one prescribed drill unlogged this week.
+ *   • has NOT logged anything today, and
+ *   • has completed fewer than `SESSIONS_PER_WEEK` sessions this week.
  *
- * The drill named in the email is the next one due — the first plan drill not
- * yet logged this week, matching what the guided-session flow opens.
+ * A session is every drill on the plan logged on one day (`session-plan.ts`),
+ * so the email describes the whole session — its length and each drill —
+ * rather than naming a single drill as "due".
  *
  * Runs with the service-role client (no auth context), so it reads across all
  * users. Batched into three queries (profiles → plans → this-week sessions)
@@ -87,13 +94,17 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
     .gte("completed_at", weekStart);
   if (sessionsError) throw sessionsError;
 
-  const doneThisWeekByPlan = new Map<string, Set<string>>();
+  const loggedThisWeekByPlan = new Map<string, LoggedDrill[]>();
   const loggedTodayPlans = new Set<string>();
   for (const s of sessions ?? []) {
     const planId = s.plan_id as string;
-    const set = doneThisWeekByPlan.get(planId) ?? new Set<string>();
-    set.add(s.drill_id as string);
-    doneThisWeekByPlan.set(planId, set);
+    const list = loggedThisWeekByPlan.get(planId) ?? [];
+    list.push({
+      planId,
+      drillId: s.drill_id as string,
+      completedAt: s.completed_at as string,
+    });
+    loggedThisWeekByPlan.set(planId, list);
     if ((s.completed_at as string) >= todayStart) loggedTodayPlans.add(planId);
   }
 
@@ -119,10 +130,13 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
       continue;
     }
 
-    // The next drill due this week; undefined means everything's already logged.
-    const doneThisWeek = doneThisWeekByPlan.get(plan.id) ?? new Set<string>();
-    const nextDrill = planDrills.find((d) => !doneThisWeek.has(d.id));
-    if (!nextDrill) {
+    // Sessions still owed this week; none left means no nudge.
+    const done = countSessions(
+      loggedThisWeekByPlan.get(plan.id) ?? [],
+      planDrills.length
+    );
+    const sessionsLeft = SESSIONS_PER_WEEK - done;
+    if (sessionsLeft <= 0) {
       summary.skipped++;
       continue;
     }
@@ -130,8 +144,9 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
     try {
       await sendDrillReminder(
         user.email as string,
-        nextDrill.name,
-        nextDrill.duration
+        sessionsLeft,
+        sessionShape(planDrills),
+        planDrills.map((d) => `${d.name} (${d.duration})`).join(", ")
       );
       summary.sent++;
     } catch (err) {

@@ -2,11 +2,12 @@ import Link from "next/link";
 
 import { login, signInWithGoogle } from "@/app/auth/actions";
 import { Logo } from "@/components/brand/Logo";
+import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string; next?: string };
+  searchParams: { error?: string; next?: string; notice?: string };
 }) {
   const next = searchParams.next ?? "/home";
 
@@ -27,6 +28,13 @@ export default function LoginPage({
           </p>
         )}
 
+        {/* A fixed set of notices, keyed — never free text from the URL. */}
+        {searchParams.notice === "deleted" && (
+          <p className="rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink-2">
+            Your account and everything saved to it have been deleted.
+          </p>
+        )}
+
         <form action={login} className="flex flex-col gap-3">
           <input type="hidden" name="next" value={next} />
 
@@ -43,7 +51,7 @@ export default function LoginPage({
             className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover focus:outline-none"
           />
 
-          {/* Password row with the inline (placeholder, non-functional) FORGOT? affordance */}
+          {/* Password row with the inline FORGOT? link to the reset flow. */}
           <div className="flex h-12 w-full items-center rounded-md border border-line-strong bg-surface pl-4 pr-4">
             <label htmlFor="password" className="sr-only">
               Password
@@ -57,9 +65,13 @@ export default function LoginPage({
               required
               className="flex-1 bg-transparent text-[15px] text-ink placeholder-ink-3 outline-none"
             />
-            <span className="shrink-0 pl-2 font-mono text-[10px] tracking-[0.08em] text-ink-3">
+            {/* `-my-4 py-4` buys a 47px tap target without growing the row. */}
+            <Link
+              href="/forgot-password"
+              className="-my-4 shrink-0 py-4 pl-3 font-mono text-[10px] tracking-[0.08em] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+            >
               FORGOT?
-            </span>
+            </Link>
           </div>
 
           <button
@@ -70,22 +82,27 @@ export default function LoginPage({
           </button>
         </form>
 
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-line" />
-          <span className="font-mono text-[10px] text-ink-3">OR</span>
-          <div className="h-px flex-1 bg-line" />
-        </div>
+        {/* Hidden until the provider is really on — see `auth-flags.ts`. */}
+        {GOOGLE_AUTH_ENABLED && (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-line" />
+              <span className="font-mono text-[10px] text-ink-3">OR</span>
+              <div className="h-px flex-1 bg-line" />
+            </div>
 
-        <form action={signInWithGoogle}>
-          <input type="hidden" name="next" value={next} />
-          <button
-            type="submit"
-            className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover"
-          >
-            <span className="font-display text-[15px] font-extrabold">G</span>
-            Continue with Google
-          </button>
-        </form>
+            <form action={signInWithGoogle}>
+              <input type="hidden" name="next" value={next} />
+              <button
+                type="submit"
+                className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover"
+              >
+                <span className="font-display text-[15px] font-extrabold">G</span>
+                Continue with Google
+              </button>
+            </form>
+          </>
+        )}
       </div>
 
       <p className="pb-2 text-center text-[13px] text-ink-2">

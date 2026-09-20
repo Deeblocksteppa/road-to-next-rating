@@ -1,5 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  SESSIONS_PER_WEEK,
+  SESSION_WINDOW_MS,
+  countSessions,
+  type LoggedDrill,
+} from "@/lib/session-plan";
+
 /**
  * Drill-session queries. "Week" and "today" are computed in UTC (simplest, and
  * consistent with the per-UTC-day dedup index on drill_sessions). Pass any
@@ -156,62 +163,78 @@ export async function getScoredSessionsByDrill(
 }
 
 export interface WeeklyProgress {
-  /** Distinct drills from this plan completed since Monday. */
+  /** Sessions completed since Monday — see `session-plan.ts` for what counts. */
   completed: number;
-  /** Total drills prescribed by the plan. */
+  /** Sessions the plan asks for each week. */
   total: number;
 }
 
+function toLogged(rows: Record<string, unknown>[] | null): LoggedDrill[] {
+  return (rows ?? []).map((row) => ({
+    planId: (row.plan_id as string | null) ?? null,
+    drillId: row.drill_id as string,
+    completedAt: row.completed_at as string,
+  }));
+}
+
 /**
- * Count this week's completed sessions for a plan, as distinct drills done
- * (so logging the same drill twice in a week still reads as one). Drives the
- * "X of N this week" indicator.
+ * This week's completed sessions for a plan. A session is every drill on the
+ * plan logged on the same UTC day, so `drillsPerSession` is the plan's drill
+ * count. Drives the "X/2 sessions" indicator on Home, Plan and the guided
+ * flow's confirmation — all three read this one function.
  */
 export async function getWeeklyProgress(
   supabase: SupabaseClient,
   planId: string,
-  totalDrills: number
+  drillsPerSession: number
 ): Promise<WeeklyProgress> {
   const { data, error } = await supabase
     .from("drill_sessions")
-    .select("drill_id")
+    .select("plan_id, drill_id, completed_at")
     .eq("plan_id", planId)
     .gte("completed_at", startOfWeekUTC().toISOString());
   if (error) throw error;
 
-  const distinct = new Set((data ?? []).map((row) => row.drill_id as string));
-  return { completed: distinct.size, total: totalDrills };
+  return {
+    completed: countSessions(toLogged(data), drillsPerSession),
+    total: SESSIONS_PER_WEEK,
+  };
 }
 
-/** Set of drill ids already logged today for the plan (for done-state / disabling). */
+/**
+ * Every session the caller has ever completed, across plans (RLS scopes the
+ * read). The Progress screen's "sessions done" stat — it used to be a raw row
+ * count, which is drills, not sessions.
+ */
+export async function getTotalSessions(
+  supabase: SupabaseClient,
+  drillsPerSession: number
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("drill_sessions")
+    .select("plan_id, drill_id, completed_at");
+  if (error) throw error;
+  return countSessions(toLogged(data), drillsPerSession);
+}
+
+/**
+ * Drill ids already logged in the current sitting — what Home, Plan and the
+ * guided flow treat as "done today". That is today in UTC, stretched back by
+ * `SESSION_WINDOW_MS` so a session that straddles midnight UTC (8pm Eastern)
+ * does not reset halfway through. Matches how `countSessions` groups logs.
+ */
 export async function getCompletedTodayDrillIds(
   supabase: SupabaseClient,
   planId: string
 ): Promise<Set<string>> {
+  const since = new Date(
+    Math.min(startOfTodayUTC().getTime(), Date.now() - SESSION_WINDOW_MS)
+  );
   const { data, error } = await supabase
     .from("drill_sessions")
     .select("drill_id")
     .eq("plan_id", planId)
-    .gte("completed_at", startOfTodayUTC().toISOString());
-  if (error) throw error;
-
-  return new Set((data ?? []).map((row) => row.drill_id as string));
-}
-
-/**
- * Set of drill ids logged at least once since Monday (for the Plan screen's
- * per-task checked/strikethrough state — a task reads "done" for the week
- * once it's been logged once, not only on the day it was logged).
- */
-export async function getCompletedThisWeekDrillIds(
-  supabase: SupabaseClient,
-  planId: string
-): Promise<Set<string>> {
-  const { data, error } = await supabase
-    .from("drill_sessions")
-    .select("drill_id")
-    .eq("plan_id", planId)
-    .gte("completed_at", startOfWeekUTC().toISOString());
+    .gte("completed_at", since.toISOString());
   if (error) throw error;
 
   return new Set((data ?? []).map((row) => row.drill_id as string));
@@ -227,12 +250,13 @@ export interface StreakResult {
 /**
  * Weekly streak across ALL of the user's drill sessions (RLS scopes to the
  * caller, so no plan filter — this spans the plan history). A week is "hit"
- * when the number of distinct drills logged that week meets `sessionTarget`.
+ * when it holds at least `SESSIONS_PER_WEEK` completed sessions, a session
+ * being `drillsPerSession` distinct drills logged on one day for one plan.
  * The current (possibly in-progress) week never breaks the streak.
  */
 export async function getWeeklyStreak(
   supabase: SupabaseClient,
-  sessionTarget: number,
+  drillsPerSession: number,
   weeksToShow = 6
 ): Promise<StreakResult> {
   const weekMs = 7 * 24 * 60 * 60 * 1000;
@@ -241,18 +265,20 @@ export async function getWeeklyStreak(
 
   const { data, error } = await supabase
     .from("drill_sessions")
-    .select("drill_id, completed_at")
+    .select("plan_id, drill_id, completed_at")
     .gte("completed_at", lookback.toISOString());
   if (error) throw error;
 
-  const weekSets: Set<string>[] = Array.from({ length: weeksToShow }, () => new Set());
-  for (const row of data ?? []) {
-    const ws = startOfWeekUTC(new Date(row.completed_at as string));
+  const byWeek: LoggedDrill[][] = Array.from({ length: weeksToShow }, () => []);
+  for (const row of toLogged(data)) {
+    const ws = startOfWeekUTC(new Date(row.completedAt));
     const idx = Math.round((ws.getTime() - lookback.getTime()) / weekMs);
-    if (idx >= 0 && idx < weeksToShow) weekSets[idx].add(row.drill_id as string);
+    if (idx >= 0 && idx < weeksToShow) byWeek[idx].push(row);
   }
 
-  const weeks = weekSets.map((s) => sessionTarget > 0 && s.size >= sessionTarget);
+  const weeks = byWeek.map(
+    (rows) => countSessions(rows, drillsPerSession) >= SESSIONS_PER_WEEK
+  );
 
   // Trailing consecutive hits; the current (last) week being a miss doesn't
   // break it (it may just be mid-week).
