@@ -76,7 +76,6 @@ export default async function PlanPage() {
       {plan ? (
         <>
           <SessionDrills
-            planId={plan.id as string}
             drills={planDrills}
             completedToday={Array.from(completedToday)}
             weekly={weekly}

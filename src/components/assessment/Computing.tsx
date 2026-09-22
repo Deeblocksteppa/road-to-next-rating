@@ -6,7 +6,9 @@ import { useEffect, useReducer, useRef } from "react";
 // spec-aligned (DESIGN_SYSTEM.md §5); the TIMING below is unchanged.
 const LINES: { text: string; weight?: "normal" | "heavy" }[] = [
   { text: "Twelve answers, one direction." },
-  { text: "One skill explains all of them." },
+  // Was "One skill explains all of them." — a claim the model can't make. It
+  // ranks four weighted gaps; the honest line is that one comes out on top.
+  { text: "One place to start." },
   { text: "Found it.", weight: "heavy" },
 ];
 

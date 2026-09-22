@@ -102,27 +102,30 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
 function DrillCard({ drill, hasPartner }: { drill: Drill; hasPartner: boolean }) {
   const showSoloBadge = drill.requiresPartner && !hasPartner;
 
+  // Same three rows as the Plan tab's card: name, mono metadata, one sentence.
+  // The technique instructions wait for the guided session, where the shot
+  // is animated beside them.
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface px-5 py-[18px]">
+    <div className="rounded-2xl border border-line bg-surface px-5 py-4">
       <div className="flex items-start justify-between gap-3">
         <p className="font-display text-[17px] font-semibold leading-[1.3] text-ink">
           {drill.name}
         </p>
-        <div className="flex shrink-0 items-center gap-2">
-          {/*
-            Neutral, not `warn`. The state colours are a scale — warn means
-            "due today", danger means "regressed" — and a solo variant is
-            neither; it is a note about which version you are being given.
-          */}
-          {showSoloBadge && (
-            <span className="shrink-0 rounded-xs border border-line-strong bg-surface-2 px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.1em] text-ink-3">
-              Solo version
-            </span>
-          )}
-          <span className="font-mono text-[11px] tabular-nums text-ink-3">{drill.duration}</span>
-        </div>
+        {/*
+          Neutral, not `warn`. The state colours are a scale — warn means
+          "due today", danger means "regressed" — and a solo variant is
+          neither; it is a note about which version you are being given.
+        */}
+        {showSoloBadge && (
+          <span className="shrink-0 rounded-xs border border-line-strong bg-surface-2 px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.1em] text-ink-3">
+            Solo version
+          </span>
+        )}
       </div>
-      <p className="text-[14px] leading-[1.55] text-ink-2">{drill.description}</p>
+      <p className="mt-1.5 font-mono text-[11px] uppercase leading-[1.5] tracking-[0.1em] text-ink-3">
+        {drill.duration} · {drill.setup}
+      </p>
+      <p className="mt-2.5 text-pretty text-[14px] leading-[1.5] text-ink-2">{drill.task}</p>
     </div>
   );
 }

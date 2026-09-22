@@ -15,15 +15,32 @@ export const SKILL_TITLES: Record<SkillId, string> = {
   dink_patience: "Soft-game patience",
 };
 
+/**
+ * The reveal's authored copy. Each beat has one job and a word budget, and the
+ * copy is edited to it:
+ *
+ *   verdict     — why this shot, traceable to their answers. ≤ 30 words.
+ *   insight     — the practice problem: a short headline, then how the way
+ *                 they train produced this gap. ≤ 12 + 25–42 words.
+ *   absolution  — one sentence turning the problem into a trainable action,
+ *                 and a close of a few words naming the plan. ≤ 25 + 10.
+ *
+ * Nothing claims to have watched them play. The assessment establishes a
+ * recommended focus from twelve answers; every line is phrased as that
+ * ("based on your answers", "you rated", "you said"), never as a verdict on
+ * their game. "Your reset already works", "this was never about talent" and
+ * similar lines are gone for that reason. `bottleneckText` is the longer
+ * version kept for the roadmap and is not shown on the reveal.
+ */
 export interface DiagnosisStory {
   id: string;
   match: { bottleneck: SkillId; rootCause: RootCauseId };
-  bottleneckVerdict: string; // one-sentence punch line for the reveal (beat 2)
+  bottleneckVerdict: string; // reveal beat 2 — why this shot, from their answers
   bottleneckText: string;    // deeper version, used later in the roadmap
-  insightHeadline: string;   // reveal beat 3 (insight) — the "why it hasn't improved" hook
-  insightBody: string;       // reveal beat 3 (insight) — the non-obvious mechanism
-  absolution: string;        // reveal beat 4 (absolution) headline — talent-ceiling → structure, ≤2 sentences
-  absolutionClose: string;   // reveal beat 4 close (below divider) — 1 story-specific sentence
+  insightHeadline: string;   // reveal beat 3 — the practice problem, in one line
+  insightBody: string;       // reveal beat 3 — how their training produced it
+  absolution: string;        // reveal beat 4 — one sentence, problem → trainable action
+  absolutionClose: string;   // reveal beat 4 close — a few words naming the plan
 }
 
 export const STORIES: DiagnosisStory[] = [
@@ -32,17 +49,15 @@ export const STORIES: DiagnosisStory[] = [
     id: "reset_open_play",
     match: { bottleneck: "reset", rootCause: "open_play_only" },
     bottleneckVerdict:
-      "It's the one skill that most separates 3.5 from 4.0 — and right now it's the ceiling on your game.",
+      "Based on your answers, this is the best place to start. The reset separates 3.5 from 4.0 more than any other shot, and it's where you rated yourself lowest.",
     bottleneckText:
-      "The reset — staying calm under pressure in the transition zone and neutralizing attacks at the net — is the single most separating skill between 3.5 and 4.0. It's not about hitting a pretty shot. It's about absorbing pace, going soft when your instincts scream 'hit back harder,' and refusing to hand the point away. Players who can reset consistently get to the kitchen, stay there, and run the soft game. Players who can't are permanently pinned in no-man's-land, fighting a battle they can't win.",
-    insightHeadline:
-      "You've played thousands of points. Almost none of them taught your reset anything.",
+      "The reset — staying calm under pressure in the transition zone and neutralizing attacks at the net — is the single most separating skill between 3.5 and 4.0. It's not about hitting a pretty shot. It's about absorbing pace, going soft when your instincts scream 'hit back harder,' and refusing to hand the point away. Players who can reset consistently get to the kitchen, stay there, and run the soft game. Players who can't are pinned in no-man's-land, fighting a battle they can't win.",
+    insightHeadline: "Games don't teach the reset.",
     insightBody:
-      "You can't build a reliable reset through open play — every point is high-stakes, so your nervous system never gets the low-stakes reps it needs to actually learn the shot. Open play teaches you to survive the moment, not own the skill.",
+      "Almost all of your court time is open play. Every point there is live, so a reset gets one rushed attempt and no second try — the shot never gets the calm, repeated reps it needs to form.",
     absolution:
-      "This was never a talent ceiling — it's a structure problem, and structure is the one thing you can actually rebuild. Your reset didn't fail you; the way you practiced never gave it a chance to form.",
-    absolutionClose:
-      "Give the reset the low-stakes reps it never got, and the calm you can't find mid-point starts showing up on its own.",
+      "This isn't a ceiling on your game — it's a shot that never got its reps, and reps are something you can schedule.",
+    absolutionClose: "Three weeks of low-stakes resets is the plan.",
   },
 
   // 2. reset + well_coached — transfer / pressure gap
@@ -50,17 +65,15 @@ export const STORIES: DiagnosisStory[] = [
     id: "reset_well_coached",
     match: { bottleneck: "reset", rootCause: "well_coached" },
     bottleneckVerdict:
-      "The reset is the last thing standing between you and 4.0 — you've built it in practice, but it isn't holding up in games yet.",
+      "Based on your answers, this is the best place to start. You drill with structure, but the reset is still where you said your points break down.",
     bottleneckText:
       "The reset is the skill that separates 3.5 from 4.0 — absorbing pace in the transition zone, going soft when everything in you wants to hit back hard, and earning your way to the kitchen rather than hoping your opponents miss. It's unglamorous, repetitive, and absolutely decisive. Players who own it control the tempo of nearly every point. Players who haven't cracked it yet are at the mercy of whoever's being aggressive.",
-    insightHeadline:
-      "Your reset already works. It just doesn't survive contact with a real game yet.",
+    insightHeadline: "The reset holds in practice and slips in games.",
     insightBody:
-      "You're doing the work, but there's a transfer gap — the reset holds up in drills where pace is controlled, but breaks down under the chaos of a real game. Under pressure, the body defaults to what's most automatic, and an automated reset isn't there yet.",
+      "You said you drill with a plan, and that the reset still fails mid-court when the ball comes fast. That pattern points to a transfer gap: the shot exists at drill pace, not yet at game pace.",
     absolution:
-      "This was never about talent or technique — it's a transfer problem, and transfer is something you can deliberately build. You're not starting over; you're closing the gap between the practice court and the game.",
-    absolutionClose:
-      "Rehearse the reset under the same chaos a game brings, and the shot you own in drills stops disappearing when it matters.",
+      "This isn't a technique problem to start over on — it's a shot that needs rehearsing under game chaos, and chaos can be rehearsed.",
+    absolutionClose: "Three weeks of resets at real pace is the plan.",
   },
 
   // 3. third_shot_drop + open_play_only
@@ -68,17 +81,15 @@ export const STORIES: DiagnosisStory[] = [
     id: "third_shot_open_play",
     match: { bottleneck: "third_shot_drop", rootCause: "open_play_only" },
     bottleneckVerdict:
-      "Your third-shot drop is the gate to 4.0 — and right now it isn't reliable enough to walk through.",
+      "Based on your answers, this is the best place to start. The drop is the shot that gets you to the kitchen, and it's the one you rated least reliable.",
     bottleneckText:
       "The third-shot drop is the gateway skill for 3.5-to-4.0. Without a reliable one, you're choosing between driving into a wall or handing the net to your opponents on a silver platter every single serve. It's the shot that converts a defensive position into an offensive one — and at 4.0, everyone expects you to have it. It requires soft hands, a feel for arc and depth, and the nerve to commit to a slow ball when the instinct is to attack.",
-    insightHeadline:
-      "You've hit thousands of drops. Almost none of them counted.",
+    insightHeadline: "Games give the drop almost no clean reps.",
     insightBody:
-      "The drop is nearly impossible to build through open play — the game moves on whether it was good or not, so you never get the clean feedback your body needs. The shot requires hundreds of isolated reps; games give you maybe 10–15 buried inside 45 minutes of everything else.",
+      "Most of your court time is open play. A game moves on whether a drop was good or bad, so there's no feedback and maybe a dozen attempts an hour — far too few for a touch shot to settle.",
     absolution:
-      "This was never a talent ceiling — it's a structure problem, and structure is the one thing you can actually rebuild. Your drop didn't fail you; it was never given the reps it needed to become real.",
-    absolutionClose:
-      "Feed the drop enough measured reps and the shot you've been hoping for becomes the shot you can call on.",
+      "This isn't a ceiling — it's a shot that has never had measured reps, and measured reps are the whole plan.",
+    absolutionClose: "Count the drops, and the drop shows up.",
   },
 
   // 4. dink_patience + well_coached
@@ -86,17 +97,15 @@ export const STORIES: DiagnosisStory[] = [
     id: "dink_patience_well_coached",
     match: { bottleneck: "dink_patience", rootCause: "well_coached" },
     bottleneckVerdict:
-      "Patience in the soft game is your ceiling — you have the shots, but the discipline cracks when the point matters.",
+      "Based on your answers, this is the best place to start. You have the shots; you said the long rallies end when patience runs out first.",
     bottleneckText:
       "Patience in the soft game — staying disciplined in a dinking rally, not manufacturing pace when the ball doesn't deserve it — is what separates players who win points at 4.0 from players who donate them. It's not a flashy skill. Nobody clips it for highlights. But at the kitchen, the player who can wait out a long rally and only speed up on a genuinely attackable ball wins a disproportionate number of exchanges. Impatience is the most reliable way to give the point away for free.",
-    insightHeadline:
-      "Your patience holds in drills and vanishes the moment there's a score.",
+    insightHeadline: "Patience holds in drills and cracks when there's a score.",
     insightBody:
-      "Your mechanics are solid — what breaks down is the internal pressure that builds in a long rally, turning discomfort into urgency and urgency into a bad decision. The ball that felt fine to leave in a drill starts looking attackable when there's a score on the board.",
+      "You drill with a plan, and you said long rallies end with you forcing a speed-up. That's a pressure pattern, not a stroke problem: in a drill the ball you leave feels fine; with a score on it, it starts looking attackable.",
     absolution:
-      "This was never a discipline flaw or a talent ceiling — it's a rehearsal gap, and rehearsal is something you can rebuild on purpose. You already own the shots; now you train the patience to use them when it counts.",
-    absolutionClose:
-      "Rehearse the long rally with a score on the line, and waiting for the right ball stops taking willpower — it becomes the habit.",
+      "This isn't a discipline flaw — it's a decision that has never been rehearsed with something on the line, and that can be rehearsed.",
+    absolutionClose: "Three weeks of long rallies with a score attached.",
   },
 
   // 5. net_defense + open_play_only
@@ -104,29 +113,30 @@ export const STORIES: DiagnosisStory[] = [
     id: "net_defense_open_play",
     match: { bottleneck: "net_defense", rootCause: "open_play_only" },
     bottleneckVerdict:
-      "Your hands at the net are the gap — and good opponents will find it within a game or two.",
+      "Based on your answers, this is the best place to start. Speed-ups at your body are where you rated yourself weakest, and 4.0 opponents will find that.",
     bottleneckText:
       "Hands at the net — handling a ball that's sped up at your body, hip, or shoulder at close range — is one of the defining skills of the 4.0 level. Speed-ups happen constantly in competitive play, and if you don't have a reliable answer for them, opponents will find that out within a game or two and target you relentlessly. A good hands game lets you neutralize aggression, reset the point, and stay in control. Without it, every speed-up feels like a coin flip.",
-    insightHeadline:
-      "It feels like you're slower than them. You're not — you've just seen fewer of those balls.",
+    insightHeadline: "It feels like slow hands. It's fewer reps.",
     insightBody:
-      "Hands at the net are purely reflexive — by the time you consciously decide, the moment is already gone. The only way to build it is repetition at real pace, and open play doesn't give you nearly enough of those reps at the right speed.",
+      "Hands at the net are reflex, and a reflex only builds from seeing the same ball many times at real pace. Open play hands you a few speed-ups an hour, spread among everything else.",
     absolution:
-      "This was never about reflexes you weren't born with — it's a structure problem, and structure is the one thing you can actually rebuild. Feed your hands enough of those specific balls and the reaction stops being a coin flip.",
-    absolutionClose:
-      "See enough speed-ups in isolation and the flinch turns into a counter you don't have to think about.",
+      "This isn't about reflexes you weren't born with — it's a ball you've seen too rarely, and you can see it on purpose.",
+    absolutionClose: "Three weeks of speed-ups in isolation.",
   },
 ];
 
+/**
+ * Used when no story matches the (bottleneck × root cause) pair. The verdict
+ * fields are empty on purpose: `diagnose` builds those from the skill label.
+ */
 export const FALLBACK = {
   id: "fallback",
   bottleneckVerdict: "",
   bottleneckText: "",
-  insightHeadline: "Your answers point to more than one gap pulling at once.",
+  insightHeadline: "Your answers don't fit one clean pattern.",
   insightBody:
-    "Your answers point to a gap, but the pattern doesn't fit a single clean story — which usually means more than one thing is holding you back at once. That's common at 3.5–4.0, and it's addressable: start with the bottleneck above, give it four to six weeks, then layer in the next.",
+    "More than one thing is pulling at once, which is common at 3.5–4.0. The skill above is where you rated yourself lowest, so it's where a plan pays off first.",
   absolution:
-    "This isn't a talent ceiling — it's a structure problem, and structure is the one thing you can actually rebuild. Start with the bottleneck above, give it a few weeks, then layer in the next.",
-  absolutionClose:
-    "Point your practice at one skill at a time, and the plateau that felt permanent starts to move.",
+    "This isn't a ceiling — it's a few small gaps, and the way through is one at a time.",
+  absolutionClose: "Start with this one; the next comes after the re-test.",
 };

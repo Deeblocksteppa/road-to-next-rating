@@ -120,8 +120,12 @@ export function diagnose(answers: AnswerMap): Diagnosis {
     storyId: story?.id ?? FALLBACK.id,
     readiness,
     mirror,
-    bottleneckVerdict: story?.bottleneckVerdict ?? `Right now, ${bottleneckLabel} is the single biggest thing holding your game back.`,
-    bottleneckText: story?.bottleneckText ?? `The data points clearly to ${bottleneckLabel} as your primary bottleneck right now.`,
+    bottleneckVerdict:
+      story?.bottleneckVerdict ??
+      `Based on your answers, this is the best place to start: ${bottleneckLabel} is where you rated yourself lowest, weighted by how much it matters for 4.0.`,
+    bottleneckText:
+      story?.bottleneckText ??
+      `Your answers point to ${bottleneckLabel} as the skill to work on first.`,
     insightHeadline: story?.insightHeadline ?? FALLBACK.insightHeadline,
     insightBody: story?.insightBody ?? FALLBACK.insightBody,
     absolution: story?.absolution ?? FALLBACK.absolution,

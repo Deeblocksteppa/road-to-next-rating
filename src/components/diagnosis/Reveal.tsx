@@ -132,13 +132,18 @@ function InsightBeat({ diagnosis }: { diagnosis: Diagnosis }) {
 }
 
 /* ── Beat 4: Absolution — the exhale ──────────────────────────── */
+/**
+ * One sentence, then a few words. It used to be a paragraph in 29px bold
+ * followed by a second paragraph making the same point — a speech between
+ * the insight and the number. The relief has to land in the sentence.
+ */
 function AbsolutionBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   return (
     <div className="flex flex-col gap-[26px]">
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
         The part that matters
       </p>
-      <h2 className="text-pretty font-display text-[29px] font-bold leading-[1.28] tracking-[-0.015em]">
+      <h2 className="text-pretty font-display text-[26px] font-bold leading-[1.3] tracking-[-0.015em]">
         {diagnosis.absolution}
       </h2>
       <div className="h-px w-11 bg-line-strong" />
@@ -198,9 +203,13 @@ function ReadinessBeat({ diagnosis }: { diagnosis: Diagnosis }) {
         </div>
       </div>
 
+      {/* Baseline, what it means, and where the plan starts. Not a verdict on
+          their game: the number is a reading of their answers, and it is the
+          thing the re-test moves against. */}
       <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
-        The biggest thing between you and 4.0 is {SKILL_LABELS[diagnosis.bottleneck]}.
-        The plan starts there.
+        {diagnosis.readiness} is your baseline from these answers. The plan starts on{" "}
+        {SKILL_LABELS[diagnosis.bottleneck]}, and the re-test in three weeks shows what
+        moved.
       </p>
     </div>
   );

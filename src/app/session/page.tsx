@@ -20,9 +20,14 @@ import type { SkillId } from "@/lib/types";
  * It used to open only the first drill not yet logged this week, under a Home
  * button that promised the combined length of both. Drills already logged
  * today are skipped, so leaving halfway and coming back resumes the session
- * rather than restarting it.
+ * rather than restarting it. `?drill=<id>` — the Plan tab's "Start drill" —
+ * starts with that drill; the rest of the session still follows.
  */
-export default async function SessionPage() {
+export default async function SessionPage({
+  searchParams,
+}: {
+  searchParams: { drill?: string };
+}) {
   const supabase = await createClient();
 
   const {
@@ -62,7 +67,10 @@ export default async function SessionPage() {
     getWeeklyProgress(supabase, plan.id, planDrills.length),
   ]);
 
-  const remaining = planDrills.filter((d) => !completedToday.has(d.id));
+  const notDone = planDrills.filter((d) => !completedToday.has(d.id));
+  const requested = notDone.findIndex((d) => d.id === searchParams.drill);
+  const remaining =
+    requested > 0 ? [...notDone.slice(requested), ...notDone.slice(0, requested)] : notDone;
   const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
   const startedToday = remaining.length < planDrills.length;
 

@@ -51,7 +51,18 @@ export function generateRoadmap(diagnosis: Diagnosis, answers: AnswerMap): Roadm
 
   const weeklyDrills = hasPartner
     ? drills.slice(0, 2)
-    : drills.map((d) => ({ ...d, description: d.soloVariant ?? d.description })).slice(0, 2);
+    : drills
+        .map((d) =>
+          d.requiresPartner
+            ? {
+                ...d,
+                description: d.soloVariant ?? d.description,
+                task: d.soloTask ?? d.soloVariant ?? d.task,
+                setup: "Solo",
+              }
+            : d
+        )
+        .slice(0, 2);
 
   return {
     goalLabel: "Road to 4.0",

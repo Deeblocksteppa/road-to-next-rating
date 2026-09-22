@@ -48,10 +48,10 @@ export interface Diagnosis {
   storyId: string;
   readiness: number;
   mirror: string[];
-  bottleneckVerdict: string;
-  bottleneckText: string;
-  insightHeadline: string; // reveal beat 3 hook — "why it hasn't improved"
-  insightBody: string;     // reveal beat 3 body — the non-obvious mechanism
-  absolution: string;      // reveal beat 4 headline — talent-ceiling → structure reframe
-  absolutionClose: string; // reveal beat 4 close (below divider) — 1 sentence, story-specific
+  bottleneckVerdict: string; // reveal beat 2 — why this shot, from their answers
+  bottleneckText: string;    // longer version for the roadmap; not on the reveal
+  insightHeadline: string;   // reveal beat 3 — the practice problem, one line
+  insightBody: string;       // reveal beat 3 — how their training produced it
+  absolution: string;        // reveal beat 4 — one sentence, problem → trainable action
+  absolutionClose: string;   // reveal beat 4 close — a few words naming the plan
 }

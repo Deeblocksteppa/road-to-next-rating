@@ -9,27 +9,16 @@ import {
   type WeeklyProgress,
 } from "@/lib/drill-sessions";
 
-/**
- * Log a drill as done today for a claimed plan. Requires a logged-in user who
- * owns the plan. Idempotent per (plan, drill, UTC day) — see
- * `recordDrillSession` for the ownership and dedup rules.
+/*
+ * There is deliberately no bare "mark done" action here any more. The Plan
+ * tab used to log a drill on one tap, writing the same drill_sessions row the
+ * guided session writes after a timed drill and a scored result — so a casual
+ * tap produced a performance record indistinguishable from a real one. The
+ * guided session is the only logging path.
  */
-export async function logDrillSession(planId: string, drillId: string) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await recordDrillSession(supabase, user.id, planId, drillId);
-
-  revalidatePath("/plan");
-  revalidatePath("/home");
-}
 
 /**
- * Log a guided session: the same drill-session row as `logDrillSession`, plus
+ * Log a guided session: one drill_sessions row for the drill, plus
  * the number the user recorded (e.g. 6 of 10 drops landed). Shares the
  * ownership check and per-day dedup; if the drill was already logged today
  * without a number, the score is written onto that existing row.
