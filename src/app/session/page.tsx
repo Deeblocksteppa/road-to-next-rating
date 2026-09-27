@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { GuidedSession } from "@/components/session/GuidedSession";
-import { SKILL_TITLES } from "@/lib/diagnoses";
+import { GuidedSession, SessionCompleteScreen } from "@/components/session/GuidedSession";
 import { findDrillById, parseDurationMinutes } from "@/lib/drill-lookup";
 import { getCompletedTodayDrillIds, getWeeklyProgress } from "@/lib/drill-sessions";
-import { sessionShape } from "@/lib/session-plan";
 import { createClient } from "@/lib/supabase/server";
-import type { SkillId } from "@/lib/types";
 
 /**
  * Guided session flow (brief → timer → log → confirmation).
@@ -37,22 +34,13 @@ export default async function SessionPage({
     redirect("/login?next=/session");
   }
 
-  const [{ data: plan }, { data: diagnosis }] = await Promise.all([
-    supabase
-      .from("plans")
-      .select("id, drill_ids")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("diagnoses")
-      .select("bottleneck")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const { data: plan } = await supabase
+    .from("plans")
+    .select("id, drill_ids, retest_metric")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (!plan) {
     redirect("/home");
@@ -74,9 +62,18 @@ export default async function SessionPage({
   const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
   const startedToday = remaining.length < planDrills.length;
 
-  // Nothing to run: today's session is finished, or the week's target is met
-  // and nothing is half-done. Restrained dead-end rather than dropping them
-  // into a flow that would dedup into a no-op.
+  // Today's session is finished: the same screen the guided flow ends on, so
+  // the re-render Next makes after the last log lands on identical content.
+  if (remaining.length === 0 && planDrills.length > 0) {
+    return (
+      <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+        <SessionCompleteScreen weekly={weekly} />
+      </main>
+    );
+  }
+
+  // The week's target is met and nothing is half-done: a restrained dead-end
+  // rather than a flow that would dedup into a no-op.
   if (remaining.length === 0 || (weekComplete && !startedToday)) {
     return (
       <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
@@ -86,32 +83,26 @@ export default async function SessionPage({
             Nothing due
           </p>
           <h1 className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em]">
-            {weekComplete ? "You're done for the week." : "Today's session is done."}
+            You&apos;re done for the week.
           </h1>
           <p className="text-[15px] leading-[1.6] text-ink-2">
-            {weekComplete
-              ? `All ${weekly.total} sessions logged. Rest counts too.`
-              : `${weekly.completed} of ${weekly.total} sessions this week. The next one is any other day.`}
+            All {weekly.total} sessions logged. Rest counts too.
           </p>
         </div>
         <div className="flex-1" />
         <Link
-          href="/home"
+          href="/plan"
           className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
         >
-          Back to home
+          Back to plan
         </Link>
       </main>
     );
   }
 
-  const bottleneck = diagnosis?.bottleneck as SkillId | undefined;
-
   return (
     <GuidedSession
       planId={plan.id as string}
-      skillTitle={bottleneck ? SKILL_TITLES[bottleneck] : ""}
-      sessionShape={sessionShape(planDrills)}
       outline={planDrills.map((d) => ({
         id: d.id,
         name: d.name,
@@ -122,10 +113,16 @@ export default async function SessionPage({
         id: d.id,
         name: d.name,
         instructions: d.description,
+        setup: d.setup,
+        cue: d.cue,
+        logProtocol: d.logProtocol,
+        counts: d.counts,
+        practiceTarget: d.practiceTarget,
         duration: d.duration,
         durationMinutes: parseDurationMinutes(d.duration),
         logPrompt: d.logPrompt,
       }))}
+      retestMetric={(plan.retest_metric as string | null) ?? null}
       fallbackWeekly={weekly}
     />
   );

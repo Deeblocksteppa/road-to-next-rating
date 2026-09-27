@@ -27,7 +27,7 @@ const IN_GAME_RULES: Record<SkillId, string> = {
   reset:
     "When you're caught mid-court, reset soft instead of attacking — even if you lose the point. You're trading this week's games for next month's level.",
   third_shot_drop:
-    "Commit to the drop on every third shot for the next two weeks, even when it fails. You need the reps more than the wins right now.",
+    "Commit to the drop on every third shot this week, even when it fails. You need the reps more than the wins right now.",
   net_defense:
     "When someone speeds up at you, your first job is to stay in the point — not counter-attack. Block first, look for offense second.",
   dink_patience:

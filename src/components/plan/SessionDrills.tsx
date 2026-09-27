@@ -1,68 +1,50 @@
 import Link from "next/link";
 
 import type { Drill } from "@/lib/drills";
-import type { WeeklyProgress } from "@/lib/drill-sessions";
-import { sessionShape } from "@/lib/session-plan";
+import type { TodayLogEntry, WeeklyProgress } from "@/lib/drill-sessions";
 
 /**
- * The Plan tab's session block: one line saying what this week and today
- * consist of, then today's drills as cards.
+ * The Plan tab's drill cards — today's session, one card per drill.
  *
- * Each card is three rows and an action — name with its status, a mono
- * metadata line, one sentence saying what the drill is, then "Start drill"
- * into the guided session. The technique instructions are not here: they
- * belong on the guided session's brief, beside the animated shot, and putting
- * them on a list card squeezed eight lines of text between a checkbox and a
- * status badge. Status sits in the first row, not in a column of its own.
+ * Each card is three rows and an action: name with its status chip, a mono
+ * metadata line, one sentence saying what the drill is, then a button into
+ * the guided session. The next recommended drill (the first not logged today)
+ * carries the page's one primary button; any other drill's is secondary. A
+ * logged drill keeps its full contrast and shows the number that was logged —
+ * dimming it read as disabled, and the result is the point.
  *
- * There is no checkbox. The old card was a form that logged the drill as done
- * on a single tap — the same record the guided session writes after a timed
- * drill and a scored result, so a casual tap created a performance entry
- * indistinguishable from a real one. The guided session is now the only way
- * to log, and the card just says whether that has happened.
+ * There is no checkbox. The guided session is the only way to log, so a
+ * casual tap cannot create a performance record.
  *
  * Presentational on purpose (the page does the querying), so the states can be
  * rendered and checked without a signed-in account.
- *
- * Today's session is every drill on the plan, same sitting (`session-plan.ts`).
- * "In progress" is the one state where a drill really is due today — the
- * session only counts if the rest is logged in the same sitting. Before that
- * there is no schedule to be late against, so nothing is badged: the plan asks
- * for two sessions a week, on any days.
  */
 export function SessionDrills({
   drills: planDrills,
-  completedToday,
+  todayLog,
   weekly,
 }: {
   drills: Drill[];
-  /** Ids of drills already logged today. */
-  completedToday: string[];
+  /** Drills already logged today, with results. */
+  todayLog: TodayLogEntry[];
   weekly: WeeklyProgress;
 }) {
-  const done = new Set(completedToday);
-  const remainingToday = planDrills.filter((d) => !done.has(d.id));
+  const logged = new Map(todayLog.map((e) => [e.drillId, e.result]));
+  const remainingToday = planDrills.filter((d) => !logged.has(d.id));
   const todayComplete = planDrills.length > 0 && remainingToday.length === 0;
   const inProgress = !todayComplete && remainingToday.length < planDrills.length;
   const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
+  const nextId = remainingToday[0]?.id ?? null;
 
   return (
     <>
-      {/*
-        One line that says what was agreed to, in the same words the plan
-        preview used: how many sessions this week, and what today's is
-        made of. The drill cards under it are that session's contents.
-      */}
-      {planDrills.length > 0 && (
-        <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-2">
-          This week: {weekly.total} sessions ·{" "}
-          {todayComplete
-            ? "today's is done"
-            : inProgress
-              ? `left today: ${sessionShape(remainingToday)}`
-              : weekComplete
-                ? "all done — anything more is extra"
-                : `today: ${sessionShape(planDrills)}`}
+      {todayComplete && (
+        <p className="text-[14px] leading-[1.5] text-ink-2">
+          Today&apos;s session complete.{" "}
+          {weekComplete
+            ? "Both sessions done this week — week " +
+              "resets Monday."
+            : `Next session: any other day this week (${weekly.total - weekly.completed} to go).`}
         </p>
       )}
 
@@ -71,26 +53,19 @@ export function SessionDrills({
           <p className="text-sm text-ink-2">No drills on this plan.</p>
         )}
         {planDrills.map((drill, i) => {
-          const logged = done.has(drill.id);
+          const isLogged = logged.has(drill.id);
+          const result = logged.get(drill.id) ?? null;
+          const isNext = drill.id === nextId;
           return (
-            <article
-              key={drill.id}
-              className={`rounded-2xl border bg-surface px-5 py-4 ${
-                logged ? "border-line" : "border-line-strong"
-              }`}
-            >
+            <article key={drill.id} className="rounded-2xl border border-line bg-surface px-5 py-4">
               {/* Row 1 — name and status */}
               <div className="flex items-start justify-between gap-3">
-                <h3
-                  className={`font-display text-[17px] font-semibold leading-[1.3] ${
-                    logged ? "text-ink-3" : "text-ink"
-                  }`}
-                >
+                <h3 className="font-display text-[17px] font-semibold leading-[1.3] text-ink">
                   {drill.name}
                 </h3>
-                {logged ? (
+                {isLogged ? (
                   <span className="shrink-0 rounded-xs bg-optic-dim px-[9px] py-[5px] font-mono text-[10px] leading-none tracking-[0.1em] text-optic">
-                    LOGGED
+                    {result === null ? "LOGGED" : `LOGGED · ${result}/10`}
                   </span>
                 ) : inProgress ? (
                   <span className="shrink-0 rounded-xs bg-warn/[0.12] px-[9px] py-[5px] font-mono text-[10px] leading-none tracking-[0.1em] text-warn">
@@ -105,25 +80,22 @@ export function SessionDrills({
               </p>
 
               {/* Row 3 — the task, one sentence, full width */}
-              <p
-                className={`mt-2.5 text-pretty text-[14px] leading-[1.5] ${
-                  logged ? "text-ink-3" : "text-ink-2"
-                }`}
-              >
+              <p className="mt-2.5 text-pretty text-[14px] leading-[1.5] text-ink-2">
                 {drill.task}
               </p>
 
-              {/* Action — into the guided session, which is the only place a
-                  result gets logged. Secondary, not optic: the page's one
-                  accent is the in-game rule card. */}
-              {!logged && (
+              {/* Action — into the guided session, the only place a result
+                  gets logged. Primary on the next drill, secondary otherwise. */}
+              {!isLogged && (
                 <Link
                   href={`/session?drill=${encodeURIComponent(drill.id)}`}
-                  className="mt-4 inline-flex h-11 items-center justify-center rounded-lg border border-line-strong bg-surface-2 px-5 text-[14px] font-semibold text-ink transition-colors hover:border-line-hover"
+                  className={
+                    isNext
+                      ? "mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-optic px-5 text-[14px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+                      : "mt-4 inline-flex h-11 items-center justify-center rounded-lg border border-line-strong bg-surface-2 px-5 text-[14px] font-semibold text-ink transition-colors hover:border-line-hover"
+                  }
                 >
-                  {inProgress && remainingToday[0]?.id === drill.id
-                    ? "Continue session"
-                    : "Start drill"}
+                  {isNext && inProgress ? "Continue session" : "Start drill"}
                 </Link>
               )}
             </article>

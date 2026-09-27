@@ -7,13 +7,24 @@ import { logGuidedSession } from "@/app/(app)/plan/actions";
 import type { WeeklyProgress } from "@/lib/drill-sessions";
 import { ShotDemo } from "@/components/session/ShotDemo";
 
-type Step = "brief" | "active" | "log" | "done";
+type Step = "brief" | "active" | "log";
 
 /** One drill of the session, as the flow needs it. */
 export interface GuidedDrill {
   id: string;
   name: string;
+  /** Full technique instructions — behind "View instructions" on the timer. */
   instructions: string;
+  /** "Partner" / "Wall" / "Solo". */
+  setup: string;
+  /** One technique cue for the timer screen. */
+  cue: string;
+  /** What to log when the timer ends. */
+  logProtocol: string;
+  /** What counts as a success. */
+  counts: string;
+  /** "7 of 10". */
+  practiceTarget: string;
   duration: string;
   durationMinutes: number;
   logPrompt: string;
@@ -29,16 +40,16 @@ export interface OutlineItem {
 
 export interface GuidedSessionProps {
   planId: string;
-  /** Skill title from SKILL_TITLES — the bottleneck these drills serve. */
-  skillTitle: string;
-  /** "25 minutes, 2 drills" — the whole session, not what is left of it. */
-  sessionShape: string;
   /** Every drill in today's session, in order, with what is already logged. */
   outline: OutlineItem[];
-  /** The drills still to run today, in order. Never empty. */
+  /** The drills still to run today, in order. */
   drills: GuidedDrill[];
+  /** The plan's match re-test target sentence, shown beside the practice target. */
+  retestMetric: string | null;
   /** Weekly count as of page load, shown if the log write returns nothing. */
   fallbackWeekly: WeeklyProgress;
+  /** The write. Defaults to the real server action; a fixture can substitute one. */
+  log?: typeof logGuidedSession;
 }
 
 /** "9:05" — mono countdown, per the design system's "countdown is mono" rule. */
@@ -49,67 +60,92 @@ function formatClock(totalSeconds: number): string {
 }
 
 /**
- * One session = every drill on the plan, same day (`session-plan.ts`). The
- * flow loops brief → timer → log once per remaining drill and only reaches
- * the confirmation after the last one, because that is the moment the session
- * actually counts. Each drill is written as it is logged, so quitting halfway
- * loses nothing: Home offers "Finish today's session" and this route resumes
- * at the first drill not yet logged today.
+ * One session = every drill on the plan, same sitting (`session-plan.ts`).
+ * The flow loops brief → timer → log once per remaining drill and reaches the
+ * confirmation only after the last one, because that is the moment the
+ * session counts. Each drill is written as it is logged, so quitting halfway
+ * loses nothing: the route resumes at the first drill not yet logged today.
+ *
+ * Which drill is current is DERIVED, never stored as an index into `drills`.
+ * The log action calls `revalidatePath`, and Next answers a revalidating
+ * action by re-rendering the current route and handing this component fresh
+ * props — with the drill just logged removed from `drills`. The old code kept
+ * `index` in state and advanced it to 1 while the array shrank to one entry,
+ * so `drills[1].id` threw on a real phone the moment drill 1 was logged (a
+ * retry worked because the fresh mount started at 0). Now the current drill
+ * is the first in `drills` that this visit has not logged, which is the same
+ * drill whether or not the refreshed props have arrived.
  */
 export function GuidedSession(props: GuidedSessionProps) {
-  const [index, setIndex] = useState(0);
   const [step, setStep] = useState<Step>("brief");
   const [selected, setSelected] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weekly, setWeekly] = useState<WeeklyProgress>(props.fallbackWeekly);
-  // Drill ids logged during this visit, so the outline ticks them off.
+  // Drill ids whose write was CONFIRMED during this visit.
   const [loggedNow, setLoggedNow] = useState<string[]>([]);
+  // A ref, not only state: two taps in one frame both read the same stale
+  // `pending`, and the server's per-day dedup should be the last line, not
+  // the first.
+  const inFlight = useRef(false);
 
-  const drill = props.drills[index];
-  const isLast = index === props.drills.length - 1;
   const outline = props.outline.map((item) => ({
     ...item,
     doneToday: item.doneToday || loggedNow.includes(item.id),
   }));
+  const drill = props.drills.find((d) => !loggedNow.includes(d.id));
+
+  // Every drill confirmed: the session is complete. This is also what the
+  // route renders on a fresh load once everything is logged, so the swap Next
+  // makes after the last log (fresh props, no drills left) lands on the same
+  // screen this is already showing.
+  if (!drill) {
+    return (
+      <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+        <SessionCompleteScreen weekly={weekly} />
+      </main>
+    );
+  }
+
   const position = outline.findIndex((item) => item.id === drill.id) + 1;
+  const next = outline.find((item, i) => i >= position && !item.doneToday) ?? null;
 
   return (
     <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
       {step === "brief" && (
         <BriefScreen
           drill={drill}
-          skillTitle={props.skillTitle}
-          sessionShape={props.sessionShape}
-          outline={outline}
           position={position}
+          total={outline.length}
+          next={next}
+          retestMetric={props.retestMetric}
           onBegin={() => setStep("active")}
         />
       )}
 
       {step === "active" && (
-        // Keyed by drill so the second drill gets its own fresh deadline.
+        // Keyed by drill so each drill gets its own fresh clock.
         <ActiveScreen key={drill.id} drill={drill} onFinish={() => setStep("log")} />
       )}
 
       {step === "log" && (
         <LogScreen
           drill={drill}
-          isLast={isLast}
+          isLast={next === null}
           selected={selected}
           onSelect={setSelected}
           pending={pending}
           error={error}
           onSubmit={async () => {
-            if (selected === null || pending) return;
+            if (selected === null || inFlight.current) return;
+            inFlight.current = true;
             setPending(true);
             setError(null);
             try {
-              const result = await logGuidedSession(props.planId, drill.id, selected);
+              const result = await (props.log ?? logGuidedSession)(props.planId, drill.id, selected);
               // null means the server refused the write (signed out, or not
-              // this user's plan). It used to fall through to "Session
-              // logged", which is the one thing this screen must never say
-              // about a number that was not saved.
+              // this user's plan). Nothing below may run until the write is
+              // confirmed: "logged" is only ever said about a saved number.
               if (!result) {
                 setError("Couldn't save that — you may have been signed out. Sign in and try again.");
                 return;
@@ -117,50 +153,50 @@ export function GuidedSession(props: GuidedSessionProps) {
               setWeekly(result);
               setLoggedNow((ids) => [...ids, drill.id]);
               setSelected(null);
-              if (isLast) {
-                setStep("done");
-              } else {
-                setIndex((i) => i + 1);
-                setStep("brief");
-              }
+              setStep("brief");
             } catch {
               // Keep them on the log screen with their number intact — a failed
               // write should never look like a successful session.
               setError("Couldn't save that. Check your connection and try again.");
             } finally {
+              inFlight.current = false;
               setPending(false);
             }
           }}
         />
       )}
-
-      {step === "done" && <DoneScreen weekly={weekly} />}
     </main>
   );
 }
 
 /* ── Screen 1 — Brief ───────────────────────────────────────────── */
+/**
+ * Drill n of m · duration · setup, the title, the instructions, the logging
+ * protocol, the diagram, Begin. What is NOT here any more: the session's
+ * total, the skill category, and an outline that repeated the title and
+ * duration — the next drill is one small line at the bottom instead.
+ */
 function BriefScreen({
   drill,
-  skillTitle,
-  sessionShape,
-  outline,
   position,
+  total,
+  next,
+  retestMetric,
   onBegin,
 }: {
   drill: GuidedDrill;
-  skillTitle: string;
-  sessionShape: string;
-  outline: OutlineItem[];
   position: number;
+  total: number;
+  next: OutlineItem | null;
+  retestMetric: string | null;
   onBegin: () => void;
 }) {
   return (
     <>
       <header className="flex items-center justify-between pt-4">
         <Link
-          href="/home"
-          aria-label="Back to home"
+          href="/plan"
+          aria-label="Back to plan"
           className="flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -173,100 +209,83 @@ function BriefScreen({
             />
           </svg>
         </Link>
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
-          Drill {position} of {outline.length} · {drill.duration}
+        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
+          Drill {position} of {total} · {drill.duration} · {drill.setup}
         </span>
       </header>
 
-      <div className="flex flex-col gap-2.5">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-2">
-          Today&apos;s session · {sessionShape}
-        </p>
-        <h1 className="font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em]">
-          {drill.name}
-        </h1>
-        <p className="text-[13px] text-ink">{skillTitle}</p>
-      </div>
-
-      {/*
-        The whole session, so nobody finds out about the second drill after
-        finishing the first. The current drill reads in `ink`; logged ones are
-        struck through. No accent: the one thing this screen points at is Begin.
-      */}
-      {outline.length > 1 && (
-        <ol className="flex flex-col rounded-xl border border-line bg-surface px-4">
-          {outline.map((item, i) => {
-            const current = item.id === drill.id;
-            return (
-              <li
-                key={item.id}
-                className={`flex items-center justify-between gap-3 py-2.5 ${
-                  i === 0 ? "" : "border-t border-line"
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <span className="w-4 shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
-                    {item.doneToday ? "✓" : i + 1}
-                  </span>
-                  <span
-                    className={`text-[14px] font-semibold leading-[1.3] ${
-                      item.doneToday
-                        ? "text-ink-3 line-through"
-                        : current
-                          ? "text-ink"
-                          : "text-ink-2"
-                    }`}
-                  >
-                    {item.name}
-                  </span>
-                </span>
-                <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] tabular-nums text-ink-3">
-                  {item.duration}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-      )}
+      <h1 className="font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em]">
+        {drill.name}
+      </h1>
 
       <p className="text-[15px] leading-[1.6] text-ink">{drill.instructions}</p>
 
+      {/*
+        What gets logged, settled before the clock starts. One protocol for
+        every drill (the last set of ten), what counts, and the two targets
+        labelled apart so "7 of 10" here and "aim for 5+" on the plan read as
+        two different measurements rather than a contradiction.
+      */}
+      <section className="flex flex-col gap-2.5 rounded-xl border border-line bg-surface px-4 py-3.5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+          When the timer ends
+        </p>
+        <p className="text-[14px] leading-[1.5] text-ink">
+          <span className="font-semibold">{drill.logProtocol}</span> {drill.counts}
+        </p>
+        <div className="flex flex-col gap-1 border-t border-line pt-2.5 font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em]">
+          <p className="text-ink-2">
+            Practice target <span className="text-ink">{drill.practiceTarget}</span>
+          </p>
+          {retestMetric && (
+            <p className="text-ink-3">
+              Match re-test target · on your plan
+            </p>
+          )}
+        </div>
+      </section>
+
       <div className="flex-1" />
 
-      {/* Shot demo sits centered in the empty space below the description. It
-          renders nothing for drills whose animation isn't built yet, in which
-          case the two spacers simply collapse into one. */}
+      {/* Shot demo sits centered in the empty space. It renders nothing for
+          drills whose animation isn't built yet, in which case the two
+          spacers simply collapse into one. */}
       <ShotDemo drillId={drill.id} />
 
       <div className="flex-1" />
 
-      <button
-        onClick={onBegin}
-        className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
-      >
-        {position === 1 ? "Begin" : `Begin drill ${position}`}
-      </button>
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={onBegin}
+          className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+        >
+          {position === 1 ? "Begin" : `Begin drill ${position}`}
+        </button>
+        {next && (
+          <p className="text-center font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3">
+            Next: {next.name} · {next.duration}
+          </p>
+        )}
+      </div>
     </>
   );
 }
 
 /* ── Screen 2 — Active / timer ──────────────────────────────────── */
-function ActiveScreen({
-  drill,
-  onFinish,
-}: {
-  drill: GuidedDrill;
-  onFinish: () => void;
-}) {
-  const { name: drillName, instructions, durationMinutes } = drill;
-  const total = durationMinutes * 60;
+/**
+ * The clock counts against a wall-clock deadline rather than decrementing
+ * once per tick: a 15-minute drill often runs with the phone locked, where
+ * timers are throttled hard, and deriving from Date.now() keeps the clock
+ * right when they look back at it. Pause stores what is left and drops the
+ * deadline; Resume sets a new one from what is left.
+ */
+function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () => void }) {
+  const total = Math.max(1, Math.round(drill.durationMinutes * 60));
 
-  // Count against a fixed wall-clock deadline rather than decrementing once per
-  // tick: a 15-minute drill will often be running with the phone locked or the
-  // tab backgrounded, where timers get throttled hard. Deriving from Date.now()
-  // means the clock is still correct when they look back at it.
-  const [deadline] = useState(() => Date.now() + total * 1000);
+  const [deadline, setDeadline] = useState<number | null>(() => Date.now() + total * 1000);
   const [remaining, setRemaining] = useState(total);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const paused = deadline === null;
 
   // onFinish in a ref so the countdown effect doesn't re-run (and restart the
   // timer) on every parent render.
@@ -274,36 +293,38 @@ function ActiveScreen({
   onFinishRef.current = onFinish;
 
   useEffect(() => {
-    const tick = () =>
-      setRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    if (deadline === null) return;
+    const tick = () => setRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
     tick();
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
   }, [deadline]);
 
-  // Advancing is a side effect of hitting zero, so it belongs in its own effect
-  // — firing it from inside the state updater above would be a setState during
-  // another component's render.
+  // Advancing is a side effect of hitting zero, so it belongs in its own
+  // effect — firing it from inside the state updater above would be a
+  // setState during another component's render.
   useEffect(() => {
     if (remaining === 0) onFinishRef.current();
   }, [remaining]);
 
-  const elapsedPct = total > 0 ? ((total - remaining) / total) * 100 : 0;
+  const elapsedPct = ((total - remaining) / total) * 100;
 
   return (
     <>
       <header className="flex items-center justify-between pt-4">
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-2">
-          In session
+          {paused ? "Paused" : "In session"}
         </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-2">
-          {drillName}
+          {drill.name}
         </span>
       </header>
 
-      <div className="flex flex-col items-center gap-5 pt-8">
+      <div className="flex flex-col items-center gap-5 pt-6">
         <p
-          className="font-mono text-[64px] font-medium leading-none tabular-nums"
+          className={`font-mono text-[64px] font-medium leading-none tabular-nums ${
+            paused ? "text-ink-2" : ""
+          }`}
           aria-live="off"
         >
           {formatClock(remaining)}
@@ -316,24 +337,48 @@ function ActiveScreen({
         </div>
       </div>
 
-      <p className="text-[15px] leading-[1.6] text-ink">{instructions}</p>
-
-      {/* What the clock running out means, stated once for every drill: a
-          target in the instructions is something to work toward, not a gate
-          the timer can fail you at. */}
-      <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-3">
-        When the clock hits zero, stop where you are and log it. Falling short
-        of a target still counts.
-      </p>
+      {/* One cue and the measurement reminder — not the paragraph again. */}
+      <div className="flex flex-col gap-3">
+        <p className="font-display text-[20px] font-bold leading-[1.3] tracking-[-0.01em]">
+          {drill.cue}
+        </p>
+        <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-3">
+          {drill.logProtocol} When the clock hits zero, stop where you are and log it — falling
+          short of {drill.practiceTarget} still counts.
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowInstructions((v) => !v)}
+          aria-expanded={showInstructions}
+          className="self-start font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
+        >
+          {showInstructions ? "Hide instructions" : "View instructions"}
+        </button>
+        {showInstructions && (
+          <p className="text-[14px] leading-[1.6] text-ink-2">{drill.instructions}</p>
+        )}
+      </div>
 
       <div className="flex-1" />
 
-      <button
-        onClick={onFinish}
-        className="flex h-[52px] w-full items-center justify-center rounded-lg border border-line-hover bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:bg-[#202024] active:scale-[0.98]"
-      >
-        I&apos;m done early
-      </button>
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() =>
+            setDeadline((d) => (d === null ? Date.now() + remaining * 1000 : null))
+          }
+          className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+        >
+          {paused ? "Resume" : "Pause"}
+        </button>
+        <button
+          type="button"
+          onClick={onFinish}
+          className="flex h-[44px] w-full items-center justify-center rounded-lg text-[14px] font-medium text-ink-2 transition-colors hover:text-ink"
+        >
+          Finish drill
+        </button>
+      </div>
     </>
   );
 }
@@ -367,11 +412,11 @@ function LogScreen({
       <h1 className="font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em]">
         {drill.logPrompt}
       </h1>
+      <p className="-mt-3 text-[14px] leading-[1.5] text-ink-2">{drill.counts}</p>
 
       {/* 0–10 across two rows. Option-select visual language (radius-xl,
           surface/line default, accent border + 8% fill when selected) sized
-          down to a square tap target — the pinned accent dot doesn't apply to
-          a square, so the fill and border carry the selected state. */}
+          down to a square tap target. */}
       <div className="grid grid-cols-6 gap-2.5">
         {Array.from({ length: 11 }, (_, n) => {
           const isSelected = selected === n;
@@ -402,19 +447,20 @@ function LogScreen({
         disabled={selected === null || pending}
         className="flex h-[52px] w-full items-center justify-center rounded-lg border border-transparent bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:border-line disabled:bg-surface disabled:text-ink-3"
       >
-        {pending ? "Logging…" : isLast ? "Log and finish session" : "Log and go to next drill"}
+        {pending ? "Saving…" : isLast ? "Log and finish session" : "Log and go to next drill"}
       </button>
     </>
   );
 }
 
 /* ── Screen 4 — Confirmation ────────────────────────────────────── */
-function DoneScreen({ weekly }: { weekly: WeeklyProgress }) {
-  // Deliberately no router.refresh() here. This screen is rendered by the
-  // /session route, whose server component re-resolves "which drill is due" —
-  // and the drill we just logged is no longer due, so a refresh would swap
-  // this confirmation out for the "done for the week" dead-end mid-read.
-  // Home's freshness is already handled by revalidatePath in the action.
+/**
+ * Shown only once every drill's write has been confirmed. Exported so the
+ * /session route renders the identical screen when it loads with nothing
+ * left to do, which is also what Next swaps in after the last log.
+ */
+export function SessionCompleteScreen({ weekly }: { weekly: WeeklyProgress }) {
+  const weekDone = weekly.total > 0 && weekly.completed >= weekly.total;
   return (
     <>
       <div className="flex-1" />
@@ -427,17 +473,18 @@ function DoneScreen({ weekly }: { weekly: WeeklyProgress }) {
           Session logged.
         </h1>
         <p className="text-[15px] leading-[1.6] text-ink-2">
-          {weekly.completed} of {weekly.total} sessions this week.
+          {weekly.completed} of {weekly.total} sessions this week.{" "}
+          {weekDone ? "That's the week — rest counts too." : "The next one is any other day."}
         </p>
       </div>
 
       <div className="flex-1" />
 
       <Link
-        href="/home"
+        href="/plan"
         className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
       >
-        Back to home
+        Back to plan
       </Link>
     </>
   );

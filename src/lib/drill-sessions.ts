@@ -240,6 +240,35 @@ export async function getCompletedTodayDrillIds(
   return new Set((data ?? []).map((row) => row.drill_id as string));
 }
 
+/** One drill logged in the current sitting, with the number recorded (if any). */
+export interface TodayLogEntry {
+  drillId: string;
+  result: number | null;
+}
+
+/**
+ * Today's log with results — what the Plan tab shows on a completed card.
+ * Same window as `getCompletedTodayDrillIds`.
+ */
+export async function getTodayLog(
+  supabase: SupabaseClient,
+  planId: string
+): Promise<TodayLogEntry[]> {
+  const since = new Date(
+    Math.min(startOfTodayUTC().getTime(), Date.now() - SESSION_WINDOW_MS)
+  );
+  const { data, error } = await supabase
+    .from("drill_sessions")
+    .select("drill_id, result_value")
+    .eq("plan_id", planId)
+    .gte("completed_at", since.toISOString());
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    drillId: row.drill_id as string,
+    result: (row.result_value as number | null) ?? null,
+  }));
+}
+
 export interface StreakResult {
   /** Consecutive weeks (up to now) hitting the session target. */
   streakCount: number;

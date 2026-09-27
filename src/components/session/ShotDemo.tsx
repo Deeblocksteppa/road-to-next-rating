@@ -29,13 +29,22 @@ import { shotTypeForDrill, type ShotType } from "@/lib/drill-shot";
 
 const COURT = "#4A4A50"; // line-hover — muted but legible court lines
 const OPTIC = "#D8E34C";
-const LABEL = "#80807B"; // ink-3
+// ink-2, not ink-3: at 6.5px the labels were the least legible thing on the
+// screen. Raised a step and a size along with it.
+const LABEL = "#B0B0AB";
 const GROUND = 120;
 const NET_X = 178;
 const NET_TOP = 88;
 
-export function ShotDemo({ drillId }: { drillId: string }) {
-  const reduced = usePrefersReducedMotion();
+export function ShotDemo({
+  drillId,
+  forceStatic = false,
+}: {
+  drillId: string;
+  /** Render the reduced-motion state regardless of the OS setting (previews, fixtures). */
+  forceStatic?: boolean;
+}) {
+  const reduced = usePrefersReducedMotion() || forceStatic;
 
   const type = shotTypeForDrill(drillId);
   if (!type) return null;
@@ -44,20 +53,27 @@ export function ShotDemo({ drillId }: { drillId: string }) {
   return (
     <div role="img" aria-label={demo.aria} className="w-full">
       <svg viewBox="0 0 320 140" className="h-auto w-full" aria-hidden="true">
-        {/* Ground + net — shared by every shot so the family reads as one set. */}
+        {/* Ground + net — shared by every shot so the family reads as one set.
+            The net is labelled: without it the post read as a stray tick. */}
         <line x1="12" y1={GROUND} x2="308" y2={GROUND} stroke={COURT} strokeWidth="1" />
         <line x1={NET_X} y1={GROUND} x2={NET_X} y2={NET_TOP} stroke={COURT} strokeWidth="1.5" strokeLinecap="round" />
         <line x1={NET_X - 5} y1={NET_TOP} x2={NET_X + 5} y2={NET_TOP} stroke={COURT} strokeWidth="1.5" strokeLinecap="round" />
+        {/* Beside the post at mid-height, not above it: every arc crosses the
+            space above the net, and the label was sitting in the flight path. */}
+        <text x={NET_X - 6} y={NET_TOP + 14} fill={LABEL} fontSize="7" letterSpacing="0.1em" textAnchor="end" fontFamily="var(--font-mono), monospace">
+          NET
+        </text>
 
         {/* Per-shot court marks (kitchen band, position ticks) sit on the court. */}
         {demo.marks}
 
-        {/* Trajectory — dotted arc in optic. */}
+        {/* Trajectory — dotted arc in optic. Under reduced motion it is the
+            whole story, so it is drawn a step stronger there. */}
         <path
           d={demo.motion.path}
           fill="none"
           stroke={OPTIC}
-          strokeOpacity="0.5"
+          strokeOpacity={reduced ? "0.8" : "0.5"}
           strokeWidth="1.5"
           strokeDasharray="0.5 5"
           strokeLinecap="round"
@@ -66,6 +82,13 @@ export function ShotDemo({ drillId }: { drillId: string }) {
         {demo.labels}
         <Ball reduced={reduced} motion={demo.motion} />
       </svg>
+      {/* Under reduced motion the ball is parked at the landing point and the
+          arc carries the shape, so the picture is complete without playing. */}
+      {reduced && (
+        <p className="mt-1 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
+          Dotted line: the ball&apos;s path · ball: where it lands
+        </p>
+      )}
     </div>
   );
 }
@@ -77,15 +100,34 @@ function Tick({ x, top }: { x: number; top: number }) {
   return <line x1={x} y1={GROUND} x2={x} y2={top} stroke={COURT} strokeWidth="1.5" strokeLinecap="round" />;
 }
 
-/** The dim-optic band on the ground marking the kitchen — the target zone. */
+/**
+ * The optic band on the ground marking the kitchen — the target zone. A
+ * hairline in optic on top of the band so the zone has an edge, not just a
+ * tint; the earlier 12% fill was hard to find on a phone outdoors.
+ */
 function KitchenBand({ x1, x2 }: { x1: number; x2: number }) {
-  return <rect x={x1} y={GROUND - 4} width={x2 - x1} height="4" fill="rgba(216,227,76,0.12)" />;
+  return (
+    <>
+      <rect x={x1} y={GROUND - 5} width={x2 - x1} height="5" fill="rgba(216,227,76,0.2)" />
+      <line x1={x1} y1={GROUND - 5} x2={x2} y2={GROUND - 5} stroke={OPTIC} strokeOpacity="0.6" strokeWidth="1" />
+    </>
+  );
+}
+
+/** A ring on the ground where the shot should land — the target, not the ball. */
+function Target({ x }: { x: number }) {
+  return (
+    <>
+      <circle cx={x} cy={GROUND} r="6" fill="none" stroke={OPTIC} strokeOpacity="0.7" strokeWidth="1" strokeDasharray="2 2" />
+      <circle cx={x} cy={GROUND} r="1.5" fill={OPTIC} fillOpacity="0.7" />
+    </>
+  );
 }
 
 /** A mono court label centered under the court, matching the drop's language. */
 function CourtLabel({ x, children }: { x: number; children: string }) {
   return (
-    <text x={x} y="134" fill={LABEL} fontSize="6.5" letterSpacing="0.1em" textAnchor="middle" fontFamily="var(--font-mono), monospace">
+    <text x={x} y="134" fill={LABEL} fontSize="7" letterSpacing="0.1em" textAnchor="middle" fontFamily="var(--font-mono), monospace">
       {children}
     </text>
   );
@@ -153,12 +195,13 @@ const DEMOS: Record<ShotType, Demo> = {
         <KitchenBand x1={178} x2={214} />
         <Tick x={44} top={108} />
         <Tick x={214} top={110} />
+        <Target x={196} />
       </>
     ),
     labels: (
       <>
         <CourtLabel x={44}>BASELINE</CourtLabel>
-        <CourtLabel x={196}>KITCHEN</CourtLabel>
+        <CourtLabel x={196}>KITCHEN · TARGET</CourtLabel>
       </>
     ),
     motion: {
@@ -185,12 +228,13 @@ const DEMOS: Record<ShotType, Demo> = {
         <KitchenBand x1={178} x2={214} />
         <Tick x={115} top={108} />
         <Tick x={214} top={110} />
+        <Target x={205} />
       </>
     ),
     labels: (
       <>
         <CourtLabel x={115}>MID-COURT</CourtLabel>
-        <CourtLabel x={196}>KITCHEN</CourtLabel>
+        <CourtLabel x={205}>KITCHEN · TARGET</CourtLabel>
       </>
     ),
     motion: {
