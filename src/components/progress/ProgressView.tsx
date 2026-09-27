@@ -202,11 +202,16 @@ function LockedState({
 
       <div className="flex-1" />
 
+      {/* No price on an entry point. The paywall this opens shows both plans
+          with their full terms; a single price here picked one for the
+          player and hid the other. The same rule holds for the Delta screen
+          and Settings upgrade buttons. Only the paywall's own Continue
+          button names a price, because it confirms the plan just chosen. */}
       <Link
         href="/paywall?from=/progress"
         className="flex h-14 w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
       >
-        Unlock Progress — $79/year ($6.58/mo)
+        Unlock Progress
       </Link>
     </>
   );
