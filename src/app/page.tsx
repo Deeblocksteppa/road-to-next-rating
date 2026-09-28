@@ -20,21 +20,21 @@ import { StatRow } from "@/components/marketing/StatRow";
  * The anonymous assessment funnel lives at /start.
  */
 export const metadata: Metadata = {
-  title: "Road to Next Rating — find the one skill capping your pickleball rating",
+  title: "Road to Next Rating — find the pickleball skill to work on first",
   description:
-    "You don't have ten weaknesses. You have one. Twelve questions finds the skill holding your rating at 3.5, why it hasn't moved, and the three weeks that fix it. Free.",
+    "You don't need to fix ten things. Start with one. Twelve questions find the skill to work on first, why it hasn't moved, and a three-week plan to work on it. Free.",
   openGraph: {
-    title: "You don't have ten weaknesses. You have one.",
+    title: "You don't need to fix ten things. Start with one.",
     description:
-      "Twelve questions finds the one skill capping your pickleball rating — and the three weeks that fix it. Free, no signup.",
+      "Twelve questions find the pickleball skill to work on first, with a three-week plan to work on it. Free, no signup.",
     siteName: "Road to Next Rating",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "You don't have ten weaknesses. You have one.",
+    title: "You don't need to fix ten things. Start with one.",
     description:
-      "Twelve questions finds the one skill capping your pickleball rating — and the three weeks that fix it. Free, no signup.",
+      "Twelve questions find the pickleball skill to work on first, with a three-week plan to work on it. Free, no signup.",
   },
 };
 

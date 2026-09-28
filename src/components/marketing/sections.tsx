@@ -5,11 +5,17 @@ import { AppShot } from "./AppShot";
 import type { ShotKey } from "./shots";
 import { BreakRule } from "./BreakRule";
 import { RiseIn } from "./RiseIn";
-import { GapLedger, RetestReadout, RootCauseReadout, ScoreReadout } from "./readouts";
+import {
+  GapLedger,
+  RetestReadout,
+  RootCauseReadout,
+  ScoreReadout,
+  SessionBriefReadout,
+} from "./readouts";
 import {
   Body,
+  Caption,
   Cta,
-  Label,
   Section,
   SectionHeading,
   SectionLabel,
@@ -42,7 +48,7 @@ export function SiteHeader() {
             the row its height back. */}
         <Link
           href="/login"
-          className="-mx-2 -my-3 px-2 py-3 text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink hover:decoration-ink-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
+          className="-mx-2 -my-3 shrink-0 whitespace-nowrap px-2 py-3 text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink hover:decoration-ink-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
         >
           Sign in
         </Link>
@@ -62,39 +68,36 @@ export function Hero() {
           point of putting real product data here instead of a phone frame.
         */}
         <div className="grid gap-y-8 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] md:items-end md:gap-x-14 lg:gap-x-20">
-          <div>
-            <div className="hero-in" style={{ "--hero-delay": "80ms" } as React.CSSProperties}>
-              <Label>For players stuck at 3.0–4.0</Label>
-            </div>
-
-            <h1
-              className="hero-in mt-5 text-balance font-display text-[40px] font-extrabold leading-[1.06] tracking-[-0.03em] text-ink md:text-[64px] md:leading-[1.03] lg:text-[80px]"
-              style={{ "--hero-delay": "160ms" } as React.CSSProperties}
-            >
-              You don&apos;t have ten weaknesses. You have one.
-            </h1>
-          </div>
+          {/*
+            Headline, one sentence, the CTA, one caption — nothing else. The
+            eyebrow and a three-sentence lede used to stack above the CTA and
+            pushed it below the fold at 375px; the audience ("stuck at
+            3.0–4.0") now rides in the one sentence.
+          */}
+          <h1
+            className="hero-in text-balance font-display text-[40px] font-extrabold leading-[1.06] tracking-[-0.03em] text-ink md:text-[64px] md:leading-[1.03] lg:text-[80px]"
+            style={{ "--hero-delay": "120ms" } as React.CSSProperties}
+          >
+            You don&apos;t need to fix ten things. Start with one.
+          </h1>
 
           <div className="md:pb-2">
             <p
-              className="hero-in max-w-[44ch] text-pretty text-[17px] leading-[1.55] text-ink-1 md:text-[20px] md:leading-[1.5]"
-              style={{ "--hero-delay": "240ms" } as React.CSSProperties}
+              className="hero-in max-w-[40ch] text-pretty text-[17px] leading-[1.55] text-ink-1 md:text-[20px] md:leading-[1.5]"
+              style={{ "--hero-delay": "220ms" } as React.CSSProperties}
             >
-              You&apos;ve been playing for two years and still don&apos;t know what&apos;s
-              actually holding you back. Twelve questions finds the one skill capping your
-              rating — and the three weeks that fix it.
+              Stuck at 3.0–4.0? Twelve questions find the skill to work on first, with a
+              three-week plan to work on it.
             </p>
 
             <div
-              className="hero-in mt-8 flex flex-col items-start gap-4"
-              style={{ "--hero-delay": "320ms" } as React.CSSProperties}
+              className="hero-in mt-7 flex flex-col items-start gap-3"
+              style={{ "--hero-delay": "300ms" } as React.CSSProperties}
             >
               <Cta href={START} className="w-full sm:w-auto">
                 Find your bottleneck — free
               </Cta>
-              <Label tone="body">
-                {QUESTIONS.length} questions · 4 minutes · no signup required
-              </Label>
+              <Caption>{QUESTIONS.length} questions · about 4 minutes · no signup</Caption>
             </div>
           </div>
         </div>
@@ -279,16 +282,16 @@ export function HowItWorks() {
         <DataStep
           index="01"
           label="The skill"
-          heading="Which of the four skills that gate 4.0 is actually your constraint."
-          body="Four skills get scored, then weighted by how much each one separates 3.5 from 4.0. The largest weighted gap is your bottleneck — not a ranked list of ten things."
+          heading="Which of the four skills that gate 4.0 to work on first."
+          body="Each skill is scored from your answers and weighted by how much it matters at 4.0. The largest gap is where the plan starts."
         >
           <GapLedger />
         </DataStep>
         <DataStep
           index="02"
           label="The root cause"
-          heading="And why that skill never developed, given how you actually train."
-          body="The same twelve answers separately diagnose your training structure. The same weak shot has a different fix depending on which one you are — and this is the part nothing else tells you."
+          heading="And why that skill hasn't developed, given how you train."
+          body="Three answers describe how you practice. A player who mostly plays games needs a different plan from one who drills but can't carry it into matches."
         >
           <RootCauseReadout />
         </DataStep>
@@ -296,7 +299,7 @@ export function HowItWorks() {
           index="03"
           label="The reading"
           heading="One number you can re-test against, instead of a vibe."
-          body="Both axes resolve into a readiness score for 4.0. You re-test after the plan, so improvement becomes a delta instead of a feeling."
+          body="Both answers roll up into a readiness score for 4.0. Re-test after the plan and you see how far it moved."
           // Measured off the capture: content runs 0.26–0.65 down the source,
           // everything else is empty screen, so `center` on a tight reveal
           // lands below all of it. 0.62 is the shallowest crop that still
@@ -317,9 +320,9 @@ export function HowItWorks() {
       */}
       <RiseIn className="mt-16 flex flex-col items-center gap-4 md:mt-20">
         <Cta href={START}>Find your bottleneck — free</Cta>
-        <Label tone="body" className="text-center">
-          {QUESTIONS.length} questions · 4 minutes · no signup required
-        </Label>
+        <Caption className="text-center">
+          {QUESTIONS.length} questions · about 4 minutes · no signup
+        </Caption>
       </RiseIn>
     </Section>
   );
@@ -392,33 +395,31 @@ export function Plan() {
         </div>
 
         {/*
-          The page's one bleed. Cropping a frame flat is a depth signal that
-          says the screen carries on past the edge; it only reads that way
-          while it is the exception, so it is spent here — the longest single
-          screen on the page, beside the list describing what fills it — and
-          nowhere else.
+          The example plan's first drill, rendered live with the guided
+          session's own brief and shot diagram. It replaced `session.png`, a
+          capture that went stale every time the drill copy changed.
         */}
-        <RiseIn delay={120} className="mx-auto w-full max-w-[320px] md:max-w-none">
-          <AppShot shot="session" reveal={0.72} bleed />
+        <RiseIn delay={120} className="w-full">
+          <SessionBriefReadout />
         </RiseIn>
       </div>
     </Section>
   );
 }
 
-/* ───────────────────────── Proof / progress ───────────────────────── */
+/* ───────────────────────── Re-test ───────────────────────── */
 
 export function Progress() {
   return (
     <Section className="border-t border-line-soft">
       <RiseIn className="max-w-[52ch]">
-        <SectionLabel>Proof it moved</SectionLabel>
-        <SectionHeading className="mt-5">
-          Then you re-test, and find out whether any of it worked.
-        </SectionHeading>
+        {/* Not "Proof it moved": the numbers below are illustrative, and an
+            illustration can't be proof of anything. */}
+        <SectionLabel>Re-testing</SectionLabel>
+        <SectionHeading className="mt-5">Re-test after three weeks. See what changed.</SectionHeading>
         <Body className="mt-4">
-          The score moves or it doesn&apos;t, and every skill shows its own delta. Then the
-          next bottleneck becomes the next three weeks.
+          Answer the same twelve questions again and see how your score moved. The next gap
+          becomes the next plan.
         </Body>
       </RiseIn>
 
@@ -462,17 +463,17 @@ export function Progress() {
  * product has made, and the copy should not make it on the product's behalf.
  */
 const FREE = [
-  "The full 12-question assessment and your diagnosis",
-  "A three-week plan for your bottleneck — and a new one after every re-test",
-  "Guided sessions with drill demos and logging, for as long as you train",
-  "Re-tests, with the headline score change: old reading, new reading, and the difference",
-  "Your current readiness on Home and Progress",
+  "The 12-question assessment and your diagnosis",
+  "A three-week plan, and a new one after every re-test",
+  "Guided sessions with drill demos and logging",
+  "Re-tests showing your new score and how far it moved",
+  "Your current readiness",
 ];
 
 const PAID = [
-  "Per-skill deltas on every re-test — which of the four skills moved, and by how much",
-  "Your readiness chart across every re-test, with your logged sessions beneath it",
-  "Re-test history, labelled by plan cycle",
+  "Which skills moved on each re-test, and by how much",
+  "Your readiness chart across every re-test",
+  "Full re-test history",
   "Weekly session streaks",
 ];
 
@@ -496,9 +497,9 @@ function PriceLine({
           {amount}
           <span className="text-[15px] font-semibold tracking-normal text-ink-2">{unit}</span>
         </p>
-        <p className="mt-2 font-mono text-[11px] uppercase leading-[1.5] tracking-[0.12em] tabular-nums text-ink-3">
-          {basis}
-        </p>
+        {/* Sentence case, `ink-2`: this is pricing terms, and it was a
+            spaced mono-caps line in the dimmest grey. */}
+        <p className="mt-2 text-[14px] leading-[1.45] tabular-nums text-ink-2">{basis}</p>
       </div>
       {mark ? (
         <span className="inline-flex shrink-0 items-center rounded-xs border border-line-strong px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.10em] text-ink-2">
@@ -518,8 +519,7 @@ export function Pricing() {
           The diagnosis is free. So is every plan after it.
         </SectionHeading>
         <Body className="mt-4">
-          No card to start. Paying adds the record: how each re-test compared to the
-          last, skill by skill, kept over time.
+          No card to start. Paying adds the record of what changed, skill by skill.
         </Body>
       </RiseIn>
 
@@ -539,7 +539,7 @@ export function Pricing() {
             Free
           </h3>
           <div className="mt-5">
-            <PriceLine amount="$0" unit="" basis="No card · no trial clock" />
+            <PriceLine amount="$0" unit="" basis="No card, no trial clock" />
           </div>
           <ul className="mt-8 flex flex-col gap-3.5">
             {FREE.map((item) => (
@@ -574,8 +574,8 @@ export function Pricing() {
             <PriceLine
               amount="$79"
               unit="/year"
-              basis="Equivalent to $6.58/month · billed annually"
-              mark="Best value · save 17%"
+              basis="Equivalent to $6.58 a month, billed annually. Saves 17% over monthly."
+              mark="Best value"
             />
             <div className="pt-4">
               <PriceLine amount="$7.99" unit="/month" basis="Billed monthly" />
@@ -593,27 +593,18 @@ export function Pricing() {
             ))}
           </ul>
           <div className="mt-auto pt-8">
-            {/*
-              What actually happens at the moment the two tiers diverge. The
-              offer itself appears inside the app: on the Delta screen after a
-              re-test, on Progress once there is a re-test to chart, and as a
-              row in Settings. It is never in the way of training.
-            */}
+            {/* Where the offer shows up, and nothing the bullets already say. */}
             <p className="text-[14px] leading-[1.5] text-ink-2">
-              After a re-test, everyone sees the new score and how far it moved.
-              Subscribers also see which skills moved, and each re-test joins a chart
-              and history that build from there. The offer appears inside the app; it
-              is never required to keep training.
+              Offered inside the app after a re-test. Never needed to keep training.
             </p>
           </div>
         </div>
       </RiseIn>
 
       <RiseIn delay={140} className="mt-8">
-        <Label className="text-center">
-          No card to start · cancel anytime · cancelling stops billing and keeps the
-          free tier
-        </Label>
+        <Caption className="text-center">
+          No card to start. Cancel anytime; cancelling stops billing and keeps the free tier.
+        </Caption>
       </RiseIn>
 
       {/* Last dark gesture on the page: the flat line lifts, and the section
@@ -662,8 +653,8 @@ export function FinalCta() {
             Find your bottleneck — free
           </Link>
 
-          <p className="mt-5 font-mono text-[11px] uppercase leading-[1.6] tracking-[0.16em] text-optic-ink/70">
-            {QUESTIONS.length} questions · 4 minutes · no signup required
+          <p className="mt-5 text-[14px] leading-[1.5] text-optic-ink/80">
+            {QUESTIONS.length} questions · about 4 minutes · no signup
           </p>
         </RiseIn>
       </div>

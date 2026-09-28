@@ -56,14 +56,6 @@ export const SHOTS = {
     label: "My plan — this week",
     alt: "The app's plan screen showing this week's sessions, a completed and a due task, and the in-game rule for the week.",
   },
-  session: {
-    src: "/marketing/session.png",
-    ready: true,
-    w: 1179,
-    h: 2070,
-    label: "Guided session — named drill",
-    alt: "The app's guided session screen showing the named drill for today, a diagram of the shot, and the button that starts it.",
-  },
   // NOT the Home dashboard: this file is a capture of the app's old landing
   // screen, which the marketing page replaced. Unusable here — showing it would
   // put this page's own headline inside this page. Recapture /home to enable.

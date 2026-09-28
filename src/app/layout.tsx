@@ -28,7 +28,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Road to Next Rating",
   description:
-    "You don't have ten weaknesses. You have one. Find the skill holding your rating down — and the three weeks that fix it.",
+    "You don't need to fix ten things. Start with one. Find the pickleball skill to work on first, with a three-week plan to work on it.",
 };
 
 export default function RootLayout({

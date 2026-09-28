@@ -1,5 +1,10 @@
+import { DrillBriefContent } from "@/components/session/DrillBrief";
+import { ShotDemo } from "@/components/session/ShotDemo";
 import { SKILL_TITLES } from "@/lib/diagnoses";
+import { findDrillById, toGuidedDrill } from "@/lib/drill-lookup";
+import { generateRoadmap } from "@/lib/roadmap";
 import {
+  DEMO_ANSWERS,
   DEMO_DIAGNOSIS,
   DEMO_RANKED_SKILLS,
   DEMO_RETEST_DIAGNOSIS,
@@ -67,16 +72,18 @@ function Readout({
       ) : null}
 
       <figure className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <figcaption className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1.5 border-b border-line px-5 py-3.5 md:px-7 md:py-4">
-          <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.14em] text-ink-2">
-            {eyebrow}
-          </span>
+        {/*
+          Sentence case, not mono caps. Both lines run five to eight words, and
+          at 375px a spaced-out uppercase line that long wraps to two or three
+          lines of letters to be decoded rather than read. Mono caps stay for
+          short labels (units, column heads, the step markers).
+        */}
+        <figcaption className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 border-b border-line px-5 py-3.5 md:px-7 md:py-4">
+          <span className="text-[14px] font-semibold leading-[1.45] text-ink-1">{eyebrow}</span>
           {/* `ink-2`, not `ink-3`: this is the line that says the numbers are
               not a customer's, so it is not allowed to be the dimmest thing in
               the panel. */}
-          <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.12em] text-ink-2">
-            {meta}
-          </span>
+          <span className="text-[13px] leading-[1.45] text-ink-2">{meta}</span>
         </figcaption>
         <div className="px-5 py-6 md:px-7 md:py-7">{children}</div>
       </figure>
@@ -147,7 +154,8 @@ function levelText(level: number): string {
 /**
  * The whole reading in one object: readiness for 4.0, and the four skills that
  * produced it with the diagnosed one flagged. The page's headline claim —
- * ten weaknesses versus one — stated as data instead of as a sentence.
+ * ten things to fix versus one to start with — stated as data instead of as a
+ * sentence.
  */
 export function ScoreReadout({ glow = false }: { glow?: boolean }) {
   const bottleneck = DEMO_DIAGNOSIS.bottleneck;
@@ -236,19 +244,7 @@ export function GapLedger() {
   const maxGap = Math.max(...DEMO_RANKED_SKILLS.map((s) => s.gap));
 
   return (
-    <Readout eyebrow="Weighted gap — all four skills" meta={EXAMPLE_LABEL}>
-      {/*
-        The formula runs above the rows, not under them. It is the sentence
-        that makes this object credible — `×1.4` means nothing until you have
-        read it — so it cannot be the smallest, dimmest thing in the panel.
-        Mono but sentence case: DESIGN.md's always-uppercase rule covers
-        labels, units and countdowns, and 67 characters of caps is not a
-        label, it is a paragraph wearing one.
-      */}
-      <p className="mb-5 border-b border-line pb-4 font-mono text-[12px] leading-[1.5] tracking-[0.02em] text-ink-2">
-        Weighted gap = weight × (3 − level) · largest gap is the bottleneck
-      </p>
-
+    <Readout eyebrow="Priority, all four skills" meta={EXAMPLE_LABEL}>
       {/* Column heads carry the table on a wide viewport; at 375px each row
           labels its own values instead, because a header row that far from
           the fourth row is recall, not recognition. */}
@@ -256,8 +252,7 @@ export function GapLedger() {
         {/* Indented past the rank column so the head sits over the names. */}
         <span className="w-[13rem] shrink-0 pl-8">Skill</span>
         <span className="w-[3.25rem] shrink-0">Level</span>
-        <span className="w-[3rem] shrink-0">Weight</span>
-        <span className="flex-1">Weighted gap</span>
+        <span className="flex-1">Priority</span>
       </div>
 
       <ul>
@@ -305,14 +300,8 @@ export function GapLedger() {
                     <span className="text-ink-3">/3</span>
                   </span>
                 </div>
-                <div className="order-2 md:order-none md:w-[3rem] md:shrink-0">
-                  <ValueLabel>Weight</ValueLabel>
-                  <span className="block font-mono text-[13px] tabular-nums text-ink-3">
-                    ×{score.importance.toFixed(1)}
-                  </span>
-                </div>
                 <div className="order-3 md:order-last md:w-[2.5rem] md:shrink-0 md:text-right">
-                  <ValueLabel>Weighted gap</ValueLabel>
+                  <ValueLabel>Priority</ValueLabel>
                   <span
                     className={`block font-display text-[17px] font-bold tabular-nums md:text-[20px] ${
                       isBottleneck ? "text-ink" : "text-ink-2"
@@ -338,6 +327,47 @@ export function GapLedger() {
         })}
       </ul>
 
+      {/*
+        The arithmetic, one tap away. Shown inline — a formula line above the
+        rows and a ×1.4 weight on every row — it made step 01 read like
+        documentation. The table above is the argument; this is the working,
+        for the visitor who wants to check it.
+      */}
+      <details className="group mt-2 border-t border-line pt-4">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-[14px] font-semibold text-ink-1 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+          <span
+            aria-hidden="true"
+            className="inline-block text-ink-3 transition-transform group-open:rotate-90"
+          >
+            ›
+          </span>
+          How your priority is chosen
+        </summary>
+        <div className="mt-3 flex flex-col gap-3 pl-4 text-[14px] leading-[1.55] text-ink-2">
+          <p>
+            Each skill&apos;s level comes from your answers, 0 to 3. The gap is how far below 3
+            it sits, multiplied by how much that skill separates 3.5 from 4.0. The largest
+            result is where your plan starts.
+          </p>
+          <p className="font-mono text-[12px] leading-[1.5] tracking-[0.02em] text-ink-2">
+            Priority = weight × (3 − level)
+          </p>
+          <ul className="flex flex-col gap-1.5 font-mono text-[12px] tabular-nums">
+            {DEMO_RANKED_SKILLS.map((score) => (
+              <li
+                key={score.skill}
+                className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4"
+              >
+                <span className="text-ink-2">{SKILL_TITLES[score.skill]}</span>
+                <span className="whitespace-nowrap text-ink-1">
+                  ×{score.importance.toFixed(1)} × (3 − {levelText(score.level)}) ={" "}
+                  {score.gap.toFixed(1)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </details>
     </Readout>
   );
 }
@@ -352,7 +382,7 @@ export function GapLedger() {
  */
 export function RootCauseReadout() {
   return (
-    <Readout eyebrow="Training signals — the second axis" meta={EXAMPLE_LABEL}>
+    <Readout eyebrow="How you practice" meta={EXAMPLE_LABEL}>
       <ul>
         {DEMO_SIGNALS.map((signal, i) => (
           <li
@@ -398,8 +428,8 @@ export function RootCauseReadout() {
           makes the argument, and this object exists to stop the page repeating
           itself in prose. The card states the resolved reading and stops.
         */}
-        <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.12em] text-ink-2 md:ml-auto">
-          Paired with {SKILL_TITLES[DEMO_DIAGNOSIS.bottleneck]} → one plan
+        <p className="text-[14px] leading-[1.45] text-ink-2 md:ml-auto">
+          Paired with {SKILL_TITLES[DEMO_DIAGNOSIS.bottleneck].toLowerCase()}, one plan
         </p>
       </div>
     </Readout>
@@ -434,7 +464,7 @@ export function RetestReadout() {
   const nextBottleneck = SKILL_TITLES[DEMO_RETEST_DIAGNOSIS.bottleneck];
 
   return (
-    <Readout eyebrow="Re-test — what moved, 3 weeks later" meta={RETEST_LABEL}>
+    <Readout eyebrow="Re-test, three weeks later" meta={RETEST_LABEL}>
       <div className="grid gap-8 md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] md:gap-12">
         <div className="md:self-center">
           <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-ink-3">
@@ -526,9 +556,44 @@ export function RetestReadout() {
         section's "then the next bottleneck becomes the next three weeks" as a
         computed fact rather than a promise.
       */}
-      <p className="mt-6 border-t border-line pt-4 font-mono text-[12px] leading-[1.5] tracking-[0.02em] text-ink-2">
-        {fixed} clears · {nextBottleneck} becomes the next three weeks
+      <p className="mt-6 border-t border-line pt-4 text-[14px] leading-[1.5] text-ink-2">
+        {fixed} is no longer the largest gap, so {nextBottleneck.toLowerCase()} becomes the
+        next three-week plan.
       </p>
+    </Readout>
+  );
+}
+
+/* ──────────────── 5. The session (the plan) ──────────────── */
+
+/**
+ * The example plan's first drill, rendered with the guided session's own brief
+ * component and shot diagram — the same code the app runs, fed the same drill
+ * data. It replaced `session.png`, a capture that had gone stale twice as the
+ * drill copy changed; a live render cannot drift.
+ *
+ * The drill is resolved the way the app resolves it: the plan stores drill ids,
+ * and the brief shows the drill as `findDrillById` returns it.
+ */
+export function SessionBriefReadout() {
+  const roadmap = generateRoadmap(DEMO_DIAGNOSIS, DEMO_ANSWERS);
+  const first = roadmap.weeklyDrills[0] ? findDrillById(roadmap.weeklyDrills[0].id) : undefined;
+  if (!first) {
+    // Loud on purpose: this renders at build time, so a renamed drill fails
+    // the build rather than shipping an empty panel.
+    throw new Error("demo-run: the example plan has no first drill");
+  }
+  const drill = toGuidedDrill(first);
+
+  return (
+    <Readout
+      eyebrow={`Drill 1 of ${roadmap.weeklyDrills.length} · ${drill.duration} · ${drill.setup}`}
+      meta="From the example plan"
+    >
+      <div className="flex flex-col gap-5">
+        <DrillBriefContent drill={drill} retestMetric={roadmap.retestMetric} as="h3" />
+        <ShotDemo drillId={drill.id} />
+      </div>
     </Readout>
   );
 }

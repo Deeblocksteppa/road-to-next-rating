@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GuidedSession, SessionCompleteScreen } from "@/components/session/GuidedSession";
-import { findDrillById, parseDurationMinutes } from "@/lib/drill-lookup";
+import { findDrillById, toGuidedDrill } from "@/lib/drill-lookup";
 import { getCompletedTodayDrillIds, getWeeklyProgress } from "@/lib/drill-sessions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -109,19 +109,7 @@ export default async function SessionPage({
         duration: d.duration,
         doneToday: completedToday.has(d.id),
       }))}
-      drills={remaining.map((d) => ({
-        id: d.id,
-        name: d.name,
-        instructions: d.description,
-        setup: d.setup,
-        cue: d.cue,
-        logProtocol: d.logProtocol,
-        counts: d.counts,
-        practiceTarget: d.practiceTarget,
-        duration: d.duration,
-        durationMinutes: parseDurationMinutes(d.duration),
-        logPrompt: d.logPrompt,
-      }))}
+      drills={remaining.map(toGuidedDrill)}
       retestMetric={(plan.retest_metric as string | null) ?? null}
       fallbackWeekly={weekly}
     />

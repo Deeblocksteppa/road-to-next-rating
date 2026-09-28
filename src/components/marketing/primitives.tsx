@@ -28,6 +28,24 @@ export function Label({
 }
 
 /**
+ * A caption in the coach's voice: sentence case, sans, `ink-2`. For any line
+ * too long to be a label — "12 questions · 4 minutes · no signup required"
+ * set in spaced mono caps wrapped to two or three lines at 375px and had to be
+ * decoded. `Label` stays for short instrument labels (three words or so).
+ */
+export function Caption({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <p className={`text-pretty text-[14px] leading-[1.5] text-ink-2 ${className}`}>{children}</p>
+  );
+}
+
+/**
  * A section's opening marker: the logo's break motif, then the mono label.
  * Gives every section the same recognizable entry point instead of a bare
  * line of small caps.

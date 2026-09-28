@@ -113,11 +113,22 @@ export const DEMO_RETEST_SKILLS = DEMO_RANKED_SKILLS.map((before) => {
   return { skill: before.skill, before: before.level, after: after.level };
 });
 
-/** Short human titles for the engine's root-cause ids. */
+/**
+ * Short human titles for the engine's root-cause ids — named for what the
+ * answers that trigger them actually say, not for the id.
+ *
+ * `open_play_only` fires for "Almost all open play", "Mostly games,
+ * occasional drilling", "I don't really drill" and "no real drilling
+ * partner" (see `questions.ts`), so "Open play only" was wrong for most of
+ * the players it describes — including this page's own sample, whose court
+ * time answer includes occasional drilling. `well_coached` fires on drilling
+ * with a plan, mostly-drilling court time, or a regular drilling partner;
+ * none of those answers mentions a coach.
+ */
 export const ROOT_CAUSE_TITLES: Record<RootCauseId, string> = {
-  open_play_only: "Open play only",
+  open_play_only: "Mostly games",
   random_drilling: "Unfocused drilling",
-  well_coached: "Coached, not transferring",
+  well_coached: "Structured practice",
   unclear: "No clear signal",
 };
 

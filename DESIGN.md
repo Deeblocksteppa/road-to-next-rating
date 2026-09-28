@@ -287,7 +287,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 
 **The Nothing-Italic Rule.** No italic anywhere in the system; emphasis comes from scale, weight, or the accent color, never from slant.
 
-**The Uppercase-Mono Rule, and its one exception.** Every mono label, unit, badge and countdown is uppercase — that is what makes the UI read as calibrated. The single exception is `marketing-formula`: an equation long enough to need reading rather than scanning is set in sentence case, because caps at that length stop being an instrument label and become an obstacle.
+**The Uppercase-Mono Rule, and its limit.** Every mono label, unit, badge and countdown is uppercase — that is what makes the UI read as calibrated. It applies to *short* labels only: roughly three words, or a unit, a number, a column head. Anything longer — a readout's header, a CTA caption ("12 questions · about 4 minutes · no signup"), a pricing term — is set in sentence case in Instrument Sans at 13–14px, `ink-1`/`ink-2`. Spaced mono caps at that length wrap to two or three lines at 375px and have to be decoded rather than read. `marketing-formula` (the priority equation, now behind the "How your priority is chosen" disclosure on step 01) stays mono in sentence case.
 
 ## Layout
 
