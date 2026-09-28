@@ -1,16 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Assessment } from "@/components/assessment/Assessment";
 import { Computing } from "@/components/assessment/Computing";
 import { Reveal } from "@/components/diagnosis/Reveal";
 import { RoadmapScreen } from "@/components/diagnosis/Roadmap";
-import { CommittedScreen } from "@/components/diagnosis/Committed";
+import { SavedResult } from "@/components/diagnosis/SavedResult";
 import { SaveGate } from "@/components/auth/SaveGate";
 import { diagnose } from "@/lib/engine";
-import { generateRoadmap, Roadmap } from "@/lib/roadmap";
-import { AnswerMap, Diagnosis } from "@/lib/types";
+import { clearLocalResult, loadLocalResult, saveLocalResult } from "@/lib/local-result";
+import { generateRoadmap } from "@/lib/roadmap";
+import { AnswerMap } from "@/lib/types";
 import {
   saveAssessment,
   saveDiagnosis,
@@ -20,22 +20,55 @@ import {
 } from "@/lib/persistence";
 
 /**
- * The anonymous funnel. The landing phase that used to open this flow now
- * lives at `/` as the marketing site, so this route starts on question one.
+ * The anonymous funnel.
+ *
+ * First pass: assessment → computing → reveal → roadmap → save gate. From the
+ * gate, "Not now" lands on the saved result, and from then on the saved
+ * result is where an anonymous player lives. It is also what /start opens
+ * on for anyone with a result on this device, so a returning player sees
+ * their diagnosis and plan instead of question one.
+ *
+ * Nothing on the saved result leads back into the gate by itself: the gate
+ * is reachable only by tapping "Create a free account", and every way out of
+ * it ("Not now", "Back to my result") returns to the saved result. Replaying
+ * the diagnosis also returns there. That is what removes the old loop
+ * (gate → committed → roadmap → gate).
  */
-type Phase = "assessment" | "computing" | "reveal" | "roadmap" | "savegate" | "committed";
+type Phase = "loading" | "assessment" | "computing" | "reveal" | "roadmap" | "savegate" | "saved";
 
 export default function Start() {
-  const router = useRouter();
-  const [phase, setPhase] = useState<Phase>("assessment");
-  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [phase, setPhase] = useState<Phase>("loading");
   const [answers, setAnswers] = useState<AnswerMap | null>(null);
-  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+  // True once the player has a stable home on the saved result: set by
+  // leaving the gate, by replaying, or by arriving with a stored result.
+  const [settled, setSettled] = useState(false);
+
+  // localStorage is only readable after mount, so the first render is a blank
+  // "loading" frame rather than question one flashing before the saved result.
+  useEffect(() => {
+    const stored = loadLocalResult();
+    if (stored) {
+      setAnswers(stored.answers);
+      setSettled(true);
+      setPhase("saved");
+    } else {
+      setPhase("assessment");
+    }
+  }, []);
+
+  // Derived, never stored: the engine is deterministic, so these are the same
+  // objects the first pass produced.
+  const diagnosis = useMemo(() => (answers ? diagnose(answers) : null), [answers]);
+  const roadmap = useMemo(
+    () => (answers && diagnosis ? generateRoadmap(diagnosis, answers) : null),
+    [answers, diagnosis]
+  );
 
   function handleAssessmentComplete(ans: AnswerMap) {
     const diag = diagnose(ans);
-    setDiagnosis(diag);
+    saveLocalResult(ans);
     setAnswers(ans);
+    setSettled(false);
     setPhase("computing");
 
     // Persist the assessment + diagnosis as unclaimed rows (best-effort — the
@@ -51,24 +84,36 @@ export default function Start() {
   }
 
   function handleRevealNext() {
-    if (diagnosis && answers) {
-      const generated = generateRoadmap(diagnosis, answers);
-      setRoadmap(generated);
-      setPhase("roadmap");
-
-      // Persist the plan, linked to the diagnosis saved earlier.
-      const diagnosisId = getPendingIds().diagnosis;
-      if (diagnosisId) {
-        savePlan(diagnosisId, generated).catch((err) =>
-          console.error("Failed to save plan:", err)
-        );
-      }
+    if (settled) {
+      setPhase("saved");
+      return;
     }
+    // Persist the plan once, linked to the diagnosis saved earlier.
+    const pending = getPendingIds();
+    if (roadmap && pending.diagnosis && !pending.plan) {
+      savePlan(pending.diagnosis, roadmap).catch((err) =>
+        console.error("Failed to save plan:", err)
+      );
+    }
+    setPhase("roadmap");
   }
 
-  function handleReset() {
+  function handleLeaveGate() {
+    setSettled(true);
+    setPhase("saved");
+  }
+
+  function handleStartOver() {
+    clearLocalResult();
     clearPendingIds();
-    router.push("/");
+    setAnswers(null);
+    setSettled(false);
+    setPhase("assessment");
+    window.scrollTo(0, 0);
+  }
+
+  if (phase === "loading") {
+    return <main className="min-h-[100dvh] w-full bg-background" />;
   }
 
   if (phase === "computing") {
@@ -88,17 +133,22 @@ export default function Start() {
       <SaveGate
         bottleneckLabel={roadmap.bottleneckLabel}
         weeksTarget={roadmap.weeksTarget}
-        onSkip={() => setPhase("committed")}
+        onSkip={handleLeaveGate}
       />
     );
   }
 
-  if (phase === "committed" && roadmap) {
+  if (phase === "saved" && diagnosis && roadmap) {
     return (
-      <CommittedScreen
+      <SavedResult
+        diagnosis={diagnosis}
         roadmap={roadmap}
-        onBackToPlan={() => setPhase("roadmap")}
-        onStartOver={handleReset}
+        onCreateAccount={() => {
+          setPhase("savegate");
+          window.scrollTo(0, 0);
+        }}
+        onReplay={() => setPhase("reveal")}
+        onStartOver={handleStartOver}
       />
     );
   }

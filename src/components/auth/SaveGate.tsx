@@ -195,15 +195,18 @@ export function SaveGate({
             </form>
           </div>
 
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-center text-[13px] text-ink-2 underline underline-offset-4"
-          >
-            Maybe later
-          </button>
         </>
       )}
+
+      {/* Always reachable, including after "check your email": it returns to
+          the saved result, which never sends anyone back here on its own. */}
+      <button
+        type="button"
+        onClick={onSkip}
+        className="-my-2 py-2 text-center text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
+      >
+        {message ? "Back to my result" : "Not now — keep it on this device"}
+      </button>
 
       <p className="text-center text-[13px] text-ink-2">
         Already have an account?{" "}

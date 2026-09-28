@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { scoreSkills } from "@/lib/engine";
 import type { AnswerMap, Diagnosis } from "@/lib/types";
 import type { Roadmap } from "@/lib/roadmap";
+import { clearLocalResult } from "@/lib/local-result";
 
 /**
  * Anonymous-first persistence. Each row is created with user_id = NULL and an
@@ -150,5 +151,8 @@ export async function claimPendingRecords(): Promise<boolean> {
   if (error) throw error;
 
   clearPendingIds();
+  // The plan lives in the account now. Leaving the device copy would make
+  // /start keep saying "saved only on this device" about a plan that isn't.
+  clearLocalResult();
   return true;
 }

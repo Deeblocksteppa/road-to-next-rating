@@ -99,7 +99,7 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
   );
 }
 
-function DrillCard({ drill, hasPartner }: { drill: Drill; hasPartner: boolean }) {
+export function DrillCard({ drill, hasPartner }: { drill: Drill; hasPartner: boolean }) {
   const showSoloBadge = drill.requiresPartner && !hasPartner;
 
   // Same three rows as the Plan tab's card: name, mono metadata, one sentence.
