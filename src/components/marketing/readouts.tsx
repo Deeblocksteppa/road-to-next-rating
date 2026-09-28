@@ -1,7 +1,8 @@
+import { ReadinessReading } from "@/components/diagnosis/Reveal";
 import { DrillBriefContent } from "@/components/session/DrillBrief";
 import { ShotDemo } from "@/components/session/ShotDemo";
 import { SKILL_TITLES } from "@/lib/diagnoses";
-import { findDrillById, toGuidedDrill } from "@/lib/drill-lookup";
+import { toGuidedDrill } from "@/lib/drill-lookup";
 import { generateRoadmap } from "@/lib/roadmap";
 import {
   DEMO_ANSWERS,
@@ -572,12 +573,14 @@ export function RetestReadout() {
  * data. It replaced `session.png`, a capture that had gone stale twice as the
  * drill copy changed; a live render cannot drift.
  *
- * The drill is resolved the way the app resolves it: the plan stores drill ids,
- * and the brief shows the drill as `findDrillById` returns it.
+ * The drill is the one `generateRoadmap` prescribes to the example player —
+ * the solo version, since their answers say they have no drilling partner.
  */
 export function SessionBriefReadout() {
   const roadmap = generateRoadmap(DEMO_DIAGNOSIS, DEMO_ANSWERS);
-  const first = roadmap.weeklyDrills[0] ? findDrillById(roadmap.weeklyDrills[0].id) : undefined;
+  // Already prescribed: the example player has no drilling partner, so this
+  // is the solo version — the same one the app now shows them.
+  const first = roadmap.weeklyDrills[0];
   if (!first) {
     // Loud on purpose: this renders at build time, so a renamed drill fails
     // the build rather than shipping an empty panel.
@@ -594,6 +597,24 @@ export function SessionBriefReadout() {
         <DrillBriefContent drill={drill} retestMetric={roadmap.retestMetric} as="h3" />
         <ShotDemo drillId={drill.id} />
       </div>
+    </Readout>
+  );
+}
+
+/* ──────────────── 6. The reading (step 03) ──────────────── */
+
+/**
+ * The last screen of the result, rendered live for the example run with the
+ * reveal's own component. It replaced `reveal-readiness.png`, whose copy ("the
+ * biggest thing between you and 4.0…") was two edits behind the app.
+ */
+export function ReadinessRevealReadout() {
+  return (
+    <Readout eyebrow="The last screen of your result" meta={EXAMPLE_LABEL}>
+      <ReadinessReading
+        readiness={DEMO_DIAGNOSIS.readiness}
+        bottleneck={DEMO_DIAGNOSIS.bottleneck}
+      />
     </Readout>
   );
 }

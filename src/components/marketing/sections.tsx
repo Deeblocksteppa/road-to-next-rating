@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { LogoFull, Logo } from "@/components/brand/Logo";
 import { QUESTIONS } from "@/lib/questions";
-import { AppShot } from "./AppShot";
-import type { ShotKey } from "./shots";
 import { BreakRule } from "./BreakRule";
 import { RiseIn } from "./RiseIn";
 import {
   GapLedger,
+  ReadinessRevealReadout,
   RetestReadout,
   RootCauseReadout,
   ScoreReadout,
@@ -199,7 +198,7 @@ function DataStep({
 }
 
 /**
- * One step of the mechanism: numbered marker, argument, screenshot.
+ * One step of the mechanism: numbered marker, argument, and a live readout.
  *
  * Text left, visual right — the same hand as the two DataSteps above it. The
  * side used to be switchable via a `flip` prop, which nothing ever set; the
@@ -212,17 +211,13 @@ function Step({
   label,
   heading,
   body,
-  shot,
-  reveal,
-  anchor,
+  children,
 }: {
   index: string;
   label: string;
   heading: string;
   body: string;
-  shot: ShotKey;
-  reveal?: number;
-  anchor?: "top" | "center" | number;
+  children: React.ReactNode;
 }) {
   return (
     /*
@@ -239,17 +234,8 @@ function Step({
         </h3>
         <Body className="mt-3 max-w-[42ch]">{body}</Body>
       </div>
-      {/*
-        The shot column is sized to the card rather than to a fraction of the
-        row, so there is no leftover space around the frame to fill with a
-        surface. The card is the object; the page ground is its ground.
-      */}
-      {/* Full width at 375 like the two readouts above it — a 300px cap here
-          made this step's visual 27px narrower than theirs on the one screen
-          where all three stack into a single column. */}
-      <div className="w-full">
-        <AppShot shot={shot} reveal={reveal} anchor={anchor} />
-      </div>
+      {/* Full width at 375 like the two readouts above it. */}
+      <div className="w-full">{children}</div>
     </RiseIn>
   );
 }
@@ -300,17 +286,9 @@ export function HowItWorks() {
           label="The reading"
           heading="One number you can re-test against, instead of a vibe."
           body="Both answers roll up into a readiness score for 4.0. Re-test after the plan and you see how far it moved."
-          // Measured off the capture: content runs 0.26–0.65 down the source,
-          // everything else is empty screen, so `center` on a tight reveal
-          // lands below all of it. 0.62 is the shallowest crop that still
-          // reads as a phone — anything under 0.553 (1179/2132) makes the
-          // frame wider than tall, and the screen reads as a slice of
-          // something rather than as a screen. Centred on the content band so
-          // the room above and below is symmetric and reads as the app's own.
-          shot="readiness"
-          reveal={0.62}
-          anchor={0.382}
-        />
+        >
+          <ReadinessRevealReadout />
+        </Step>
       </div>
 
       {/*

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GuidedSession, SessionCompleteScreen } from "@/components/session/GuidedSession";
-import { findDrillById, toGuidedDrill } from "@/lib/drill-lookup";
+import { toGuidedDrill } from "@/lib/drill-lookup";
+import { loadPlanDrills } from "@/lib/plan-drills";
 import { getCompletedTodayDrillIds, getWeeklyProgress } from "@/lib/drill-sessions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,7 +37,7 @@ export default async function SessionPage({
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, drill_ids, retest_metric")
+    .select("id, drill_ids, diagnosis_id, retest_metric")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -46,9 +47,9 @@ export default async function SessionPage({
     redirect("/home");
   }
 
-  const planDrills = ((plan.drill_ids as string[] | null) ?? [])
-    .map((id) => findDrillById(id))
-    .filter((d): d is NonNullable<typeof d> => Boolean(d));
+  // As prescribed: the solo version for a player without a partner. The brief,
+  // the timer cue and the log question all come from this.
+  const planDrills = await loadPlanDrills(supabase, plan);
 
   const [completedToday, weekly] = await Promise.all([
     getCompletedTodayDrillIds(supabase, plan.id),

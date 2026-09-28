@@ -100,7 +100,8 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
 }
 
 export function DrillCard({ drill, hasPartner }: { drill: Drill; hasPartner: boolean }) {
-  const showSoloBadge = drill.requiresPartner && !hasPartner;
+  // A partner drill that was prescribed in its solo version.
+  const showSoloBadge = drill.requiresPartner && !hasPartner && Boolean(drill.solo);
 
   // Same three rows as the Plan tab's card: name, mono metadata, one sentence.
   // The technique instructions wait for the guided session, where the shot

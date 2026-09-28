@@ -114,6 +114,12 @@ typography:
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.5
+  headline-complete:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "28px"
+    fontWeight: 800
+    lineHeight: 1.15
+    letterSpacing: "-0.01em"
   h1:
     fontFamily: "Archivo, sans-serif"
     fontSize: "24px"
@@ -247,7 +253,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 - **Surface 2** (`#1A1A1D`): raised surfaces, secondary buttons.
 - **Reveal Background** (`#060607`): darker-than-app background reserved for the reveal and delta screens — the one place the UI goes darker to make the accent break read louder.
 - **Line Soft** (`rgba(255,255,255,0.06)`): the lighter rule between marketing sections — quiet enough to divide the page without reading as an edge around anything.
-- **Line Hair** (`rgba(255,255,255,0.08)`): the marketing screenshot card's edge. Translucent rather than a flat hex so the same hairline holds over both marketing grounds (`background` and the raised `#0E0E10`). Screenshots sit on the page ground with this edge and nothing else — an earlier presentation "stage" wrapped each one in a second, slightly lighter rounded rectangle, which read as a smudge around the card rather than as a surface under it.
+- **Line Hair** (`rgba(255,255,255,0.08)`): the edge the marketing site's screenshot cards used. No screenshots remain — every product visual on the page is now rendered live from the app's own components — but the token stays for any future capture. Translucent rather than a flat hex so the same hairline holds over both marketing grounds (`background` and the raised `#0E0E10`). Screenshots sit on the page ground with this edge and nothing else — an earlier presentation "stage" wrapped each one in a second, slightly lighter rounded rectangle, which read as a smudge around the card rather than as a surface under it.
 - **Line** (`#232327`) / **Line Strong** (`#2E2E33`) / **Line Hover** (`#4A4A50`): default borders/dividers, stronger borders (inputs, empty ticks), and hover borders, in ascending order of visual weight.
 - **Ink** (`#F4F4F2`): primary text (~17.9:1 on background).
 - **Ink 1** (`#D8D8D4`): marketing body copy (~13.8:1). Exists because a cold visitor on the public site scans rather than studies — in-app secondary text stays on Ink 2, and this tier never replaces it inside the product.
@@ -275,6 +281,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 - **Statement** (800, 26px → 36px sm → 46px md → 54px desktop, LH 1.08–1.15, tracking −0.02em): the marketing site's statement sections — one sentence, centred, spanning the container, nothing beside it. Deliberately a step below Display: the hero must stay the loudest thing on the page, and a statement that matched it would read as a second hero. Mobile runs 26px because 30px wrapped the sentence to six centred lines of ~20 characters, which is the hardest wrap the page can produce.
 - **Marketing H2 (group)** (700, 26px → 32px, LH 1.2–1.25, tracking −0.01em): a heading that has to hold a group of numbered steps under it rather than one column of prose. At ordinary section scale a centred heading over a 2,300px group reads as a caption that lost its paragraph.
 - **Marketing formula** (400, 12px, LH 1.5, IBM Plex Mono, sentence case, `ink-2`): the one place mono is not uppercased. The Nothing-But-Caps habit is right for labels, units and countdowns; an equation set in 67 characters of caps is a paragraph wearing a label's clothes, and it is the sentence that makes the weighted-gap readout legible at all.
+- **Headline, complete** (800, 28px, LH 1.15, tracking −0.01em): the one-line headline on a screen where a flow has ended — the guided session's "Session logged.", the "done for the week" dead-end, and the session error screen. A step above H1 because it is the whole message on an otherwise empty screen; well below Display because nothing is being revealed.
 - **H1** (700, 24px → 32px, LH ~1.25, tracking −0.01em): screen titles.
 - **H2** (600, 17–18px → 20px): card titles, section headers.
 - **Body** (400, 15px → 16px, LH 1.6, color `ink-2`): explanations, descriptions.

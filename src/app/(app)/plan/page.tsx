@@ -2,9 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SessionDrills } from "@/components/plan/SessionDrills";
-import { findDrillById } from "@/lib/drill-lookup";
 import { getTodayLog, getWeeklyProgress } from "@/lib/drill-sessions";
 import { sessionShape } from "@/lib/session-plan";
+import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { WEEK_FOCUS_LABELS } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
@@ -30,17 +30,14 @@ export default async function PlanPage() {
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, drill_ids, in_game_rule, retest_metric, retest_date, status, created_at")
+    .select("id, drill_ids, diagnosis_id, in_game_rule, retest_metric, retest_date, status, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const planDrills = plan
-    ? ((plan.drill_ids as string[] | null) ?? [])
-        .map((id) => findDrillById(id))
-        .filter((d): d is NonNullable<typeof d> => Boolean(d))
-    : [];
+  // As prescribed: the solo version for a player without a partner.
+  const planDrills = plan ? await loadPlanDrills(supabase, plan) : [];
 
   const [todayLog, weekly] = plan
     ? await Promise.all([

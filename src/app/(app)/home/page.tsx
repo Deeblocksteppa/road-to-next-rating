@@ -6,12 +6,12 @@ import { Logo } from "@/components/brand/Logo";
 import { TodaySession, todayState } from "@/components/home/TodaySession";
 import { monthDay } from "@/lib/date-format";
 import { SKILL_TITLES } from "@/lib/diagnoses";
-import { findDrillById } from "@/lib/drill-lookup";
 import {
   getCompletedTodayDrillIds,
   getWeeklyProgress,
   startOfWeekUTC,
 } from "@/lib/drill-sessions";
+import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { WEEK_FOCUS_LABELS } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
@@ -37,17 +37,13 @@ export default async function HomePage() {
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, drill_ids, retest_date, status, created_at")
+    .select("id, drill_ids, diagnosis_id, retest_date, status, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const planDrills = plan
-    ? ((plan.drill_ids as string[] | null) ?? [])
-        .map((id) => findDrillById(id))
-        .filter((d): d is NonNullable<typeof d> => Boolean(d))
-    : [];
+  const planDrills = plan ? await loadPlanDrills(supabase, plan) : [];
 
   const [weekly, completedToday] = plan
     ? await Promise.all([

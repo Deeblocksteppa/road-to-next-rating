@@ -45,24 +45,34 @@ const RETEST_METRICS: Record<SkillId, string> = {
     "In your next 3 games, count how many times you speed up on a ball that wasn't actually attackable. Aim for fewer than 3 per game.",
 };
 
-export function generateRoadmap(diagnosis: Diagnosis, answers: AnswerMap): Roadmap {
-  const drills = DRILLS[diagnosis.bottleneck];
-  const hasPartner = answers["partner_access"] === "a";
+/**
+ * Whether the plan should assume a drilling partner. One rule, used when the
+ * plan is generated and again wherever a saved plan is rendered, so the two
+ * can't disagree: only "I have a reliable drilling partner and play up often"
+ * counts. "Sometimes, but not consistently" gets the solo versions, which are
+ * the ones a player can be sure of doing.
+ */
+export function hasDrillingPartner(answers: AnswerMap): boolean {
+  return answers["partner_access"] === "a";
+}
 
-  const weeklyDrills = hasPartner
-    ? drills.slice(0, 2)
-    : drills
-        .map((d) =>
-          d.requiresPartner
-            ? {
-                ...d,
-                description: d.soloVariant ?? d.description,
-                task: d.soloTask ?? d.soloVariant ?? d.task,
-                setup: "Solo",
-              }
-            : d
-        )
-        .slice(0, 2);
+/**
+ * The drill as prescribed to this player: the partner version, or — for a
+ * player without a partner — the drill's complete solo version. Plans store
+ * only drill ids, so every surface that renders a saved plan's drills must go
+ * through this (via `loadPlanDrills` on the server), or a solo player sees
+ * partner instructions they can't follow.
+ */
+export function prescribeDrill(drill: Drill, hasPartner: boolean): Drill {
+  if (hasPartner || !drill.requiresPartner || !drill.solo) return drill;
+  return { ...drill, ...drill.solo };
+}
+
+export function generateRoadmap(diagnosis: Diagnosis, answers: AnswerMap): Roadmap {
+  const hasPartner = hasDrillingPartner(answers);
+  const weeklyDrills = DRILLS[diagnosis.bottleneck]
+    .slice(0, 2)
+    .map((d) => prescribeDrill(d, hasPartner));
 
   return {
     goalLabel: "Road to 4.0",

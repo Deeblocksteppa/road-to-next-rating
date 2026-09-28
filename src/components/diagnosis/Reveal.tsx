@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
-import { Diagnosis } from "@/lib/types";
+import { Diagnosis, SkillId } from "@/lib/types";
 
 const BEAT_COUNT = 5;
 
@@ -180,13 +180,42 @@ function ReadinessBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   }, [diagnosis.readiness]);
 
   return (
+    <ReadinessReading
+      readiness={diagnosis.readiness}
+      bottleneck={diagnosis.bottleneck}
+      shown={count}
+      fill={fill}
+    />
+  );
+}
+
+/**
+ * The readiness screen's content, without the count-up. Shared by the reveal's
+ * last beat (which animates `shown` and `fill` from 0) and the marketing page's
+ * step 03, which renders it static — so the page shows this screen's current
+ * copy instead of a capture of an old version of it.
+ */
+export function ReadinessReading({
+  readiness,
+  bottleneck,
+  shown = readiness,
+  fill = readiness,
+}: {
+  readiness: number;
+  bottleneck: SkillId;
+  /** The number on screen — mid-count during the reveal's animation. */
+  shown?: number;
+  /** Bar width in percent — animates in during the reveal. */
+  fill?: number;
+}) {
+  return (
     <div className="flex flex-col gap-[26px]">
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
         Readiness for 4.0
       </p>
 
       <div className="font-display text-[96px] font-extrabold leading-none tabular-nums">
-        {count}
+        {shown}
         <span className="text-[28px] font-semibold text-ink-3"> /100</span>
       </div>
 
@@ -207,9 +236,8 @@ function ReadinessBeat({ diagnosis }: { diagnosis: Diagnosis }) {
           their game: the number is a reading of their answers, and it is the
           thing the re-test moves against. */}
       <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
-        {diagnosis.readiness} is your baseline from these answers. The plan starts on{" "}
-        {SKILL_LABELS[diagnosis.bottleneck]}, and the re-test in three weeks shows what
-        moved.
+        {readiness} is your baseline from these answers. The plan starts on{" "}
+        {SKILL_LABELS[bottleneck]}, and the re-test in three weeks shows what moved.
       </p>
     </div>
   );

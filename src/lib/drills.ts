@@ -33,10 +33,22 @@ export interface Drill {
    */
   logPrompt: string;
   requiresPartner: boolean;
-  soloVariant?: string;
-  /** One-sentence `task` for the solo variant, so a no-partner plan's cards stay one line. */
-  soloTask?: string;
+  /**
+   * The version prescribed to a player with no drilling partner. Complete, not
+   * just new instructions: a wall-volley "Hands Battle" can't be logged as
+   * "exchanges won", so every field that assumes a partner is overridden here.
+   * Anything not listed carries over. See `prescribeDrill` in `roadmap.ts`.
+   */
+  solo?: SoloVersion;
 }
+
+/**
+ * `name` and `duration` are deliberately not overridable: Home, Progress and
+ * the reminder email render saved plans by id and show only those two fields,
+ * which is correct only while they are the same in both versions.
+ */
+export type SoloVersion = Pick<Drill, "description" | "task" | "setup"> &
+  Partial<Pick<Drill, "cue" | "logProtocol" | "counts" | "practiceTarget" | "logPrompt">>;
 
 export const DRILLS: Record<SkillId, Drill[]> = {
   reset: [
@@ -54,9 +66,13 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "15 min",
       logPrompt: "Of your last 10 resets, how many stayed low?",
       requiresPartner: true,
-      soloVariant:
-        "Drop-feed yourself off the bounce from mid-court and reset into a target zone near the kitchen line. Work in sets of 10 and keep the count. When the timer ends, stop where you are and log how many of your last 10 landed in the zone.",
-      soloTask: "Drop-feed yourself from mid-court and reset into a target zone by the kitchen line.",
+      solo: {
+        description: "Drop-feed yourself off the bounce from mid-court and reset into a target zone near the kitchen line. Work in sets of 10 and keep the count. When the timer ends, stop where you are and log how many of your last 10 landed in the zone.",
+        task: "Drop-feed yourself from mid-court and reset into a target zone by the kitchen line.",
+        setup: "Solo",
+        counts: "A reset counts if it lands in your target zone by the kitchen line and stays below net height.",
+        logPrompt: "Of your last 10 resets, how many landed in the zone?",
+      },
     },
     {
       id: "reset_wall",
@@ -72,7 +88,6 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "10 min",
       logPrompt: "Of your last 10 resets, how many stayed low?",
       requiresPartner: false,
-      soloVariant: "This drill is already solo.",
     },
   ],
   third_shot_drop: [
@@ -90,7 +105,6 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "15 min",
       logPrompt: "Out of 10 drops, how many landed clean?",
       requiresPartner: false,
-      soloVariant: "This drill is already solo.",
     },
     {
       id: "drop_live",
@@ -106,9 +120,12 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "15 min",
       logPrompt: "Out of 10 drops, how many landed clean?",
       requiresPartner: true,
-      soloVariant:
-        "Self-feed from the baseline: toss the ball, let it bounce, hit the drop. Focus on contact point — slightly low, slightly out front, gentle lift.",
-      soloTask: "Toss, bounce, and hit the drop from the baseline, working on the contact point.",
+      solo: {
+        description: "Self-feed from the baseline: toss the ball, let it bounce, hit the drop. Focus on contact point — slightly low, slightly out front, gentle lift.",
+        task: "Toss, bounce, and hit the drop from the baseline, working on the contact point.",
+        setup: "Solo",
+        counts: "A drop counts if it lands in the kitchen and bounces below net height, so it could not be attacked.",
+      },
     },
   ],
   net_defense: [
@@ -126,9 +143,13 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "15 min",
       logPrompt: "Out of 10 speed-ups, how many did you block back?",
       requiresPartner: true,
-      soloVariant:
-        "Wall drill: stand close to the wall, drive medium-pace balls and block your own returns. Builds the reflex of soft hands on fast balls.",
-      soloTask: "Drive medium-pace balls into a wall up close and block your own returns.",
+      solo: {
+        description: "Wall drill: stand close to the wall, drive medium-pace balls and block your own returns. Builds the reflex of soft hands on fast balls.",
+        task: "Drive medium-pace balls into a wall up close and block your own returns.",
+        setup: "Wall",
+        counts: "A block counts if the ball comes back off the wall under control and you can play the next one.",
+        logPrompt: "Of your last 10 blocks, how many stayed under control?",
+      },
     },
     {
       id: "hands_battle",
@@ -144,9 +165,16 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "10 min",
       logPrompt: "Out of 10 exchanges, how many did you win?",
       requiresPartner: true,
-      soloVariant:
-        "Wall volley: stand 5 feet from the wall, volley continuously keeping the ball controlled. Decrease distance as you improve.",
-      soloTask: "Volley continuously against a wall from five feet, moving closer as it holds.",
+      solo: {
+        description: "Wall volley: stand 5 feet from the wall, volley continuously keeping the ball controlled. Decrease distance as you improve.",
+        task: "Volley continuously against a wall from five feet, moving closer as it holds.",
+        setup: "Wall",
+        cue: "Short strokes, stay compact — keep it under control.",
+        logProtocol: "Log your last 10 volleys.",
+        counts: "A volley counts if you keep it going under control, with no mishit or pop-up.",
+        practiceTarget: "7 of 10",
+        logPrompt: "Of your last 10 volleys, how many stayed under control?",
+      },
     },
   ],
   dink_patience: [
@@ -164,9 +192,15 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "10 min",
       logPrompt: "Out of 10 rallies, how many did you keep patient?",
       requiresPartner: true,
-      soloVariant:
-        "Wall dinking: stand at kitchen distance from a wall, dink continuously keeping the ball at net height. Count to 30 before resetting.",
-      soloTask: "Dink against a wall at kitchen distance, counting to 30 before resetting.",
+      solo: {
+        description: "Wall dinking: stand at kitchen distance from a wall, dink continuously keeping the ball at net height. Count to 30 before resetting.",
+        task: "Dink against a wall at kitchen distance, counting to 30 before resetting.",
+        setup: "Wall",
+        cue: "Soft wrist, contact out front — keep it at net height.",
+        logProtocol: "Log your last 10 dinks.",
+        counts: "A dink counts if it comes back off the wall around net height and you keep the rally going.",
+        logPrompt: "Of your last 10 dinks, how many stayed at net height?",
+      },
     },
     {
       id: "attack_gate",
@@ -182,9 +216,14 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       duration: "15 min",
       logPrompt: "Out of 10 attackable balls, how many did you read right?",
       requiresPartner: true,
-      soloVariant:
-        "Shadow drill: stand at the kitchen, feed yourself imaginary balls, practice the decision out loud — 'attackable' or 'reset' — before swinging.",
-      soloTask: "Shadow the decision at the kitchen: call each imagined ball attackable or reset, out loud.",
+      solo: {
+        description: "Shadow drill: stand at the kitchen, feed yourself imaginary balls, practice the decision out loud — 'attackable' or 'reset' — before swinging.",
+        task: "Shadow the decision at the kitchen: call each imagined ball attackable or reset, out loud.",
+        setup: "Solo",
+        logProtocol: "Log your last 10 calls.",
+        counts: "A call counts if it follows the rule: above the net and out front is attackable, anything else is a reset.",
+        logPrompt: "Of your last 10 calls, how many matched the rule?",
+      },
     },
   ],
 };
