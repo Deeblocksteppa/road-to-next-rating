@@ -110,11 +110,15 @@ export default async function SettingsPage() {
             </Link>
           )}
         </div>
+        {/* Says only what Manage subscription does: cancel, or resume a
+            scheduled cancellation. It used to promise "change plan, or
+            update billing", and neither exists. Sentence case: at this
+            length, spaced mono caps have to be decoded, not read. */}
         {isPaid && (
-          <p className="pl-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-ink-3">
+          <p className="pl-0.5 text-[13px] leading-[1.5] text-ink-3">
             {plan?.cancel_at_period_end
-              ? "Scheduled to cancel · you can resume anytime"
-              : "Cancel, change plan, or update billing"}
+              ? "Scheduled to cancel. You can resume it anytime before then."
+              : "Cancel anytime. You keep Progress until the end of the period you've paid for."}
           </p>
         )}
       </section>

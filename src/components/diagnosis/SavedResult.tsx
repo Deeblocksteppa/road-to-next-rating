@@ -71,7 +71,7 @@ export function SavedResult({
             Saved on this device only
           </p>
           <h2 className="text-pretty font-display text-[20px] font-bold leading-[1.3]">
-            Create a free account to start guided sessions and track progress.
+            Create a free account to start guided sessions and re-test your score.
           </h2>
           <ul className="flex flex-col gap-2.5">
             {[

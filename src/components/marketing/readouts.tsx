@@ -13,7 +13,7 @@ import {
   DEMO_SIGNALS,
   EXAMPLE_LABEL,
   RETEST_LABEL,
-  ROOT_CAUSE_TITLES,
+  SIGNAL_READINGS,
 } from "./demo-run";
 
 /**
@@ -377,7 +377,8 @@ export function GapLedger() {
 
 /**
  * The second axis, scored from the same twelve answers: three training signals,
- * what each one reads, and the cause they resolve to. Court time is marked as
+ * what each one implies about how the skill gets practiced, and the
+ * conclusion they resolve to. Court time is marked as
  * the master variable because that is literally how `inferRootCause` works — it
  * settles the reading outright, and the other two only break a tie.
  */
@@ -406,7 +407,7 @@ export function RootCauseReadout() {
               {signal.answer}
             </p>
             <div className="md:justify-self-end">
-              <Chip>{ROOT_CAUSE_TITLES[signal.flag]}</Chip>
+              <Chip>{SIGNAL_READINGS[signal.flag]}</Chip>
             </div>
           </li>
         ))}
@@ -415,22 +416,23 @@ export function RootCauseReadout() {
       {/*
         The accent-tinted card variant (DESIGN.md §Components): border `optic`
         over a 5% tint, for the one moment this object is pointing at — the
-        cause the three signals resolve to.
+        conclusion the three signals resolve to.
+
+        The conclusion is the engine's own output for this example: the
+        insight line and plan line the reveal shows for this bottleneck ×
+        root cause. It is a claim about the mechanism ("Games don't teach
+        the reset."), not a label for the answers above it, and it can't
+        drift from what the product actually tells a player.
       */}
-      <div className="mt-6 flex flex-col gap-3 rounded-xl border border-optic bg-optic/[0.05] px-5 py-4 md:flex-row md:items-center md:gap-6 md:px-6">
-        <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-optic md:w-[10rem] md:shrink-0">
+      <div className="mt-6 flex flex-col gap-2 rounded-xl border border-optic bg-optic/[0.05] px-5 py-4 md:px-6 md:py-5">
+        <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-optic">
           Root cause
         </p>
-        <p className="font-display text-[22px] font-bold leading-[1.2] tracking-[-0.01em] text-ink md:text-[24px]">
-          {ROOT_CAUSE_TITLES[DEMO_DIAGNOSIS.rootCause]}
+        <p className="text-balance font-display text-[22px] font-bold leading-[1.2] tracking-[-0.01em] text-ink md:text-[24px]">
+          {DEMO_DIAGNOSIS.insightHeadline}
         </p>
-        {/*
-          No explanatory sentence here: the section's own body copy already
-          makes the argument, and this object exists to stop the page repeating
-          itself in prose. The card states the resolved reading and stops.
-        */}
-        <p className="text-[14px] leading-[1.45] text-ink-2 md:ml-auto">
-          Paired with {SKILL_TITLES[DEMO_DIAGNOSIS.bottleneck].toLowerCase()}, one plan
+        <p className="text-pretty text-[14px] leading-[1.45] text-ink-2">
+          {DEMO_DIAGNOSIS.absolutionClose}
         </p>
       </div>
     </Readout>

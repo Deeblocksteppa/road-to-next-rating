@@ -114,22 +114,25 @@ export const DEMO_RETEST_SKILLS = DEMO_RANKED_SKILLS.map((before) => {
 });
 
 /**
- * Short human titles for the engine's root-cause ids — named for what the
- * answers that trigger them actually say, not for the id.
+ * What each practice answer says about how the skill gets trained — the
+ * reading, one step past the answer. These used to be names for the
+ * root-cause ids ("Mostly games"), so the readout tagged "Mostly games,
+ * occasional drilling" as MOSTLY GAMES and then announced the root cause as
+ * "Mostly games": the visitor's own answer handed back as the diagnosis.
+ * The chips now say what the answer implies, and the conclusion card says
+ * what the engine concludes from it (see `RootCauseReadout`).
  *
  * `open_play_only` fires for "Almost all open play", "Mostly games,
  * occasional drilling", "I don't really drill" and "no real drilling
- * partner" (see `questions.ts`), so "Open play only" was wrong for most of
- * the players it describes — including this page's own sample, whose court
- * time answer includes occasional drilling. `well_coached` fires on drilling
- * with a plan, mostly-drilling court time, or a regular drilling partner;
- * none of those answers mentions a coach.
+ * partner" (see `questions.ts`) — in every case, no shot gets repeated in
+ * isolation. `well_coached` fires on drilling with a plan, mostly-drilling
+ * court time, or a regular drilling partner.
  */
-export const ROOT_CAUSE_TITLES: Record<RootCauseId, string> = {
-  open_play_only: "Mostly games",
-  random_drilling: "Unfocused drilling",
-  well_coached: "Structured practice",
-  unclear: "No clear signal",
+export const SIGNAL_READINGS: Record<RootCauseId, string> = {
+  open_play_only: "No isolated reps",
+  random_drilling: "Reps without a plan",
+  well_coached: "Structured reps",
+  unclear: "Mixed signal",
 };
 
 /** One training question, the answer given, and the root cause it votes for. */

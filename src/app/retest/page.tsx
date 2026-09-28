@@ -1,26 +1,31 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { submitRetest, type RetestResult } from "@/app/retest/actions";
+import { submitRetest } from "@/app/retest/actions";
 import { Assessment } from "@/components/assessment/Assessment";
 import { Computing } from "@/components/assessment/Computing";
-import { DeltaScreen } from "@/components/retest/DeltaScreen";
+import { retestHref } from "@/lib/retest-view";
 import type { AnswerMap } from "@/lib/types";
 
-type Phase = "assessment" | "computing" | "delta" | "error";
+type Phase = "assessment" | "computing" | "error";
 
+/**
+ * Takes the re-test, then hands off to the result screen at `/retest/[id]`.
+ * `replace`, not `push`: Back from the result should not reopen a blank
+ * assessment for a re-test that has already been saved.
+ */
 export default function RetestPage() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("assessment");
-  const [result, setResult] = useState<RetestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleComplete(answers: AnswerMap) {
     setPhase("computing");
     try {
-      const res = await submitRetest(answers);
-      setResult(res);
-      setPhase("delta");
+      const { diagnosisId } = await submitRetest(answers);
+      router.replace(retestHref(diagnosisId));
     } catch (err) {
       console.error("Re-test failed:", err);
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -33,12 +38,8 @@ export default function RetestPage() {
   }
 
   if (phase === "computing") {
-    // Loading visual while submitRetest runs; the phase advances on resolve.
+    // Loading visual while submitRetest runs and the result route loads.
     return <Computing onDone={() => {}} />;
-  }
-
-  if (phase === "delta" && result) {
-    return <DeltaScreen result={result} />;
   }
 
   return (
@@ -48,7 +49,6 @@ export default function RetestPage() {
         <button
           onClick={() => {
             setError(null);
-            setResult(null);
             setPhase("assessment");
           }}
           className="text-sm text-foreground underline underline-offset-4"

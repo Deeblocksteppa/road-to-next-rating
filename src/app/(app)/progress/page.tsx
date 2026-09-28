@@ -31,8 +31,8 @@ const READINESS_TARGET = 80;
  * Progress — three states driven by real data:
  *   • no diagnosis at all      → prompt to take the assessment
  *   • exactly one diagnosis    → Day One (no re-test history yet)
+ *   • 2+ diagnoses + free      → Locked (placeholder only; paid data never loaded)
  *   • 2+ diagnoses + paid      → Full
- *   • 2+ diagnoses + free      → Locked
  * Each re-test inserts a new `diagnoses` row, so row count IS the re-test history.
  */
 export default async function ProgressPage() {
@@ -101,8 +101,22 @@ export default async function ProgressPage() {
       sessionsDone,
       daysElapsed: timeline?.daysElapsed ?? 1,
     };
+  } else if (profileRes.data?.subscription_status !== "active") {
+    // ── State 2: Locked (free). Only what the free tier shows is read and
+    // sent: the current number, the change since the first reading, and how
+    // many readings exist (the shape of the placeholder). The chart series,
+    // re-test history and streak are paid, and a CSS blur over the real data
+    // would still hand them to the browser.
+    const first = diags[0];
+    const last = diags[diags.length - 1];
+    viewData = {
+      kind: "locked",
+      currentReadiness: last.readiness ?? 0,
+      totalChange: (last.readiness ?? 0) - (first.readiness ?? 0),
+      readingCount: diags.length,
+    };
   } else {
-    // ── State 2/3: has re-test history.
+    // ── State 3: Full (paid).
     const first = diags[0];
     const last = diags[diags.length - 1];
 
@@ -125,7 +139,8 @@ export default async function ProgressPage() {
       })
     );
 
-    const chart = {
+    viewData = {
+      kind: "full",
       series: buildReadinessSeries(diags),
       target: READINESS_TARGET,
       weeksSpan: weeksBetween(first.created_at, last.created_at),
@@ -133,21 +148,9 @@ export default async function ProgressPage() {
       startLabel: shortDate(first.created_at),
       endLabel: shortDate(last.created_at),
       sessions,
+      history: buildHistoryRows(diags, plans),
+      streak: await getWeeklyStreak(supabase, drillsPerSession),
     };
-    const history = buildHistoryRows(diags, plans);
-    const streak = await getWeeklyStreak(supabase, drillsPerSession);
-
-    const isPaid = profileRes.data?.subscription_status === "active";
-
-    viewData = isPaid
-      ? { kind: "full", history, streak, ...chart }
-      : {
-          kind: "locked",
-          currentReadiness: last.readiness ?? 0,
-          history,
-          streak,
-          ...chart,
-        };
   }
 
   return <ProgressView data={viewData} />;

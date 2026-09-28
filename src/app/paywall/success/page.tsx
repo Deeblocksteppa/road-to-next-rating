@@ -72,6 +72,18 @@ export default async function CheckoutSuccessPage({
     confirmed = profile?.subscription_status === "active";
   }
 
+  // Name where the button goes. Checkout returns the player to what they were
+  // trying to see, which from a re-test is that re-test's breakdown.
+  const continueLabel = destination.startsWith("/retest/")
+    ? "See my breakdown"
+    : destination.startsWith("/progress")
+      ? "See my progress"
+      : "Continue";
+  const refreshHref = `/paywall/success?${new URLSearchParams({
+    ...(searchParams.session_id ? { session_id: searchParams.session_id } : {}),
+    from: destination,
+  }).toString()}`;
+
   return (
     <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-6 bg-background px-6 py-8 text-ink">
       <div className="flex flex-col gap-2.5">
@@ -83,17 +95,17 @@ export default async function CheckoutSuccessPage({
         </h1>
         <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">
           {confirmed
-            ? "Every re-test from here is measured against today. Your deltas, chart, and drill history are live."
+            ? "Every re-test's skill-by-skill breakdown, your readiness chart, and your re-test history are open now — including re-tests you've already taken."
             : "Stripe has your payment and we're waiting on final confirmation. This usually takes a few seconds — refresh if it doesn't clear."}
         </p>
       </div>
 
       <div className="flex flex-col gap-3">
         <Link
-          href={confirmed ? destination : "/paywall/success"}
+          href={confirmed ? destination : refreshHref}
           className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
         >
-          {confirmed ? "See my progress" : "Refresh"}
+          {confirmed ? continueLabel : "Refresh"}
         </Link>
         {!confirmed && (
           <Link

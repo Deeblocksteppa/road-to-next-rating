@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { LockedCard } from "@/components/ui/locked-card";
 import type { HistoryRow, ReadinessPoint, SessionSeries } from "@/lib/progress";
+import { retestHref } from "@/lib/retest-view";
 import { ReadinessChart } from "./ReadinessChart";
 
 export interface StreakData {
@@ -33,12 +34,18 @@ export type ProgressViewData =
       daysElapsed: number;
     }
   | ({ kind: "full"; history: HistoryRow[]; streak: StreakData } & ChartData)
-  | ({
+  | {
+      /**
+       * Free tier. Carries only what the screen shows unlocked — the paid
+       * chart, history and streak are never loaded for a free player, so the
+       * locked cards render placeholders shaped by `readingCount`.
+       */
       kind: "locked";
       currentReadiness: number;
-      history: HistoryRow[];
-      streak: StreakData;
-    } & ChartData);
+      totalChange: number;
+      /** Diagnoses on the account, baseline included. */
+      readingCount: number;
+    };
 
 export function ProgressView({ data }: { data: ProgressViewData }) {
   return (
@@ -121,9 +128,8 @@ function DayOneState({
         <p className="text-pretty text-[13px] leading-[1.5] text-ink-3">
           One point so far: your baseline.{" "}
           {data.retestDateLabel === "—"
-            ? "Your first re-test adds the second"
-            : `Your first re-test on ${data.retestDateLabel} adds the second`}
-          , and that is when there is a line to read.
+            ? "Your first re-test adds the second reading."
+            : `Your first re-test on ${data.retestDateLabel} adds the second reading.`}
         </p>
       </section>
     </>
@@ -192,12 +198,12 @@ function LockedState({
         </p>
       </section>
 
-      <LockedCard teaser="Your readiness line, over time — unlock Progress to watch the whole climb.">
-        <ChartContent data={data} />
+      <LockedCard teaser="Your readiness line across every re-test, whichever way it went.">
+        <ChartPlaceholder readings={data.readingCount} />
       </LockedCard>
 
-      <LockedCard teaser="Re-test history & streaks">
-        <HistoryContent rows={data.history} />
+      <LockedCard teaser="Re-test history, with each re-test's skill-by-skill breakdown">
+        <HistoryPlaceholder readings={data.readingCount} />
       </LockedCard>
 
       <div className="flex-1" />
@@ -345,6 +351,11 @@ function SessionSparkline({ values, max }: { values: number[]; max: number }) {
   );
 }
 
+/**
+ * Every re-test row opens that re-test's full result, per-skill breakdown
+ * included, at `/retest/[id]`. The baseline has nothing before it to compare
+ * against, so it stays a plain row.
+ */
 function HistoryContent({ rows }: { rows: HistoryRow[] }) {
   return (
     <>
@@ -352,27 +363,94 @@ function HistoryContent({ rows }: { rows: HistoryRow[] }) {
         Re-test history
       </p>
       <div className="mt-2 flex flex-col">
-        {rows.map((row, i) => (
-          <div key={`${row.label}-${i}`}>
-            {i > 0 && <div className="h-px bg-line" />}
-            <div className="flex items-center justify-between py-3.5">
+        {rows.map((row, i) => {
+          const body = (
+            <>
               <div className="flex flex-col gap-0.5">
                 <span className="text-[14px] font-semibold">{row.label}</span>
                 <span className="font-mono text-[10px] text-ink-3">{row.dateLabel}</span>
               </div>
-              <span className="font-display text-[17px] font-bold tabular-nums">
-                {row.score}
-                {row.delta !== null && row.delta !== 0 && (
-                  <span
-                    className={`ml-1.5 font-mono text-[11px] font-medium ${
-                      row.delta > 0 ? "text-optic" : "text-danger"
-                    }`}
-                  >
-                    {row.delta > 0 ? "+" : ""}
-                    {row.delta}
+              <span className="flex items-center gap-3">
+                <span className="font-display text-[17px] font-bold tabular-nums">
+                  {row.score}
+                  {row.delta !== null && row.delta !== 0 && (
+                    <span
+                      className={`ml-1.5 font-mono text-[11px] font-medium ${
+                        row.delta > 0 ? "text-optic" : "text-danger"
+                      }`}
+                    >
+                      {row.delta > 0 ? "+" : "−"}
+                      {Math.abs(row.delta)}
+                    </span>
+                  )}
+                </span>
+                {row.id && i > 0 && (
+                  <span aria-hidden="true" className="text-ink-3">
+                    ›
                   </span>
                 )}
               </span>
+            </>
+          );
+          return (
+            <div key={row.id ?? `${row.label}-${i}`}>
+              {i > 0 && <div className="h-px bg-line" />}
+              {row.id && i > 0 ? (
+                <Link
+                  href={retestHref(row.id)}
+                  aria-label={`${row.label}, ${row.dateLabel}: readiness ${row.score}. See the breakdown`}
+                  className="-mx-2 flex items-center justify-between rounded-lg px-2 py-3.5 transition-colors hover:bg-[#17171A]"
+                >
+                  {body}
+                </Link>
+              ) : (
+                <div className="flex items-center justify-between py-3.5">{body}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/* ── Locked placeholders ──────────────────────────────────────── */
+/**
+ * Decoys for the blurred cards: the right shape, no values. A flat run of
+ * readings rather than a rising line — the placeholder shouldn't promise a
+ * climb the player's own chart may not show.
+ */
+function ChartPlaceholder({ readings }: { readings: number }) {
+  const n = Math.max(2, Math.min(readings, 8));
+  const xs = Array.from({ length: n }, (_, i) => 12 + (i / (n - 1)) * 276);
+  return (
+    <>
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">Readiness</p>
+      <svg width="100%" height="120" viewBox="0 0 300 120" preserveAspectRatio="none" className="mt-3.5 block">
+        <line x1="12" y1="24" x2="288" y2="24" stroke="#2E2E33" strokeDasharray="3 4" />
+        <polyline points={xs.map((x) => `${x},70`).join(" ")} fill="none" stroke="#80807B" strokeWidth="2" />
+        {xs.map((x) => (
+          <circle key={x} cx={x} cy={70} r="3.5" fill="#80807B" />
+        ))}
+      </svg>
+    </>
+  );
+}
+
+function HistoryPlaceholder({ readings }: { readings: number }) {
+  const rows = Math.max(2, Math.min(readings, 4));
+  return (
+    <>
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+        Re-test history
+      </p>
+      <div className="mt-2 flex flex-col">
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i}>
+            {i > 0 && <div className="h-px bg-line" />}
+            <div className="flex items-center justify-between py-3.5">
+              <span className="text-[14px] font-semibold">{i === 0 ? "Baseline" : "Re-test"}</span>
+              <span className="font-display text-[17px] font-bold text-ink-3">––</span>
             </div>
           </div>
         ))}

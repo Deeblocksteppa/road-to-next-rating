@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { startCheckout } from "@/app/paywall/actions";
+import type { Direction } from "@/lib/retest-view";
 
 type Plan = "annual" | "monthly";
 
@@ -13,12 +14,45 @@ type Plan = "annual" | "monthly";
  * plans for the next bottleneck regardless of tier — it was never gated.
  */
 const FEATURES = [
-  "Per-skill re-test deltas — which skills moved, and how much",
+  "Each re-test's skill-by-skill breakdown, kept for every re-test you take",
   "Your readiness chart across every re-test, with logged sessions beneath it",
   "Re-test history and week-over-week session streaks",
 ];
 
-export function PaywallView({ returnTo }: { returnTo: string }) {
+/**
+ * The headline follows the player's last re-test, because this screen is
+ * usually reached straight from one. It used to open on "You're improving —
+ * keep the receipts" for everyone, including a player whose score had just
+ * fallen. With no re-test yet (reached from Settings, say) it stays neutral.
+ */
+function pitchFor(reading: { direction: Direction; change: number } | null): {
+  eyebrow: string;
+  headline: string;
+} {
+  if (!reading) return { eyebrow: "Progress", headline: "See what every re-test changes." };
+  const points = (n: number) => `${n} point${n === 1 ? "" : "s"}`;
+  switch (reading.direction) {
+    case "up":
+      return { eyebrow: `Up ${points(reading.change)}`, headline: "See where every point came from." };
+    case "flat":
+      return { eyebrow: "Score held", headline: "See what shifted underneath it." };
+    case "down":
+      return {
+        eyebrow: `Down ${points(Math.abs(reading.change))}`,
+        headline: "See which skills slipped, and which held.",
+      };
+  }
+}
+
+export function PaywallView({
+  returnTo,
+  reading,
+}: {
+  returnTo: string;
+  /** Direction of the re-test the player came from, or their latest; null before any re-test. */
+  reading: { direction: Direction; change: number } | null;
+}) {
+  const pitch = pitchFor(reading);
   const [plan, setPlan] = useState<Plan>("annual");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -57,10 +91,10 @@ export function PaywallView({ returnTo }: { returnTo: string }) {
       <div className="flex flex-1 flex-col justify-center gap-[22px] py-6">
         <div className="flex flex-col gap-2.5">
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-            You&apos;re improving — keep the receipts
+            {pitch.eyebrow}
           </p>
           <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
-            See every point you earn from here.
+            {pitch.headline}
           </h1>
         </div>
 

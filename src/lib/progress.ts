@@ -10,6 +10,8 @@ export interface ReadinessPoint {
 }
 
 export interface HistoryRow {
+  /** The diagnosis behind the row — opens its result at `/retest/[id]`. */
+  id: string | null;
   label: string;
   dateLabel: string;
   score: number;
@@ -147,6 +149,7 @@ export function buildHistoryRows(
     }
 
     return {
+      id: d.id ?? null,
       label,
       dateLabel: shortDate(d.created_at),
       score: d.readiness ?? 0,
