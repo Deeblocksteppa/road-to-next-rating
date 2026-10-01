@@ -119,7 +119,7 @@ export default async function HomePage() {
           <Link
             href="/settings"
             aria-label="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
+            className="relative flex h-8 w-8 items-center justify-center rounded-full after:absolute after:-inset-1.5 after:content-[''] border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
@@ -141,9 +141,10 @@ export default async function HomePage() {
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
               Current bottleneck
             </p>
-            <p className="font-display text-[27px] font-extrabold tracking-[-0.01em]">
+            {/* The screen's one heading (Home had none). */}
+            <h1 className="font-display text-[27px] font-extrabold tracking-[-0.01em]">
               {SKILL_TITLES[bottleneck]}
-            </p>
+            </h1>
             {timeline && (
               <p className="text-[13px] text-ink-2">
                 Week {timeline.weekNumber} of {timeline.weeksTarget} —{" "}

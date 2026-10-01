@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { QUESTIONS } from "@/lib/questions";
 import { AnswerMap, Question } from "@/lib/types";
 
@@ -24,6 +24,20 @@ export function Assessment({ onComplete }: Props) {
   // question id makes carry-over impossible by construction, and the named,
   // autocomplete-off fields below stop the browser offering it.
   const [drafts, setDrafts] = useState<AnswerMap>({});
+
+  // Each new question takes focus at its heading: a screen reader announces
+  // it, and the next Tab lands on its first answer. Without this, advancing
+  // unmounted the focused control and dropped focus back to <body>. Skipped
+  // on first render so arriving on question 1 doesn't steal focus.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    headingRef.current?.focus({ preventScroll: true });
+  }, [index]);
 
   const question = QUESTIONS[index];
   const total = QUESTIONS.length;
@@ -62,31 +76,47 @@ export function Assessment({ onComplete }: Props) {
   // This question's own draft, else its saved answer (navigating back), else
   // empty. Never another question's text.
   const currentText = drafts[question.id] ?? answers[question.id] ?? "";
+  // The chosen option, including one answered earlier and returned to with
+  // Back — Next used to stay disabled there until the option was re-tapped.
+  const currentChoice = selected ?? answers[question.id];
 
   return (
-    <main className="relative min-h-[100dvh] w-full bg-background text-ink">
+    <main className="relative mx-auto min-h-[100dvh] w-full max-w-md bg-background text-ink">
       <AssessmentStyles />
 
       {/* Header row — back + thin progress bar + counter */}
       <div className="flex items-center gap-4 px-6 pt-5">
+        {/* Kept in the layout on question 1 so the bar doesn't shift, but
+            taken out of the tab order and the accessibility tree there. The
+            ::after extends the 36px button to a 44px hit area. */}
         <button
           onClick={handleBack}
-          aria-label="Go back"
+          aria-label="Previous question"
+          disabled={index === 0}
+          aria-hidden={index === 0 ? true : undefined}
           className={[
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors",
+            "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors after:absolute after:-inset-1 after:content-['']",
             "hover:border-line-hover",
-            index === 0 ? "pointer-events-none opacity-0" : "opacity-100",
+            index === 0 ? "pointer-events-none invisible" : "",
           ].join(" ")}
         >
           ‹
         </button>
-        <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-line">
+        <div
+          role="progressbar"
+          aria-label="Assessment progress"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={index + 1}
+          aria-valuetext={`Question ${index + 1} of ${total}`}
+          className="h-[3px] flex-1 overflow-hidden rounded-full bg-line"
+        >
           <div
             className="h-full rounded-full bg-optic transition-[width] duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="shrink-0 font-mono text-[11px] tracking-[0.1em] text-ink-3">
+        <span aria-hidden="true" className="shrink-0 font-mono text-[11px] tracking-[0.1em] text-ink-3">
           {counter}
         </span>
       </div>
@@ -100,9 +130,14 @@ export function Assessment({ onComplete }: Props) {
             </p>
           )}
 
-          <h2 className="text-balance font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em] md:text-[28px]">
+          <h1
+            ref={headingRef}
+            id={`q-${question.id}-prompt`}
+            tabIndex={-1}
+            className="text-balance focus-visible:outline-none font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em] md:text-[28px]"
+          >
             {question.prompt}
-          </h2>
+          </h1>
 
           {question.note && (
             <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">{question.note}</p>
@@ -114,6 +149,7 @@ export function Assessment({ onComplete }: Props) {
                 question={question}
                 selected={selected ?? answers[question.id]}
                 onSelect={handleOptionTap}
+                onConfirm={() => advance(answers)}
               />
             ) : (
               <TextEntry
@@ -132,8 +168,8 @@ export function Assessment({ onComplete }: Props) {
       {question.options && (
         <div className="px-6 pb-8">
           <button
-            onClick={() => selected && advance(answers)}
-            disabled={!selected}
+            onClick={() => currentChoice && advance(answers)}
+            disabled={!currentChoice}
             className="flex h-[52px] w-full items-center justify-center rounded-lg border border-transparent bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:border-line disabled:bg-surface disabled:text-ink-3"
           >
             Next
@@ -145,39 +181,62 @@ export function Assessment({ onComplete }: Props) {
 }
 
 /* ── Multiple-choice options ────────────────────────────────────── */
+/**
+ * Native radio inputs, visually hidden, inside the option cards: screen
+ * readers announce the group (named by the question) and which answer is
+ * checked, arrow keys move between answers, and Enter on a chosen answer
+ * moves on. The cards were plain buttons with the selection shown only by
+ * colour and a dot.
+ */
 function OptionList({
   question,
   selected,
   onSelect,
+  onConfirm,
 }: {
   question: Question;
   selected: string | undefined;
   onSelect: (id: string) => void;
+  onConfirm: () => void;
 }) {
   return (
-    <ul className="flex flex-col gap-3">
+    <div
+      role="radiogroup"
+      aria-labelledby={`q-${question.id}-prompt`}
+      className="flex flex-col gap-3"
+    >
       {question.options!.map((opt) => {
         const isSelected = selected === opt.id;
         return (
-          <li key={opt.id}>
-            <button
-              onClick={() => onSelect(opt.id)}
-              className={[
-                "flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border px-[18px] py-3.5 text-left text-[15px] leading-[1.4] transition-all duration-150 active:scale-[0.99]",
-                isSelected
-                  ? "border-optic bg-optic/[0.08] text-ink"
-                  : "border-line bg-surface text-ink hover:border-line-hover hover:bg-[#17171A]",
-              ].join(" ")}
-            >
-              <span>{opt.label}</span>
-              {isSelected && (
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-optic" />
-              )}
-            </button>
-          </li>
+          <label
+            key={opt.id}
+            className={[
+              "flex min-h-16 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-[18px] py-3.5 text-left text-[15px] leading-[1.4] transition-all duration-150 active:scale-[0.99]",
+              "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-optic",
+              isSelected
+                ? "border-optic bg-optic/[0.08] text-ink"
+                : "border-line bg-surface text-ink hover:border-line-hover hover:bg-[#17171A]",
+            ].join(" ")}
+          >
+            <input
+              type="radio"
+              name={`q-${question.id}`}
+              value={opt.id}
+              checked={isSelected}
+              onChange={() => onSelect(opt.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && isSelected) onConfirm();
+              }}
+              className="sr-only"
+            />
+            <span>{opt.label}</span>
+            {isSelected && (
+              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full bg-optic" />
+            )}
+          </label>
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -202,7 +261,7 @@ function TextEntry({
   const baseClass = [
     "w-full rounded-md border border-line-strong bg-surface px-4 py-3.5",
     "text-[15px] leading-relaxed text-ink placeholder-ink-3",
-    "focus:border-line-hover focus:outline-none",
+    "focus:border-line-hover",
     "transition-colors duration-200 resize-none",
   ].join(" ");
 

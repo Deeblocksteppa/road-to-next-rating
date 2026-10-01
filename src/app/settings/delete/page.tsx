@@ -33,7 +33,7 @@ export default async function DeleteAccountPage() {
         <Link
           href="/settings"
           aria-label="Back to settings"
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
+          className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
         >
           ‹
         </Link>
@@ -41,7 +41,8 @@ export default async function DeleteAccountPage() {
       </header>
 
       <div className="flex flex-col gap-2.5">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+        {/* Not uppercased: an email is read to be checked, and caps make that harder. */}
+        <p className="font-mono text-[12px] text-ink-3">
           {user.email}
         </p>
         <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">

@@ -67,7 +67,7 @@ export default async function SessionPage({
   // the re-render Next makes after the last log lands on identical content.
   if (remaining.length === 0 && planDrills.length > 0) {
     return (
-      <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
         <SessionCompleteScreen weekly={weekly} />
       </main>
     );
@@ -77,7 +77,7 @@ export default async function SessionPage({
   // rather than a flow that would dedup into a no-op.
   if (remaining.length === 0 || (weekComplete && !startedToday)) {
     return (
-      <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
         <div className="flex-1" />
         <div className="flex flex-col gap-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">

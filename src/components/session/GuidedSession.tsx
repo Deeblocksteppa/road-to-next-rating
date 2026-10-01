@@ -102,7 +102,7 @@ export function GuidedSession(props: GuidedSessionProps) {
   // screen this is already showing.
   if (!drill) {
     return (
-      <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
         <SessionCompleteScreen weekly={weekly} />
       </main>
     );
@@ -112,7 +112,7 @@ export function GuidedSession(props: GuidedSessionProps) {
   const next = outline.find((item, i) => i >= position && !item.doneToday) ?? null;
 
   return (
-    <main className="flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
       {step === "brief" && (
         <BriefScreen
           drill={drill}
@@ -198,7 +198,7 @@ function BriefScreen({
         <Link
           href="/plan"
           aria-label="Back to plan"
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
+          className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path
@@ -322,7 +322,7 @@ function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () =>
           type="button"
           onClick={() => setShowInstructions((v) => !v)}
           aria-expanded={showInstructions}
-          className="self-start font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
+          className="relative self-start font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 underline after:absolute after:-inset-x-2 after:-inset-y-3.5 after:content-[''] decoration-line-hover underline-offset-4 hover:text-ink"
         >
           {showInstructions ? "Hide instructions" : "View instructions"}
         </button>

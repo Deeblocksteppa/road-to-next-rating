@@ -14,7 +14,7 @@ export function LogoMark({
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
       <path
         d="M4 22.5 H15.5"
-        stroke="#63635E"
+        stroke="#80807B"
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         fill="none"

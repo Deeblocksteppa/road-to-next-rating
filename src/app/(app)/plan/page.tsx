@@ -88,7 +88,7 @@ export default async function PlanPage() {
           {plan.in_game_rule && (
             <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface px-5 py-[18px]">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-                In-game rule — this week
+                In-game rule
               </p>
               <p className="text-pretty text-[15px] leading-[1.55] text-ink">
                 {plan.in_game_rule}

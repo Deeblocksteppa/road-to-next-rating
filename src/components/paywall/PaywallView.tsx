@@ -81,7 +81,7 @@ export function PaywallView({
         <Link
           href={returnTo}
           aria-label="Back"
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
+          className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
         >
           ‹
         </Link>
@@ -107,10 +107,11 @@ export function PaywallView({
           ))}
         </div>
 
-        <div className="mt-1 flex flex-col gap-2.5">
+        <div role="radiogroup" aria-label="Plan" className="mt-1 flex flex-col gap-2.5">
           <PlanCard
             selected={plan === "annual"}
             onSelect={() => setPlan("annual")}
+            value="annual"
             name="Annual"
             price="$79 / year · equivalent to $6.58 per month"
             badge="SAVE 17%"
@@ -118,6 +119,7 @@ export function PaywallView({
           <PlanCard
             selected={plan === "monthly"}
             onSelect={() => setPlan("monthly")}
+            value="monthly"
             name="Monthly"
             price="$7.99 / month · billed monthly"
           />
@@ -150,51 +152,70 @@ export function PaywallView({
   );
 }
 
+/**
+ * A native radio inside each card, visually hidden: assistive tech hears
+ * "Annual, radio button, checked, 1 of 2" and arrow keys switch plans. Both
+ * cards carry the radio dot; the Annual card used to swap its dot for the
+ * SAVE badge, so it had no selection indicator at all.
+ */
 function PlanCard({
   selected,
   onSelect,
+  value,
   name,
   price,
   badge,
 }: {
   selected: boolean;
   onSelect: () => void;
+  value: Plan;
   name: string;
   price: string;
   badge?: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <label
       className={[
-        "flex w-full items-center justify-between rounded-xl border px-[18px] py-4 text-left transition-colors",
+        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-[18px] py-4 text-left transition-colors",
+        "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-optic",
         selected
           ? "border-optic bg-optic/[0.05]"
           : "border-line-strong hover:border-line-hover",
       ].join(" ")}
     >
+      <input
+        type="radio"
+        name="plan"
+        value={value}
+        checked={selected}
+        onChange={onSelect}
+        className="sr-only"
+      />
       <div className="flex flex-col gap-1">
-        <span className={`text-[16px] font-semibold ${selected ? "text-ink" : "text-ink-2"}`}>
-          {name}
+        <span className="flex items-center gap-2.5">
+          <span className={`text-[16px] font-semibold ${selected ? "text-ink" : "text-ink-2"}`}>
+            {name}
+          </span>
+          {badge && (
+            <span className="shrink-0 rounded-xs bg-optic px-2 py-1 font-mono text-[10px] tracking-[0.08em] text-optic-ink">
+              {badge}
+            </span>
+          )}
         </span>
         <span className={`font-mono text-[11px] ${selected ? "text-ink-2" : "text-ink-3"}`}>
           {price}
         </span>
       </div>
 
-      {badge ? (
-        <span className="shrink-0 rounded-xs bg-optic px-2 py-1 font-mono text-[10px] tracking-[0.08em] text-optic-ink">
-          {badge}
-        </span>
-      ) : (
-        <span
-          className={[
-            "h-5 w-5 shrink-0 rounded-full border-[1.5px] box-border",
-            selected ? "border-optic bg-optic" : "border-line-strong",
-          ].join(" ")}
-        />
-      )}
-    </button>
+      <span
+        aria-hidden="true"
+        className={[
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.5px] box-border",
+          selected ? "border-optic" : "border-line-strong",
+        ].join(" ")}
+      >
+        {selected && <span className="h-2.5 w-2.5 rounded-full bg-optic" />}
+      </span>
+    </label>
   );
 }

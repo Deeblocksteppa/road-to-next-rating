@@ -7,6 +7,7 @@ import { Reveal } from "@/components/diagnosis/Reveal";
 import { RoadmapScreen } from "@/components/diagnosis/Roadmap";
 import { SavedResult } from "@/components/diagnosis/SavedResult";
 import { SaveGate } from "@/components/auth/SaveGate";
+import { SKILL_TITLES } from "@/lib/diagnoses";
 import { diagnose } from "@/lib/engine";
 import { clearLocalResult, loadLocalResult, saveLocalResult } from "@/lib/local-result";
 import { generateRoadmap } from "@/lib/roadmap";
@@ -128,10 +129,10 @@ export default function Start() {
     return <RoadmapScreen roadmap={roadmap} onCommit={() => setPhase("savegate")} />;
   }
 
-  if (phase === "savegate" && roadmap) {
+  if (phase === "savegate" && roadmap && diagnosis) {
     return (
       <SaveGate
-        bottleneckLabel={roadmap.bottleneckLabel}
+        bottleneckTitle={SKILL_TITLES[diagnosis.bottleneck]}
         weeksTarget={roadmap.weeksTarget}
         onSkip={handleLeaveGate}
       />

@@ -33,7 +33,7 @@ export default async function ResetPasswordPage({
   }
 
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
       <header className="pt-4">
         <Logo />
       </header>
@@ -49,7 +49,7 @@ export default async function ResetPasswordPage({
         </div>
 
         {searchParams.error && (
-          <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
             {searchParams.error}
           </p>
         )}
@@ -66,7 +66,7 @@ export default async function ResetPasswordPage({
             placeholder="New password"
             minLength={8}
             required
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover focus:outline-none"
+            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
           <label htmlFor="confirm" className="sr-only">
             Repeat new password
@@ -79,7 +79,7 @@ export default async function ResetPasswordPage({
             placeholder="Repeat new password"
             minLength={8}
             required
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover focus:outline-none"
+            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
           <button
             type="submit"

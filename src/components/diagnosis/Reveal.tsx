@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
 import { Diagnosis, SkillId } from "@/lib/types";
 
@@ -19,6 +19,62 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
   const advance = () => {
     if (!isLast) setBeat((b) => b + 1);
   };
+  const back = () => {
+    if (beat > 0) setBeat((b) => b - 1);
+  };
+
+  /*
+   * Keyboard. Right arrow, Enter and Space advance; left arrow goes back.
+   * Enter and Space are left alone when a button or link has focus, so the
+   * focused control handles its own press (the Back and Continue controls
+   * below, and the plan button on the last beat) and nothing fires twice.
+   */
+  const advanceRef = useRef(advance);
+  const backRef = useRef(back);
+  advanceRef.current = advance;
+  backRef.current = back;
+  // Last input was a key, not a tap or click. Keeps the focus handoff below
+  // to keyboard users, so a tap never pops a focus ring onto the footer.
+  const usingKeyboard = useRef(false);
+  const continueRef = useRef<HTMLButtonElement>(null);
+  const planRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const onPointer = () => {
+      usingKeyboard.current = false;
+    };
+    window.addEventListener("pointerdown", onPointer);
+    return () => window.removeEventListener("pointerdown", onPointer);
+  }, []);
+
+  /*
+   * The footer swaps controls between the last two beats (Continue ↔ the
+   * plan button), which drops focus to <body>. For a keyboard user, put it
+   * back on the control that moves them on.
+   */
+  useEffect(() => {
+    if (!usingKeyboard.current) return;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    (isLast ? planRef.current : continueRef.current)?.focus();
+  }, [beat, isLast]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      usingKeyboard.current = true;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      const onControl = (e.target as HTMLElement | null)?.closest("button, a, input, textarea");
+      if (e.key === "ArrowRight" || (!onControl && (e.key === "Enter" || e.key === " "))) {
+        e.preventDefault();
+        advanceRef.current();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        backRef.current();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <main
@@ -32,7 +88,11 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
 
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-[440px] flex-col px-6 pb-8">
         {/* Story-progress ticks */}
-        <div className="flex gap-[5px] pt-6">
+        <div
+          className="flex gap-[5px] pt-6"
+          role="img"
+          aria-label={`Part ${beat + 1} of ${BEAT_COUNT}`}
+        >
           {Array.from({ length: BEAT_COUNT }).map((_, i) => (
             <span
               key={i}
@@ -41,37 +101,101 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
           ))}
         </div>
 
-        {/* Beat content */}
-        <div key={beat} className="beat-in flex flex-1 flex-col justify-center">
-          {beat === 0 && <MirrorBeat diagnosis={diagnosis} />}
-          {beat === 1 && <VerdictBeat diagnosis={diagnosis} />}
-          {beat === 2 && <InsightBeat diagnosis={diagnosis} />}
-          {beat === 3 && <AbsolutionBeat diagnosis={diagnosis} />}
-          {beat === 4 && <ReadinessBeat diagnosis={diagnosis} />}
+        {/* Beat content. A polite live region, so a screen reader reads each
+            beat as it arrives while focus stays on the control that moved it. */}
+        <div aria-live="polite" className="flex flex-1 flex-col">
+          <div key={beat} className="beat-in flex flex-1 flex-col justify-center">
+            {beat === 0 && <MirrorBeat diagnosis={diagnosis} />}
+            {beat === 1 && <VerdictBeat diagnosis={diagnosis} />}
+            {beat === 2 && <InsightBeat diagnosis={diagnosis} />}
+            {beat === 3 && <AbsolutionBeat diagnosis={diagnosis} />}
+            {beat === 4 && <ReadinessBeat diagnosis={diagnosis} />}
+          </div>
         </div>
 
-        {/* Footer — tap hint for beats 0–3, the CTA on readiness */}
+        {/*
+          Keys matter here: without them React reuses the focused Continue
+          element as the last beat's Back button, and a second Enter would
+          step the player backwards.
+
+          Footer. The hint stays the quiet mono line it always was, but it is
+          now a real button, so the reveal can be reached by Tab and pressed,
+          with a Back control beside it. Tap-anywhere still advances on
+          mobile. On the last beat the plan button takes the Continue slot.
+        */}
         {isLast ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onNext();
-            }}
-            className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
-          >
-            See my 3-week plan
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              key="plan"
+              ref={planRef}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNext();
+              }}
+              className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+            >
+              See my 3-week plan
+            </button>
+            <RevealNavButton key="back" onPress={back} label="Back" className="self-center">
+              ‹ Back
+            </RevealNavButton>
+          </div>
         ) : (
-          <div className="flex justify-center">
-            <span className="continue-hint font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
-              Tap to continue
-            </span>
+          <div className="flex items-center justify-between">
+            {beat > 0 ? (
+              <RevealNavButton key="back" onPress={back} label="Back">
+                ‹ Back
+              </RevealNavButton>
+            ) : (
+              <span />
+            )}
+            <RevealNavButton key="continue" ref={continueRef} onPress={advance} label="Continue" pulse>
+              {/* "Tap" only where tapping is how you'd do it. */}
+              <span className="[@media(pointer:fine)]:hidden">Tap to continue</span>
+              <span className="hidden [@media(pointer:fine)]:inline">Continue ›</span>
+            </RevealNavButton>
+            {beat > 0 ? <span className="w-[72px]" aria-hidden="true" /> : <span />}
           </div>
         )}
       </div>
     </main>
   );
 }
+
+/**
+ * The reveal's quiet navigation: mono label, no fill, a 44px hit area. It
+ * looks like the hint line it replaces, not like a form button.
+ */
+const RevealNavButton = forwardRef<
+  HTMLButtonElement,
+  {
+    onPress: () => void;
+    label: string;
+    pulse?: boolean;
+    className?: string;
+    children: React.ReactNode;
+  }
+>(function RevealNavButton({ onPress, label, pulse, className = "", children }, ref) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={label}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPress();
+      }}
+      className={[
+        "flex h-11 min-w-[72px] items-center justify-center rounded-md px-2 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2 transition-colors hover:text-ink",
+        pulse ? "continue-hint" : "",
+        className,
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+});
 
 /* ── Beat 1: Mirror — their answers reflected back ────────────── */
 function MirrorBeat({ diagnosis }: { diagnosis: Diagnosis }) {
@@ -160,6 +284,13 @@ function ReadinessBeat({ diagnosis }: { diagnosis: Diagnosis }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
+    // Reduced motion: land on the final number and bar, no count or sweep.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setFill(diagnosis.readiness);
+      setCount(diagnosis.readiness);
+      return;
+    }
+
     const fillTimer = setTimeout(() => setFill(diagnosis.readiness), 200);
 
     let raf = 0;
@@ -222,7 +353,7 @@ export function ReadinessReading({
       <div className="flex flex-col gap-2.5">
         <div className="h-1.5 overflow-hidden rounded-full bg-line">
           <div
-            className="h-full rounded-full bg-optic transition-[width] duration-[1100ms] ease-out"
+            className="h-full rounded-full bg-optic transition-[width] duration-[1100ms] ease-out motion-reduce:transition-none"
             style={{ width: `${fill}%` }}
           />
         </div>
@@ -254,9 +385,12 @@ function RevealStyles() {
       .beat-in {
         animation: beatIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
       }
+      /* Pulses colour between ink-3 and ink-2 (5.1:1 and 9.3:1 on the reveal
+         ground). It used to pulse opacity down to 0.5, which bottomed out
+         near 2:1 on the only cue that the screen continues. */
       @keyframes hintPulse {
-        0%, 100% { opacity: 0.5; }
-        50%      { opacity: 0.9; }
+        0%, 100% { color: #80807b; }
+        50%      { color: #b0b0ab; }
       }
       .continue-hint {
         animation: hintPulse 2.6s ease-in-out infinite;

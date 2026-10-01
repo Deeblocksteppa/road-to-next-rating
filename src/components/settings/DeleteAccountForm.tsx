@@ -46,7 +46,7 @@ export function DeleteAccountForm() {
         autoCapitalize="characters"
         spellCheck={false}
         placeholder={CONFIRM_WORD}
-        className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 font-mono text-[15px] tracking-[0.08em] text-ink placeholder-ink-3 focus:border-line-hover focus:outline-none"
+        className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 font-mono text-[15px] tracking-[0.08em] text-ink placeholder-ink-3 focus:border-line-hover"
       />
 
       {error && (

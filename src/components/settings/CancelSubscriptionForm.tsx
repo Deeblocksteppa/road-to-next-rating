@@ -66,7 +66,10 @@ export function CancelSubscriptionForm({
         type="button"
         onClick={() => run(cancelSubscription)}
         disabled={pending}
-        className="flex h-[52px] w-full items-center justify-center rounded-lg bg-danger text-[15px] font-semibold text-ink transition-colors hover:bg-danger-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+        // The Delete account button's recipe: danger text on a 12% danger
+        // fill (~5.2:1). It was ink on solid danger, 3.06:1 and 2.37:1 on
+        // hover — the billing action was the hardest text on the page to read.
+        className="flex h-[52px] w-full items-center justify-center rounded-lg border border-danger bg-danger/[0.12] text-[15px] font-semibold text-danger transition-colors hover:bg-danger/[0.18] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
       >
         {pending ? "Canceling…" : "Cancel subscription"}
       </button>

@@ -44,8 +44,10 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
             </p>
             <p className="text-[14px] leading-[1.55] text-ink-2">
               One session is {roadmap.weeklyDrills.length === 2 ? "both" : "all"} of these,
-              back to back, on the same day. Book the court or the partner for the
-              whole thing.
+              back to back, on the same day.
+              {/* Only a partner plan needs a partner booked; a solo plan
+                  prescribes solo and wall drills. */}
+              {roadmap.hasPartner && " Book the court and your partner for the whole thing."}
             </p>
           </div>
           <div className="space-y-3">
@@ -118,7 +120,7 @@ export function DrillCard({ drill, hasPartner }: { drill: Drill; hasPartner: boo
           neither; it is a note about which version you are being given.
         */}
         {showSoloBadge && (
-          <span className="shrink-0 rounded-xs border border-line-strong bg-surface-2 px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.1em] text-ink-3">
+          <span className="shrink-0 rounded-xs border border-line-strong bg-surface-2 px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.1em] text-ink-2">
             Solo version
           </span>
         )}

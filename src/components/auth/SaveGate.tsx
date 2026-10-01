@@ -20,11 +20,12 @@ import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
  */
 export function SaveGate({
   onSkip,
-  bottleneckLabel,
+  bottleneckTitle,
   weeksTarget,
 }: {
   onSkip: () => void;
-  bottleneckLabel: string;
+  /** Title-case skill name ("The reset") — it heads the card, so not the in-sentence label. */
+  bottleneckTitle: string;
   weeksTarget: number;
 }) {
   const [email, setEmail] = useState("");
@@ -93,10 +94,10 @@ export function SaveGate({
   }
 
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col justify-center gap-5 bg-background px-6 py-12 text-ink">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-5 bg-background px-6 py-12 text-ink">
       <div className="flex flex-col gap-2.5">
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-          Your diagnosis is ready
+          Save your plan
         </p>
         <h1 className="text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em] font-display">
           Keep what you just found.
@@ -112,9 +113,9 @@ export function SaveGate({
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
           Saving
         </p>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <span className="h-2 w-2 shrink-0 rounded-full bg-optic" />
-          <span className="text-[15px] font-semibold">{bottleneckLabel}</span>
+          <span className="text-[15px] font-semibold">{bottleneckTitle}</span>
           <span className="text-[13px] text-ink-3">
             · {weeksTarget}-week plan
           </span>
@@ -122,13 +123,13 @@ export function SaveGate({
       </div>
 
       {error && (
-        <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
           {error}
         </p>
       )}
 
       {message ? (
-        <p className="rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink-2">
+        <p role="status" className="rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink-2">
           {message}
         </p>
       ) : (
@@ -167,7 +168,7 @@ export function SaveGate({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover focus:outline-none"
+                className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
               />
 
               <label htmlFor="password" className="sr-only">
@@ -182,7 +183,7 @@ export function SaveGate({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover focus:outline-none"
+                className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
               />
 
               <button

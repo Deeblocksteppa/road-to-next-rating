@@ -12,7 +12,7 @@ export default function LoginPage({
   const next = searchParams.next ?? "/home";
 
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
       <header className="pt-4">
         <Logo />
       </header>
@@ -23,7 +23,7 @@ export default function LoginPage({
         </h1>
 
         {searchParams.error && (
-          <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
             {searchParams.error}
           </p>
         )}
@@ -48,11 +48,13 @@ export default function LoginPage({
             autoComplete="email"
             placeholder="Email address"
             required
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover focus:outline-none"
+            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
 
           {/* Password row with the inline FORGOT? link to the reset flow. */}
-          <div className="flex h-12 w-full items-center rounded-md border border-line-strong bg-surface pl-4 pr-4">
+          {/* The ring goes on the row, not the bare input inside it, so it
+              wraps the whole field the way every other input's does. */}
+          <div className="flex h-12 w-full items-center rounded-md border border-line-strong bg-surface pl-4 pr-4 has-[input:focus-visible]:border-line-hover has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-optic">
             <label htmlFor="password" className="sr-only">
               Password
             </label>
@@ -63,7 +65,7 @@ export default function LoginPage({
               autoComplete="current-password"
               placeholder="Password"
               required
-              className="flex-1 bg-transparent text-[15px] text-ink placeholder-ink-3 outline-none"
+              className="flex-1 bg-transparent text-[15px] text-ink placeholder-ink-3 focus-visible:outline-none"
             />
             {/* `-my-4 py-4` buys a 47px tap target without growing the row. */}
             <Link

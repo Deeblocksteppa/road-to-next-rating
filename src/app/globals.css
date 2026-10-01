@@ -53,6 +53,20 @@
     min-height: 100%;
   }
 
+  /*
+   * One visible focus style for every focusable element: the design system's
+   * ring (`--ring` = optic). Components used to suppress the browser default
+   * with `outline-none` and signal focus with a line-strong → line-hover
+   * border shift, about 1.5:1 — effectively invisible. `:focus-visible`
+   * keeps it off mouse clicks on buttons and links, and on for keyboard
+   * focus and text fields. The one surface where optic can't show (the optic
+   * closing section on the marketing page) sets its own optic-ink outline.
+   */
+  :focus-visible {
+    outline: 2px solid #d8e34c;
+    outline-offset: 2px;
+  }
+
   /* Identity: selection carries the optic accent. */
   ::selection {
     background: #d8e34c;

@@ -51,7 +51,7 @@ export default async function SettingsPage() {
         <Link
           href="/home"
           aria-label="Back"
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
+          className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
         >
           ‹
         </Link>
@@ -70,7 +70,6 @@ export default async function SettingsPage() {
             label="Display name"
             value={profile?.display_name ?? "Add your name"}
             muted={!profile?.display_name}
-            chevron
           />
         </div>
       </section>
@@ -176,19 +175,17 @@ function Row({
   label,
   value,
   muted,
-  chevron,
 }: {
   label: string;
   value: string;
   muted?: boolean;
-  chevron?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between px-[18px] py-[15px]">
       <span className="text-[15px] text-ink-2">{label}</span>
       <span className="flex items-center gap-2 text-[15px]">
+        {/* No chevron: this row isn't a link, so it mustn't look like one. */}
         <span className={muted ? "text-ink-3" : "text-ink"}>{value}</span>
-        {chevron && <span className="text-ink-3">›</span>}
       </span>
     </div>
   );

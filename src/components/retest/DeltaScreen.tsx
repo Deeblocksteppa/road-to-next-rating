@@ -213,7 +213,7 @@ function BackToProgress() {
     <Link
       href="/progress"
       aria-label="Back to Progress"
-      className="flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
+      className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-[16px] text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
     >
       ‹
     </Link>
