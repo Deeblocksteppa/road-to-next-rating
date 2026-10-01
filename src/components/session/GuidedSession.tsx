@@ -102,7 +102,7 @@ export function GuidedSession(props: GuidedSessionProps) {
   // screen this is already showing.
   if (!drill) {
     return (
-      <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+      <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
         <SessionCompleteScreen weekly={weekly} />
       </main>
     );
@@ -112,7 +112,7 @@ export function GuidedSession(props: GuidedSessionProps) {
   const next = outline.find((item, i) => i >= position && !item.doneToday) ?? null;
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
       {step === "brief" && (
         <BriefScreen
           drill={drill}
@@ -314,7 +314,7 @@ function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () =>
         <p className="font-display text-[20px] font-bold leading-[1.3] tracking-[-0.01em]">
           {drill.cue}
         </p>
-        <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-3">
+        <p className="text-pretty text-[13px] leading-[1.55] text-ink-2">
           {drill.logProtocol} When the clock hits zero, stop where you are and log it — falling
           short of {drill.practiceTarget} still counts.
         </p>

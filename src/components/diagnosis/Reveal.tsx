@@ -80,13 +80,13 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
     <main
       onClick={advance}
       className={[
-        "relative min-h-[100dvh] w-full select-none overflow-hidden bg-reveal text-ink",
+        "relative min-h-app w-full select-none overflow-hidden bg-reveal text-ink",
         isLast ? "cursor-default" : "cursor-pointer",
       ].join(" ")}
     >
       <RevealStyles />
 
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[440px] flex-col px-6 pb-8">
+      <div className="mx-auto flex min-h-app w-full max-w-[440px] flex-col px-6 pb-8">
         {/* Story-progress ticks */}
         <div
           className="flex gap-[5px] pt-6"
@@ -245,10 +245,10 @@ function InsightBeat({ diagnosis }: { diagnosis: Diagnosis }) {
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
         Why it hasn&apos;t improved
       </p>
-      <h2 className="text-pretty font-display text-[25px] font-bold leading-[1.32] tracking-[-0.01em]">
+      <h2 className="text-pretty font-display text-2xl font-bold leading-[1.32] tracking-[-0.01em]">
         {diagnosis.insightHeadline}
       </h2>
-      <p className="text-pretty text-[15.5px] leading-[1.68] text-ink-2">
+      <p className="text-pretty text-[15px] leading-[1.68] text-ink-2">
         {diagnosis.insightBody}
       </p>
     </div>

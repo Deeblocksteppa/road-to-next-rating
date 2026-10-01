@@ -6,6 +6,7 @@ import { useState } from "react";
 import { claimPendingRecords } from "@/lib/persistence";
 import { createClient } from "@/lib/supabase/client";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
+import { AUTH_ERRORS, authErrorCode } from "@/lib/auth-errors";
 
 /**
  * Post-roadmap Save Gate. Creates an account, then claims the anonymous
@@ -50,7 +51,8 @@ export function SaveGate({
     });
 
     if (error) {
-      setError(error.message);
+      // Friendly fixed copy, not Supabase's raw wording (lib/auth-errors.ts).
+      setError(AUTH_ERRORS[authErrorCode(error)]);
       setLoading(false);
       return;
     }
@@ -87,14 +89,14 @@ export function SaveGate({
     });
 
     if (error) {
-      setError(error.message);
+      setError(AUTH_ERRORS.signin_failed);
       setLoading(false);
     }
     // On success the browser is redirected to Google.
   }
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-5 bg-background px-6 py-12 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center gap-5 bg-background px-6 py-12 text-ink">
       <div className="flex flex-col gap-2.5">
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
           Save your plan
@@ -102,7 +104,7 @@ export function SaveGate({
         <h1 className="text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em] font-display">
           Keep what you just found.
         </h1>
-        <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">
+        <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
           Save your bottleneck and {weeksTarget}-week plan to your account so
           it&apos;s here tomorrow. No card, nothing to pay.
         </p>

@@ -28,7 +28,7 @@ export default async function DeleteAccountPage() {
   const isPaid = profile?.subscription_status === "active";
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
       <header className="flex items-center gap-4 pt-4">
         <Link
           href="/settings"
@@ -37,12 +37,12 @@ export default async function DeleteAccountPage() {
         >
           ‹
         </Link>
-        <h1 className="font-display text-[22px] font-bold tracking-[-0.01em]">Delete account</h1>
+        <h1 className="font-display text-2xl font-bold tracking-[-0.01em]">Delete account</h1>
       </header>
 
       <div className="flex flex-col gap-2.5">
         {/* Not uppercased: an email is read to be checked, and caps make that harder. */}
-        <p className="font-mono text-[12px] text-ink-3">
+        <p className="font-mono text-[11px] text-ink-3">
           {user.email}
         </p>
         <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
@@ -60,7 +60,7 @@ export default async function DeleteAccountPage() {
         ].map((line, i) => (
           <p
             key={line}
-            className={`py-3.5 text-[14.5px] leading-[1.45] text-ink ${
+            className={`py-3.5 text-[15px] leading-[1.45] text-ink ${
               i === 0 ? "" : "border-t border-line"
             }`}
           >

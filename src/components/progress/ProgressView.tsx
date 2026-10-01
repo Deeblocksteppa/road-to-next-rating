@@ -49,7 +49,7 @@ export type ProgressViewData =
 
 export function ProgressView({ data }: { data: ProgressViewData }) {
   return (
-    <main className="flex min-h-[calc(100dvh-4rem)] flex-col gap-3.5 px-6 py-8">
+    <main className="flex min-h-app-tabbed flex-col gap-3.5 px-6 py-8">
       <header className="pt-4">
         <h1 className="font-display text-2xl font-bold tracking-[-0.01em]">Progress</h1>
       </header>
@@ -192,7 +192,7 @@ function LockedState({
             {data.currentReadiness}
           </p>
         </div>
-        <p className={`font-mono text-[12px] ${up ? "text-optic" : "text-danger"}`}>
+        <p className={`font-mono text-[11px] ${up ? "text-optic" : "text-danger"}`}>
           {up ? "+" : ""}
           {data.totalChange} SINCE START
         </p>
@@ -234,7 +234,7 @@ function ChartContent({ data }: { data: ChartData }) {
   const up = data.totalChange >= 0;
   return (
     <>
-      <p className="text-pretty text-[12.5px] leading-[1.45] text-ink-3">
+      <p className="text-pretty text-[13px] leading-[1.45] text-ink-3">
         Your readiness score tracks how close you are to 4.0. Each re-test
         shows how much it moved.
       </p>
@@ -290,7 +290,7 @@ function SessionSeriesBlock({ sessions }: { sessions: SessionSeries }) {
         <SessionSparkline values={values} max={max} />
       </div>
       <div className="mt-2 flex items-baseline justify-between">
-        <span className="font-mono text-[12px] tabular-nums text-ink-2">
+        <span className="font-mono text-[11px] tabular-nums text-ink-2">
           {progression}
         </span>
         <span className="font-mono text-[10px] text-ink-3">OF {max}</span>

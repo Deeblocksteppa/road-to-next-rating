@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { updatePassword } from "@/app/auth/actions";
 import { Logo } from "@/components/brand/Logo";
 import { createClient } from "@/lib/supabase/server";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -19,21 +20,19 @@ export default async function ResetPasswordPage({
 }: {
   searchParams: { error?: string };
 }) {
+  // Fixed copy keyed by code; the URL's own text is never shown (lib/auth-errors.ts).
+  const errorMessage = authErrorMessage(searchParams.error);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(
-      `/forgot-password?error=${encodeURIComponent(
-        "That reset link is invalid or has expired. Request a new one."
-      )}`
-    );
+    redirect("/forgot-password?error=link_expired");
   }
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
       <header className="pt-4">
         <Logo />
       </header>
@@ -43,14 +42,14 @@ export default async function ResetPasswordPage({
           <h1 className="font-display text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Choose a new password.
           </h1>
-          <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">
+          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
             For {user.email}. At least 8 characters.
           </p>
         </div>
 
-        {searchParams.error && (
+        {errorMessage && (
           <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-            {searchParams.error}
+            {errorMessage}
           </p>
         )}
 

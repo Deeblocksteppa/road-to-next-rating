@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
+import { authErrorCode } from "@/lib/auth-errors";
 import { createClient } from "@/lib/supabase/server";
 
 /** Where to send users after a successful login/signup. */
@@ -26,7 +27,7 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    redirect(`/login?error=${authErrorCode(error)}`);
   }
 
   revalidatePath("/", "layout");
@@ -48,7 +49,7 @@ export async function signup(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    redirect(`/signup?error=${authErrorCode(error)}`);
   }
 
   // If email confirmation is disabled, signUp returns a live session and the
@@ -76,7 +77,7 @@ export async function signInWithGoogle(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    redirect("/login?error=signin_failed");
   }
 
   // Hand off to Google's consent screen; it returns to /auth/callback.
@@ -100,7 +101,7 @@ export async function requestPasswordReset(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
 
   if (!email) {
-    redirect(`/forgot-password?error=${encodeURIComponent("Enter your email address.")}`);
+    redirect("/forgot-password?error=email_required");
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -110,11 +111,7 @@ export async function requestPasswordReset(formData: FormData) {
   if (error) {
     console.error("requestPasswordReset failed", error.status, error.message);
     if (error.status === 429) {
-      redirect(
-        `/forgot-password?error=${encodeURIComponent(
-          "Too many reset requests. Wait a few minutes and try again."
-        )}`
-      );
+      redirect("/forgot-password?error=rate_limited");
     }
   }
 
@@ -129,26 +126,22 @@ export async function updatePassword(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect(
-      `/forgot-password?error=${encodeURIComponent(
-        "That reset link is invalid or has expired. Request a new one."
-      )}`
-    );
+    redirect("/forgot-password?error=link_expired");
   }
 
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
   if (password.length < 8) {
-    redirect(`/reset-password?error=${encodeURIComponent("Use at least 8 characters.")}`);
+    redirect("/reset-password?error=password_short");
   }
   if (password !== confirm) {
-    redirect(`/reset-password?error=${encodeURIComponent("Those two passwords don't match.")}`);
+    redirect("/reset-password?error=password_mismatch");
   }
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    redirect(`/reset-password?error=${encodeURIComponent(error.message)}`);
+    redirect(`/reset-password?error=${authErrorCode(error)}`);
   }
 
   revalidatePath("/", "layout");

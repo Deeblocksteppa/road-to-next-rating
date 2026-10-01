@@ -1,6 +1,7 @@
 import { AnswerMap, Diagnosis, RootCauseId, SkillId, SkillScore } from "./types";
 import { QUESTIONS } from "./questions";
 import { STORIES, FALLBACK, SKILL_LABELS } from "./diagnoses";
+import { fillLevel, levelPhrase } from "./rating";
 
 const IMPORTANCE: Record<SkillId, number> = {
   reset: 1.4,
@@ -112,6 +113,9 @@ export function diagnose(answers: AnswerMap): Diagnosis {
   const mirror = buildMirror(answers);
 
   const bottleneckLabel = SKILL_LABELS[bottleneck];
+  // Every story line goes through the `{level}` slot (see diagnoses.ts).
+  const level = levelPhrase(answers.rating);
+  const fill = (text: string) => fillLevel(text, level);
 
   return {
     bottleneck,
@@ -120,15 +124,17 @@ export function diagnose(answers: AnswerMap): Diagnosis {
     storyId: story?.id ?? FALLBACK.id,
     readiness,
     mirror,
-    bottleneckVerdict:
+    bottleneckVerdict: fill(
       story?.bottleneckVerdict ??
-      `Based on your answers, this is the best place to start: ${bottleneckLabel} is where you rated yourself lowest, weighted by how much it matters for 4.0.`,
-    bottleneckText:
+        `Based on your answers, this is the best place to start: ${bottleneckLabel} is where you rated yourself lowest, weighted by how much it matters for 4.0.`
+    ),
+    bottleneckText: fill(
       story?.bottleneckText ??
-      `Your answers point to ${bottleneckLabel} as the skill to work on first.`,
-    insightHeadline: story?.insightHeadline ?? FALLBACK.insightHeadline,
-    insightBody: story?.insightBody ?? FALLBACK.insightBody,
-    absolution: story?.absolution ?? FALLBACK.absolution,
-    absolutionClose: story?.absolutionClose ?? FALLBACK.absolutionClose,
+        `Your answers point to ${bottleneckLabel} as the skill to work on first.`
+    ),
+    insightHeadline: fill(story?.insightHeadline ?? FALLBACK.insightHeadline),
+    insightBody: fill(story?.insightBody ?? FALLBACK.insightBody),
+    absolution: fill(story?.absolution ?? FALLBACK.absolution),
+    absolutionClose: fill(story?.absolutionClose ?? FALLBACK.absolutionClose),
   };
 }

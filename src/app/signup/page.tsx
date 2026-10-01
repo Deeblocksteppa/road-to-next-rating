@@ -5,16 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 export default function SignupPage({
   searchParams,
 }: {
   searchParams: { error?: string; check_email?: string; next?: string };
 }) {
+  // Fixed copy keyed by code; the URL's own text is never shown (lib/auth-errors.ts).
+  const errorMessage = authErrorMessage(searchParams.error);
   const next = searchParams.next ?? "/home";
 
   return (
-    <main className="flex min-h-[100dvh] w-full items-center justify-center bg-background px-6 py-12 text-foreground">
+    <main className="flex min-h-app w-full items-center justify-center bg-background px-6 py-12 text-foreground">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
@@ -23,9 +26,9 @@ export default function SignupPage({
           </p>
         </div>
 
-        {searchParams.error && (
+        {errorMessage && (
           <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {searchParams.error}
+            {errorMessage}
           </p>
         )}
 

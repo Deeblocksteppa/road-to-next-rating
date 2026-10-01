@@ -4,7 +4,9 @@ export const QUESTIONS: Question[] = [
   {
     id: "rating",
     prompt: "What's your current rating, and how do you know it?",
-    helperText: 'e.g. "3.5 DUPR", "self-rated around 3.7"',
+    // An example answer belongs in the field, not in the mono eyebrow, where it
+    // wrapped to two lines of spaced caps above the question.
+    placeholder: "e.g. 3.5 DUPR, or self-rated around 3.7",
     type: "context",
     required: true,
   },
@@ -24,7 +26,7 @@ export const QUESTIONS: Question[] = [
   {
     id: "play_frequency",
     prompt: "In a typical week, how many times do you play and for about how long?",
-    helperText: 'e.g. "3x a week, 2 hours each"',
+    placeholder: "e.g. 3x a week, 2 hours each",
     type: "context",
     required: true,
   },

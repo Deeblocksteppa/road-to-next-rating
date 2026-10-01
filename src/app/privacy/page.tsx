@@ -16,7 +16,7 @@ export const metadata: Metadata = {
  */
 export default function Privacy() {
   return (
-    <main className="mx-auto min-h-[100dvh] w-full max-w-[680px] px-6 py-12 md:py-20">
+    <main className="mx-auto min-h-app w-full max-w-[680px] px-6 py-12 md:py-20">
       <Link href="/" className="inline-block">
         <Logo />
       </Link>

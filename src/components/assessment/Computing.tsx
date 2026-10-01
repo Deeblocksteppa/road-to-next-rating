@@ -46,7 +46,7 @@ export function Computing({ onDone }: { onDone: () => void }) {
   const allVisible = visible >= LINES.length;
 
   return (
-    <main className="flex min-h-[100dvh] w-full items-center justify-center bg-reveal px-6">
+    <main className="flex min-h-app w-full items-center justify-center bg-reveal px-6">
       <ComputingStyles />
       <div className="mx-auto flex w-full max-w-[440px] flex-col gap-[22px]">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">

@@ -74,22 +74,22 @@ export default async function HomePage() {
 
   const retestReadyLink = (
     <Link href="/retest" className="text-optic underline underline-offset-4">
-      RE-TEST READY — TAKE IT NOW
+      Re-test ready — take it now
     </Link>
   );
   const retestOpensText = (days: number) => (
     <>
-      RE-TEST OPENS IN {days} DAY{days === 1 ? "" : "S"}
+      Re-test opens in {days} day{days === 1 ? "" : "s"}
     </>
   );
-  const nextUnlockText = `NEXT SESSIONS UNLOCK MONDAY, ${monthDay(nextWeekStart).toUpperCase()}`;
+  const nextUnlockText = `Next sessions unlock Monday, ${monthDay(nextWeekStart)}`;
 
   // Below-button caption. Unchanged from prior behavior when sessions remain
   // (retest countdown, or nothing if there's no retest date yet); once the
   // week is done, the button itself goes quiet so this line always has
   // something forward-looking to say instead.
   const caption = todayDone && !allDone
-    ? `${sessionsLeft} MORE SESSION${sessionsLeft === 1 ? "" : "S"} THIS WEEK — ANY OTHER DAY`
+    ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} this week — any other day`
     : allDone
     ? timeline === null
       ? nextUnlockText
@@ -142,7 +142,7 @@ export default async function HomePage() {
               Current bottleneck
             </p>
             {/* The screen's one heading (Home had none). */}
-            <h1 className="font-display text-[27px] font-extrabold tracking-[-0.01em]">
+            <h1 className="font-display text-[28px] font-extrabold tracking-[-0.01em]">
               {SKILL_TITLES[bottleneck]}
             </h1>
             {timeline && (
@@ -203,7 +203,9 @@ export default async function HomePage() {
           />
 
           {caption && (
-            <p className="pb-1 text-center font-mono text-[11px] tracking-[0.14em] text-ink-3">
+            // Sentence case in the body voice: at four to eight words, spaced
+            // mono caps had to be decoded (DESIGN.md, Uppercase-Mono limit).
+            <p className="pb-1 text-center text-[13px] leading-[1.5] text-ink-3">
               {caption}
             </p>
           )}

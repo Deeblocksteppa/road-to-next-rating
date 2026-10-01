@@ -72,6 +72,15 @@ const config: Config = {
         danger: { DEFAULT: "#E3654C", hover: "#E98572" },
         reveal: "#060607",
       },
+      minHeight: {
+        // A full screen inside the safe area: 100dvh less the notch/status
+        // bar and the home indicator, which the body pads out (globals.css).
+        // `min-h-[100dvh]` under that padding scrolled by the inset height.
+        app: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
+        // The same, less the 64px tab bar.
+        "app-tabbed":
+          "calc(100dvh - 4rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
+      },
       borderRadius: {
         // Formalized radius scale (DESIGN_SYSTEM.md §3). rounded-lg (14) = base/button.
         xs: "6px",

@@ -68,7 +68,7 @@ export function DeltaScreen({ view }: { view: RetestView }) {
   const locked = LOCKED_COPY[direction];
 
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col bg-reveal px-6 py-8 text-ink">
+    <main className="flex min-h-app w-full flex-col bg-reveal px-6 py-8 text-ink">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6">
         {!view.isLatest && <BackToProgress />}
 
@@ -164,7 +164,7 @@ export function DeltaScreen({ view }: { view: RetestView }) {
  */
 function BaselineScreen({ view }: { view: RetestView }) {
   return (
-    <main className="flex min-h-[100dvh] w-full flex-col bg-reveal px-6 py-8 text-ink">
+    <main className="flex min-h-app w-full flex-col bg-reveal px-6 py-8 text-ink">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6">
         {!view.isLatest && <BackToProgress />}
 

@@ -41,7 +41,7 @@ export function SavedResult({
   const [confirmingReset, setConfirmingReset] = useState(false);
 
   return (
-    <main className="min-h-[100dvh] w-full bg-background text-ink">
+    <main className="min-h-app w-full bg-background text-ink">
       <div className="mx-auto flex w-full max-w-[600px] flex-col gap-8 px-6 py-12 md:py-16">
         {/* ── The result ── */}
         <section className="flex flex-col gap-3">
@@ -132,7 +132,7 @@ export function SavedResult({
           </div>
           <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface px-5 py-[18px]">
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-              Match re-test target · in {roadmap.weeksTarget} weeks
+              Re-test target · {roadmap.weeksTarget} weeks
             </p>
             <p className="text-[14px] leading-[1.55] text-ink-2">{roadmap.retestMetric}</p>
             <p className="text-[13px] leading-[1.5] text-ink-3">

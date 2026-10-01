@@ -20,7 +20,9 @@ export function TabBar() {
   const router = useRouter();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto flex h-16 w-full max-w-md border-t border-line bg-background">
+    // Fixed, so the body's safe-area padding doesn't reach it: the bar pads
+    // itself below the 64px row so its labels sit above the home indicator.
+    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto flex w-full max-w-md border-t border-line bg-background pb-[env(safe-area-inset-bottom)]">
       {TABS.map((tab) => {
         const active =
           pathname === tab.href || pathname.startsWith(`${tab.href}/`);
@@ -38,7 +40,7 @@ export function TabBar() {
                 router.refresh();
               }
             }}
-            className="flex flex-1 flex-col items-center justify-center gap-1.5 transition-colors hover:bg-surface"
+            className="flex h-16 flex-1 flex-col items-center justify-center gap-1.5 transition-colors hover:bg-surface"
           >
             {/* 16×2px accent tick above the active label */}
             <span

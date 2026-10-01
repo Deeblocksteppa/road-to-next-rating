@@ -114,7 +114,7 @@ export default function Start() {
   }
 
   if (phase === "loading") {
-    return <main className="min-h-[100dvh] w-full bg-background" />;
+    return <main className="min-h-app w-full bg-background" />;
   }
 
   if (phase === "computing") {

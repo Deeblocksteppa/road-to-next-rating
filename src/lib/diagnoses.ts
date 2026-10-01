@@ -49,9 +49,9 @@ export const STORIES: DiagnosisStory[] = [
     id: "reset_open_play",
     match: { bottleneck: "reset", rootCause: "open_play_only" },
     bottleneckVerdict:
-      "Based on your answers, this is the best place to start. The reset separates 3.5 from 4.0 more than any other shot, and it's where you rated yourself lowest.",
+      "Based on your answers, this is the best place to start. The reset separates {level} from 4.0 more than any other shot, and it's where you rated yourself lowest.",
     bottleneckText:
-      "The reset — staying calm under pressure in the transition zone and neutralizing attacks at the net — is the single most separating skill between 3.5 and 4.0. It's not about hitting a pretty shot. It's about absorbing pace, going soft when your instincts scream 'hit back harder,' and refusing to hand the point away. Players who can reset consistently get to the kitchen, stay there, and run the soft game. Players who can't are pinned in no-man's-land, fighting a battle they can't win.",
+      "The reset — staying calm under pressure in the transition zone and neutralizing attacks at the net — is the single most separating skill between {level} and 4.0. It's not about hitting a pretty shot. It's about absorbing pace, going soft when your instincts scream 'hit back harder,' and refusing to hand the point away. Players who can reset consistently get to the kitchen, stay there, and run the soft game. Players who can't are pinned in no-man's-land, fighting a battle they can't win.",
     insightHeadline: "Games don't teach the reset.",
     insightBody:
       "Almost all of your court time is open play. Every point there is live, so a reset gets one rushed attempt and no second try — the shot never gets the calm, repeated reps it needs to form.",
@@ -67,7 +67,7 @@ export const STORIES: DiagnosisStory[] = [
     bottleneckVerdict:
       "Based on your answers, this is the best place to start. You drill with structure, but the reset is still where you said your points break down.",
     bottleneckText:
-      "The reset is the skill that separates 3.5 from 4.0 — absorbing pace in the transition zone, going soft when everything in you wants to hit back hard, and earning your way to the kitchen rather than hoping your opponents miss. It's unglamorous, repetitive, and absolutely decisive. Players who own it control the tempo of nearly every point. Players who haven't cracked it yet are at the mercy of whoever's being aggressive.",
+      "The reset is the skill that separates {level} from 4.0 — absorbing pace in the transition zone, going soft when everything in you wants to hit back hard, and earning your way to the kitchen rather than hoping your opponents miss. It's unglamorous, repetitive, and absolutely decisive. Players who own it control the tempo of nearly every point. Players who haven't cracked it yet are at the mercy of whoever's being aggressive.",
     insightHeadline: "The reset holds in practice and slips in games.",
     insightBody:
       "You said you drill with a plan, and that the reset still fails mid-court when the ball comes fast. That pattern points to a transfer gap: the shot exists at drill pace, not yet at game pace.",
@@ -83,7 +83,7 @@ export const STORIES: DiagnosisStory[] = [
     bottleneckVerdict:
       "Based on your answers, this is the best place to start. The drop is the shot that gets you to the kitchen, and it's the one you rated least reliable.",
     bottleneckText:
-      "The third-shot drop is the gateway skill for 3.5-to-4.0. Without a reliable one, you're choosing between driving into a wall or handing the net to your opponents on a silver platter every single serve. It's the shot that converts a defensive position into an offensive one — and at 4.0, everyone expects you to have it. It requires soft hands, a feel for arc and depth, and the nerve to commit to a slow ball when the instinct is to attack.",
+      "The third-shot drop is the gateway skill from {level} to 4.0. Without a reliable one, you're choosing between driving into a wall or handing the net to your opponents on a silver platter every single serve. It's the shot that converts a defensive position into an offensive one — and at 4.0, everyone expects you to have it. It requires soft hands, a feel for arc and depth, and the nerve to commit to a slow ball when the instinct is to attack.",
     insightHeadline: "Games give the drop almost no clean reps.",
     insightBody:
       "Most of your court time is open play. A game moves on whether a drop was good or bad, so there's no feedback and maybe a dozen attempts an hour — far too few for a touch shot to settle.",
@@ -126,6 +126,11 @@ export const STORIES: DiagnosisStory[] = [
 ];
 
 /**
+ * Story lines that name the player's level use a `{level}` slot, filled by
+ * `diagnose` from question 1: their stated rating ("3.5") when it reads
+ * cleanly, else "your current level" (see `lib/rating.ts`). They used to say
+ * "3.5" to every player, including a 3.0 and a 3.8.
+ *
  * Used when no story matches the (bottleneck × root cause) pair. The verdict
  * fields are empty on purpose: `diagnose` builds those from the skill label.
  */
@@ -135,7 +140,7 @@ export const FALLBACK = {
   bottleneckText: "",
   insightHeadline: "Your answers don't fit one clean pattern.",
   insightBody:
-    "More than one thing is pulling at once, which is common at 3.5–4.0. The skill above is where you rated yourself lowest, so it's where a plan pays off first.",
+    "More than one thing is pulling at once, which is common at {level}. The skill above is where you rated yourself lowest, so it's where a plan pays off first.",
   absolution:
     "This isn't a ceiling — it's a few small gaps, and the way through is one at a time.",
   absolutionClose: "Start with this one; the next comes after the re-test.",

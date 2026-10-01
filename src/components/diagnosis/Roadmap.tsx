@@ -15,7 +15,7 @@ import { SESSIONS_PER_WEEK, sessionShape } from "@/lib/session-plan";
  */
 export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommit: () => void }) {
   return (
-    <main className="min-h-[100dvh] w-full bg-background text-ink">
+    <main className="min-h-app w-full bg-background text-ink">
       <RoadmapStyles />
       <div className="roadmap-in mx-auto w-full max-w-[600px] space-y-10 px-6 py-16 md:py-20">
         {/* Header */}
@@ -39,7 +39,7 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
           {/* Computed, never typed: this line used to read "2x a week · 15 min
               each" above a 15-minute drill and a 10-minute one. */}
           <div className="space-y-2">
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+            <p className="text-[15px] font-semibold text-ink">
               {SESSIONS_PER_WEEK} sessions a week · {sessionShape(roadmap.weeklyDrills)} each
             </p>
             <p className="text-[14px] leading-[1.55] text-ink-2">

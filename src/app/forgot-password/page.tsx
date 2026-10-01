@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { requestPasswordReset } from "@/app/auth/actions";
 import { Logo } from "@/components/brand/Logo";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 /**
  * Step one of the password reset: ask for the address, send the link.
@@ -15,10 +16,12 @@ export default function ForgotPasswordPage({
 }: {
   searchParams: { sent?: string; error?: string };
 }) {
+  // Fixed copy keyed by code; the URL's own text is never shown (lib/auth-errors.ts).
+  const errorMessage = authErrorMessage(searchParams.error);
   const sent = searchParams.sent === "1";
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
       <header className="pt-4">
         <Logo />
       </header>
@@ -28,16 +31,16 @@ export default function ForgotPasswordPage({
           <h1 className="font-display text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Reset your password.
           </h1>
-          <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">
+          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
             {sent
               ? "If there is an account for that address, a reset link is on its way. It can take a minute, and it may land in spam."
               : "Enter the email you signed up with and we'll send you a link to choose a new password."}
           </p>
         </div>
 
-        {searchParams.error && (
+        {errorMessage && (
           <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-            {searchParams.error}
+            {errorMessage}
           </p>
         )}
 

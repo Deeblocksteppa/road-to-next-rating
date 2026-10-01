@@ -10,7 +10,7 @@ import { TabBar } from "@/components/nav/TabBar";
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background text-foreground">
+    <div className="relative mx-auto flex min-h-app w-full max-w-md flex-col bg-background text-foreground">
       {/* pb-16 clears the fixed 64px tab bar. Also a flex container (not just
           a flex item) so pages that need to anchor content to the bottom
           (e.g. Home's CTA) can grow into it via flex-1 rather than relying

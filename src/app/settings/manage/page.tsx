@@ -34,7 +34,7 @@ export default async function ManageSubscriptionPage() {
   const cancelPending = profile.cancel_at_period_end === true;
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-6 bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center gap-6 bg-background px-6 py-8 text-ink">
       <div className="flex flex-col gap-2.5">
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
           Manage subscription
@@ -43,7 +43,7 @@ export default async function ManageSubscriptionPage() {
           {cancelPending ? "Cancellation scheduled" : "Cancel your subscription?"}
         </h1>
         {!cancelPending && (
-          <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">
+          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
             You&apos;ll keep Progress access until {untilLabel} — the time
             you&apos;ve already paid for — then move to the free plan. Nothing
             is charged again.

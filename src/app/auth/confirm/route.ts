@@ -28,6 +28,6 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(
-    `${origin}/login?error=${encodeURIComponent("Email link is invalid or has expired")}`
+    `${origin}/login?error=link_expired`
   );
 }

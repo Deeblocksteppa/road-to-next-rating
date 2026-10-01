@@ -21,7 +21,7 @@ export default function SessionError({
   }, [error]);
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
       <div className="flex-1" />
       <div className="flex flex-col gap-3">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">

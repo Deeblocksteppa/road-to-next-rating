@@ -81,7 +81,7 @@ export function Assessment({ onComplete }: Props) {
   const currentChoice = selected ?? answers[question.id];
 
   return (
-    <main className="relative mx-auto min-h-[100dvh] w-full max-w-md bg-background text-ink">
+    <main className="relative mx-auto min-h-app w-full max-w-md bg-background text-ink">
       <AssessmentStyles />
 
       {/* Header row — back + thin progress bar + counter */}
@@ -140,7 +140,7 @@ export function Assessment({ onComplete }: Props) {
           </h1>
 
           {question.note && (
-            <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">{question.note}</p>
+            <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">{question.note}</p>
           )}
 
           <div className="mt-4">
@@ -271,7 +271,7 @@ function TextEntry({
     name: `q-${question.id}`,
     autoComplete: "off",
     value,
-    placeholder: "Type your answer…",
+    placeholder: question.placeholder ?? "Type your answer…",
     "aria-label": question.prompt,
   } as const;
 

@@ -33,6 +33,6 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(
-    `${origin}/login?error=${encodeURIComponent("Sign in could not be completed")}`
+    `${origin}/login?error=signin_failed`
   );
 }

@@ -46,7 +46,7 @@ export default async function SettingsPage() {
   const planLabel = plan?.plan_type === "monthly" ? "Monthly" : "Annual";
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-7 bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-7 bg-background px-6 py-8 text-ink">
       <header className="flex items-center gap-4 pt-4">
         <Link
           href="/home"
@@ -55,7 +55,7 @@ export default async function SettingsPage() {
         >
           ‹
         </Link>
-        <h1 className="font-display text-[22px] font-bold tracking-[-0.01em]">Settings</h1>
+        <h1 className="font-display text-2xl font-bold tracking-[-0.01em]">Settings</h1>
       </header>
 
       {/* ACCOUNT */}

@@ -74,7 +74,7 @@ export function PaywallView({
   }
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
       {/* Dismissing the paywall returns the user wherever they came from —
           the same `from` the Continue button uses after Stripe checkout. */}
       <header className="flex items-center pt-4">
@@ -102,7 +102,7 @@ export function PaywallView({
           {FEATURES.map((line) => (
             <div key={line} className="flex items-start gap-3">
               <span className="mt-[3px] text-sm leading-none text-optic">▪</span>
-              <span className="text-[14.5px] leading-[1.45] text-ink">{line}</span>
+              <span className="text-[15px] leading-[1.45] text-ink">{line}</span>
             </div>
           ))}
         </div>
@@ -143,7 +143,7 @@ export function PaywallView({
               {error}
             </p>
           )}
-          <p className="text-center font-mono text-[10px] uppercase tracking-[0.1em] text-ink-3">
+          <p className="text-center text-[13px] leading-[1.5] text-ink-3">
             Secure checkout by Stripe · Cancel anytime
           </p>
         </div>
@@ -202,7 +202,8 @@ function PlanCard({
             </span>
           )}
         </span>
-        <span className={`font-mono text-[11px] ${selected ? "text-ink-2" : "text-ink-3"}`}>
+        {/* Pricing terms are read, not scanned: body voice, per DESIGN.md. */}
+        <span className={`text-[13px] leading-[1.45] ${selected ? "text-ink-2" : "text-ink-3"}`}>
           {price}
         </span>
       </div>

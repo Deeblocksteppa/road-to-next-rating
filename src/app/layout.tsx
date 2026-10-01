@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -31,6 +31,20 @@ export const metadata: Metadata = {
     "You don't need to fix ten things. Start with one. Find the pickleball skill to work on first, with a three-week plan to work on it.",
 };
 
+/*
+ * `viewport-fit=cover` lets the page use the whole screen on notched iPhones,
+ * including as a home-screen app with the translucent status bar. Without it
+ * iOS reports every safe-area inset as 0, so nothing could clear the notch
+ * or the home indicator. The insets are applied in globals.css (body
+ * padding, `min-h-app`) and on the fixed tab bar.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0B0B0C",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,7 +56,6 @@ export default function RootLayout({
       className={`${archivo.variable} ${instrumentSans.variable} ${ibmPlexMono.variable}`}
     >
       <head>
-        <meta name="theme-color" content="#0B0B0C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>

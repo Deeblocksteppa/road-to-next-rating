@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default function MarketingHome() {
   return (
-    <div className="min-h-[100dvh] bg-background text-ink">
+    <div className="min-h-app bg-background text-ink">
       {/*
         Visible only on focus. On a ~7,500px page with eight tabbable elements
         and no in-page nav, a keyboard user otherwise tabs the whole banner

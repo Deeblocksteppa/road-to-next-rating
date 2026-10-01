@@ -85,7 +85,7 @@ export default async function CheckoutSuccessPage({
   }).toString()}`;
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-6 bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center gap-6 bg-background px-6 py-8 text-ink">
       <div className="flex flex-col gap-2.5">
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
           {confirmed ? "Payment confirmed" : "Payment received"}
@@ -93,7 +93,7 @@ export default async function CheckoutSuccessPage({
         <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
           {confirmed ? "You're in. Progress is unlocked." : "Finishing up…"}
         </h1>
-        <p className="text-pretty text-[14.5px] leading-[1.55] text-ink-2">
+        <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
           {confirmed
             ? "Every re-test's skill-by-skill breakdown, your readiness chart, and your re-test history are open now — including re-tests you've already taken."
             : "Stripe has your payment and we're waiting on final confirmation. This usually takes a few seconds — refresh if it doesn't clear."}

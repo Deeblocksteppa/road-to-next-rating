@@ -35,6 +35,48 @@ typography:
     fontWeight: 800
     lineHeight: 1.0
     letterSpacing: "normal"
+  metric-lg:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "72px"
+    fontWeight: 800
+    lineHeight: 1.0
+    letterSpacing: "normal"
+  metric-xl:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "96px"
+    fontWeight: 800
+    lineHeight: 1.0
+    letterSpacing: "normal"
+  metric-prior-desktop:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "48px"
+    fontWeight: 800
+    lineHeight: 1.0
+    letterSpacing: "normal"
+  metric-card:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "44px"
+    fontWeight: 800
+    lineHeight: 1.0
+    letterSpacing: "normal"
+  countdown:
+    fontFamily: "IBM Plex Mono, monospace"
+    fontSize: "64px"
+    fontWeight: 500
+    lineHeight: 1.0
+    letterSpacing: "normal"
+  headline-result:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "34px"
+    fontWeight: 800
+    lineHeight: 1.05
+    letterSpacing: "-0.02em"
+  headline-screen:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "30px"
+    fontWeight: 800
+    lineHeight: 1.1
+    letterSpacing: "-0.02em"
   display-md:
     fontFamily: "Archivo, sans-serif"
     fontSize: "64px"
@@ -153,6 +195,11 @@ typography:
   small:
     fontFamily: "Instrument Sans, sans-serif"
     fontSize: "13px"
+    fontWeight: 400
+    lineHeight: 1.5
+  small-ui:
+    fontFamily: "Instrument Sans, sans-serif"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.5
   label:
@@ -277,7 +324,11 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 
 ### Hierarchy
 - **Display** (800, 40px → 64px md → 80px desktop, LH 1.03–1.08, tracking −0.02em in-app / −0.03em on the marketing hero): landing/reveal headlines, the one big claim on a screen. The marketing site runs the top of this range so the gap down to a 24px section heading is unmistakable; line-height stays at or above 1.03 because Archivo's ascender overflows a tighter box and the hero sits inside a clipping container.
-- **Metric** (800, 56–72px, up to 96px on the Readiness beat, LH 1.0, tabular-nums): the big number — readiness score, re-test deltas. Suffix (`/100`, `/3`) always drops to `ink-3`.
+- **Metric** (800, 56–72px, up to 96px on the Readiness beat, LH 1.0, tabular-nums): the big number — readiness score, re-test deltas. Suffix (`/100`, `/3`) always drops to `ink-3`. Tokens: `metric` 56, `metric-lg` 72, `metric-xl` 96, and `metric-prior-desktop` 48 for the de-emphasised "before" score beside a 72px "after" on the marketing re-test readout.
+- **Metric, card** (800, 32–44px, LH 1.0, tabular-nums): a number inside a stat card, where a full Metric would overrun a half-width card — Home readiness (44), Progress readiness-now and the Day One re-test date (40), Progress stat values (32). Token `metric-card` (44); 32 and 40 reuse the H1-desktop and Display steps.
+- **Headline, result** (800, 34px, LH 1.05, tracking −0.02em): the headline on a screen that reports a result in the reveal register — Computing's "Found it." and the re-test result headline. Prescribed by DESIGN_SYSTEM.md §6; one step below Display, above Headline, screen.
+- **Headline, screen** (800, 30px, LH 1.1, tracking −0.02em): the one headline on a standalone, single-purpose screen — Save Gate, Sign in, Reset password, Paywall, checkout success. Prescribed by DESIGN_SYSTEM.md §6 and used consistently on all six; a step above Headline, complete because these screens open a flow rather than end one.
+- **Countdown** (IBM Plex Mono 500, 64px, LH 1.0, tabular): the guided-session timer. Mono because every countdown is the instrument reading (Typography, Character); large so it reads at a glance between reps.
 - **Statement** (800, 26px → 36px sm → 46px md → 54px desktop, LH 1.08–1.15, tracking −0.02em): the marketing site's statement sections — one sentence, centred, spanning the container, nothing beside it. Deliberately a step below Display: the hero must stay the loudest thing on the page, and a statement that matched it would read as a second hero. Mobile runs 26px because 30px wrapped the sentence to six centred lines of ~20 characters, which is the hardest wrap the page can produce.
 - **Marketing H2 (group)** (700, 26px → 32px, LH 1.2–1.25, tracking −0.01em): a heading that has to hold a group of numbered steps under it rather than one column of prose. At ordinary section scale a centred heading over a 2,300px group reads as a caption that lost its paragraph.
 - **Marketing formula** (400, 12px, LH 1.5, IBM Plex Mono, sentence case, `ink-2`): the one place mono is not uppercased. The Nothing-But-Caps habit is right for labels, units and countdowns; an equation set in 67 characters of caps is a paragraph wearing a label's clothes, and it is the sentence that makes the weighted-gap readout legible at all.
@@ -286,6 +337,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 - **H2** (600, 17–18px → 20px): card titles, section headers.
 - **Body** (400, 15px → 16px, LH 1.6, color `ink-2`): explanations, descriptions.
 - **Small** (400, 13px, LH 1.5, color `ink-2`): secondary copy.
+- **Small UI** (400–500, 14px, LH 1.5): secondary copy inside cards and the ghost/tertiary button label (Components, Buttons). Kept distinct from Small because a 13px card body reads cramped beside 15px titles; it is the same step as `marketing-small`.
 - **Eyebrow / Badge** (400, 10px, uppercase, tracking +0.16em / +0.10em, IBM Plex Mono): the label step *inside* a card or pill, one notch below the standalone Label. Already specified under Components (Cards, Badges) and used in 46 places across the app; recorded here so the ramp is complete rather than split between the token list and the prose.
 - **Label** (400/500, 11px, uppercase, tracking +0.14em, IBM Plex Mono): every standalone eyebrow, unit, and countdown that is not inside a card or badge. Tracking widens for emphasis (0.22em on reveal eyebrows, 0.42em on the "RATING" wordmark subtitle) and narrows for density (0.10–0.12em on nav/counters/badges).
 

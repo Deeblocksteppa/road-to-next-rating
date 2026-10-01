@@ -19,6 +19,8 @@ export interface Question {
   id: string;
   prompt: string;
   helperText?: string;
+  /** Example answer for a text question, shown in the empty field. */
+  placeholder?: string;
   /**
    * A full sentence shown under the prompt, in the body voice. `helperText` is
    * the mono eyebrow above it and only suits a few words; this is for a

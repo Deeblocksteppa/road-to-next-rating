@@ -3,16 +3,19 @@ import Link from "next/link";
 import { login, signInWithGoogle } from "@/app/auth/actions";
 import { Logo } from "@/components/brand/Logo";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 export default function LoginPage({
   searchParams,
 }: {
   searchParams: { error?: string; next?: string; notice?: string };
 }) {
+  // Fixed copy keyed by code; the URL's own text is never shown (lib/auth-errors.ts).
+  const errorMessage = authErrorMessage(searchParams.error);
   const next = searchParams.next ?? "/home";
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
       <header className="pt-4">
         <Logo />
       </header>
@@ -22,9 +25,9 @@ export default function LoginPage({
           Welcome back.
         </h1>
 
-        {searchParams.error && (
+        {errorMessage && (
           <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-            {searchParams.error}
+            {errorMessage}
           </p>
         )}
 
