@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { claimPendingRecords } from "@/lib/persistence";
+import { claimPendingRecords, getPendingIds } from "@/lib/persistence";
 import { createClient } from "@/lib/supabase/client";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 import { AUTH_ERRORS, authErrorCode } from "@/lib/auth-errors";
@@ -42,11 +42,21 @@ export function SaveGate({
     setMessage(null);
 
     const supabase = createClient();
+    // The ids of the diagnosis and plan just made, sent with the sign-up so
+    // /auth/confirm can attach them wherever the confirmation link is
+    // opened. They otherwise live only in this browser's storage, and the
+    // link now works on any device.
+    const pending = getPendingIds();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/home`,
+        data: {
+          pending_assessment_id: pending.assessment ?? null,
+          pending_diagnosis_id: pending.diagnosis ?? null,
+          pending_plan_id: pending.plan ?? null,
+        },
       },
     });
 
