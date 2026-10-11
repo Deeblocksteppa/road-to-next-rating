@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoFull, Logo } from "@/components/brand/Logo";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 import { QUESTIONS } from "@/lib/questions";
 import { BreakRule } from "./BreakRule";
 import { RiseIn } from "./RiseIn";
@@ -652,6 +653,7 @@ export function Footer() {
             { href: "/login", label: "Sign in" },
             { href: "/privacy", label: "Privacy" },
             { href: "/terms", label: "Terms" },
+            { href: SUPPORT_MAILTO, label: SUPPORT_EMAIL },
           ].map((link) => (
             <Link
               key={link.href}

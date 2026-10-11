@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { cancelSubscription, resumeSubscription } from "@/app/settings/actions";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 
 /**
  * Cancel / resume controls for a live Stripe subscription.
@@ -21,14 +22,19 @@ export function CancelSubscriptionForm({
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  // A failed cancellation shows one fixed message with a person to write to,
+  // not the action's own text (which can be a raw Stripe error).
+  const [cancelFailed, setCancelFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function run(action: typeof cancelSubscription) {
     setError(null);
+    setCancelFailed(false);
     startTransition(async () => {
       const result = await action();
       if ("error" in result) {
-        setError(result.error);
+        if (action === cancelSubscription) setCancelFailed(true);
+        else setError(result.error);
         return;
       }
       router.refresh();
@@ -73,9 +79,13 @@ export function CancelSubscriptionForm({
       >
         {pending ? "Canceling…" : "Cancel subscription"}
       </button>
-      {error && (
+      {cancelFailed && (
         <p role="alert" className="text-center text-[13px] leading-[1.45] text-danger">
-          {error}
+          Something went wrong. Email{" "}
+          <a href={SUPPORT_MAILTO} className="underline underline-offset-4">
+            {SUPPORT_EMAIL}
+          </a>{" "}
+          and we&apos;ll sort it out.
         </p>
       )}
     </div>

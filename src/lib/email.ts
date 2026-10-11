@@ -3,12 +3,11 @@ import { Resend } from "resend";
 /**
  * Transactional email via Resend.
  *
- * Sender: Resend's shared test domain (onboarding@resend.dev) until a custom
- * domain is verified. That domain only reliably delivers to the Resend account
- * owner's own address — good enough to test the reminder flow; swap FROM for a
- * verified address (e.g. reminders@yourdomain) once the domain is set up.
+ * Sender: hello@roadtonextrating.com. Resend only sends from a domain that is
+ * verified in the Resend account, so roadtonextrating.com must be verified
+ * there or every send fails.
  */
-const FROM = "Road to Next Rating <onboarding@resend.dev>";
+const FROM = "Road to Next Rating <hello@roadtonextrating.com>";
 
 let client: Resend | null = null;
 function resend(): Resend {

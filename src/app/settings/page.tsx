@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
 import { DrillReminderToggle } from "@/components/settings/DrillReminderToggle";
 import { RetestReminderToggle } from "@/components/settings/RetestReminderToggle";
+import { SUPPORT_MAILTO } from "@/lib/contact";
 import { monthYear } from "@/lib/date-format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -143,6 +144,20 @@ export default async function SettingsPage() {
             </span>
             <DrillReminderToggle initialEnabled={drillReminderEnabled} />
           </div>
+        </div>
+      </section>
+
+      {/* SUPPORT */}
+      <section className="flex flex-col gap-2.5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">Support</p>
+        <div className="flex flex-col rounded-2xl border border-line bg-surface">
+          <a
+            href={SUPPORT_MAILTO}
+            className="flex items-center justify-between rounded-2xl px-[18px] py-[15px] transition-colors hover:bg-[#17171A]"
+          >
+            <span className="text-[15px] text-ink">Contact support</span>
+            <span className="text-ink-3">›</span>
+          </a>
         </div>
       </section>
 
