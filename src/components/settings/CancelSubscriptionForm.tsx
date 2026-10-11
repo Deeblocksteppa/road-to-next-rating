@@ -21,20 +21,17 @@ export function CancelSubscriptionForm({
   untilLabel: string;
 }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  // A failed cancellation shows one fixed message with a person to write to,
-  // not the action's own text (which can be a raw Stripe error).
-  const [cancelFailed, setCancelFailed] = useState(false);
+  // A failed cancel or resume shows one fixed message with a person to write
+  // to, not the action's own text (which can be a raw Stripe error).
+  const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function run(action: typeof cancelSubscription) {
-    setError(null);
-    setCancelFailed(false);
+    setFailed(false);
     startTransition(async () => {
       const result = await action();
       if ("error" in result) {
-        if (action === cancelSubscription) setCancelFailed(true);
-        else setError(result.error);
+        setFailed(true);
         return;
       }
       router.refresh();
@@ -57,11 +54,7 @@ export function CancelSubscriptionForm({
         >
           {pending ? "Resuming…" : "Keep my subscription"}
         </button>
-        {error && (
-          <p role="alert" className="text-center text-[13px] leading-[1.45] text-danger">
-            {error}
-          </p>
-        )}
+        {failed && <SupportError />}
       </div>
     );
   }
@@ -79,15 +72,19 @@ export function CancelSubscriptionForm({
       >
         {pending ? "Canceling…" : "Cancel subscription"}
       </button>
-      {cancelFailed && (
-        <p role="alert" className="text-center text-[13px] leading-[1.45] text-danger">
-          Something went wrong. Email{" "}
-          <a href={SUPPORT_MAILTO} className="underline underline-offset-4">
-            {SUPPORT_EMAIL}
-          </a>{" "}
-          and we&apos;ll sort it out.
-        </p>
-      )}
+      {failed && <SupportError />}
     </div>
+  );
+}
+
+function SupportError() {
+  return (
+    <p role="alert" className="text-center text-[13px] leading-[1.45] text-danger">
+      Something went wrong. Email{" "}
+      <a href={SUPPORT_MAILTO} className="underline underline-offset-4">
+        {SUPPORT_EMAIL}
+      </a>{" "}
+      and we&apos;ll sort it out.
+    </p>
   );
 }
