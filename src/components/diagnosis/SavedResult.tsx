@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
@@ -82,6 +83,18 @@ export function SavedResult({
                 Use a different email
               </button>
             </div>
+            {/* The way out when the link was opened on another device: this
+                one can't know that happened. Signing in lands on Home, which
+                clears the pending note and this device's copy of the plan. */}
+            <p className="text-[13px] leading-[1.5] text-ink-3">
+              Already confirmed?{" "}
+              <Link
+                href="/login"
+                className="text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+              >
+                Sign in
+              </Link>
+            </p>
           </div>
         )}
 

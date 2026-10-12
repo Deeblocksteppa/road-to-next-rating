@@ -1,4 +1,4 @@
-import { type EmailOtpType, type User } from "@supabase/supabase-js";
+import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 import {
@@ -8,6 +8,7 @@ import {
   linkErrorPath,
   safeNextPath,
 } from "@/lib/auth-redirect";
+import { claimSignupRecords } from "@/lib/claim-signup";
 import { createClient } from "@/lib/supabase/server";
 
 const EMAIL_OTP_TYPES: readonly EmailOtpType[] = [
@@ -50,7 +51,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.verifyOtp({ type, token_hash });
     if (!error) {
-      if (!isRecovery) await claimSignupRecords(supabase, data.user);
+      // Every link that starts a session claims the sign-up's rows (a no-op
+      // when there are none, or they were claimed already).
+      await claimSignupRecords(supabase, data.user);
       // A confirmed sign-up lands on Home with a brief "Plan saved".
       const landing = !isRecovery && next === AFTER_AUTH ? `${next}?saved=1` : next;
       return NextResponse.redirect(`${origin}${landing}`);
@@ -62,33 +65,4 @@ export async function GET(request: Request) {
   return NextResponse.redirect(
     `${origin}${linkErrorPath(isRecovery ? "recovery" : "confirm", "expired")}`
   );
-}
-
-/**
- * Attach the diagnosis and plan the player made before signing up.
- *
- * Those rows are saved unclaimed and their ids kept in the browser that took
- * the assessment, to be claimed on /home after sign-in. Now that this link
- * works on any device, a player who signs up on a laptop and confirms on a
- * phone would land on an empty Home. So the Save Gate also sends the ids in
- * the sign-up metadata, and they are claimed here, as the newly verified
- * user, through the same RPC. It only ever assigns rows that are still
- * unclaimed, so a repeat (or the original browser claiming later) is a no-op.
- */
-async function claimSignupRecords(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  user: User | null
-) {
-  const meta = user?.user_metadata ?? {};
-  const id = (key: string) => (typeof meta[key] === "string" ? (meta[key] as string) : null);
-  const ids = {
-    p_assessment_id: id("pending_assessment_id"),
-    p_diagnosis_id: id("pending_diagnosis_id"),
-    p_plan_id: id("pending_plan_id"),
-  };
-  if (!ids.p_assessment_id && !ids.p_diagnosis_id && !ids.p_plan_id) return;
-
-  const { error } = await supabase.rpc("claim_anonymous_records", ids);
-  // Never block the confirmation on this: /home's own claim is the fallback.
-  if (error) console.error("auth/confirm: claim failed", error.code);
 }

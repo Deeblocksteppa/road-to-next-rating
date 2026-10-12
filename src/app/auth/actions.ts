@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import { authErrorCode } from "@/lib/auth-errors";
+import { claimSignupRecords } from "@/lib/claim-signup";
 import { createClient } from "@/lib/supabase/server";
 
 /** Where to send users after a successful login/signup. */
@@ -21,7 +22,7 @@ export async function login(formData: FormData) {
   const supabase = await createClient();
   const next = safeNext(formData.get("next"));
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: String(formData.get("email")),
     password: String(formData.get("password")),
   });
@@ -30,8 +31,13 @@ export async function login(formData: FormData) {
     redirect(`/login?error=${authErrorCode(error)}`);
   }
 
+  // A player who confirmed somewhere the claim didn't run (an old-style
+  // link) gets their plan attached the first time they sign in, on any
+  // device. Home says so once.
+  const claimed = await claimSignupRecords(supabase, data.user);
+
   revalidatePath("/", "layout");
-  redirect(next);
+  redirect(claimed && next === AFTER_AUTH ? `${next}?saved=1` : next);
 }
 
 /** Email + password sign up. The DB trigger creates the profiles row. */

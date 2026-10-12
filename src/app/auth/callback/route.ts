@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 import { AFTER_AUTH, AFTER_RECOVERY, appOrigin, linkErrorPath, safeNextPath } from "@/lib/auth-redirect";
+import { claimSignupRecords } from "@/lib/claim-signup";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -22,9 +23,12 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      // An old-style confirmation link (or Google) starts a session here.
+      const claimed = await claimSignupRecords(supabase, data.user);
+      const landing = claimed && next === AFTER_AUTH ? `${next}?saved=1` : next;
+      return NextResponse.redirect(`${origin}${landing}`);
     }
     console.error("auth/callback: code exchange failed", error.code, error.status);
   }
