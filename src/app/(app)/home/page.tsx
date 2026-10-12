@@ -17,7 +17,11 @@ import { WEEK_FOCUS_LABELS } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 import type { SkillId } from "@/lib/types";
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: { saved?: string };
+}) {
   const supabase = await createClient();
 
   const {
@@ -106,7 +110,7 @@ export default async function HomePage() {
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-6 py-8">
-      <ClaimOnLoad />
+      <ClaimOnLoad saved={searchParams.saved === "1"} />
 
       <header className="flex items-center justify-between pt-4">
         <Logo />

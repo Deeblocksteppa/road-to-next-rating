@@ -133,6 +133,30 @@ export function clearPendingIds() {
 }
 
 /**
+ * Make sure the result on this device ends up in the signed-in player's
+ * account. Normally the rows were saved when the assessment finished and
+ * only need claiming. If that save never landed (it is best-effort, and the
+ * funnel carries on without it), the rows are written now from the answers
+ * still on the device, then claimed. Either way the player is not asked to
+ * take the assessment again.
+ */
+export async function attachLocalResult(
+  answers: AnswerMap,
+  diagnosis: Diagnosis,
+  roadmap: Roadmap
+): Promise<void> {
+  const ids = getPendingIds();
+  if (!ids.diagnosis) {
+    const assessmentId = ids.assessment ?? (await saveAssessment(answers));
+    const diagnosisId = await saveDiagnosis(assessmentId, diagnosis, answers);
+    await savePlan(diagnosisId, roadmap);
+  } else if (!ids.plan) {
+    await savePlan(ids.diagnosis, roadmap);
+  }
+  await claimPendingRecords();
+}
+
+/**
  * Claim any pending anonymous rows for the currently signed-in user. Safe to
  * call whenever a session exists (Save Gate, or on /home after an
  * OAuth / email-confirmation round trip). No-op when nothing is pending.

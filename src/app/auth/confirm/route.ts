@@ -51,7 +51,9 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.verifyOtp({ type, token_hash });
     if (!error) {
       if (!isRecovery) await claimSignupRecords(supabase, data.user);
-      return NextResponse.redirect(`${origin}${next}`);
+      // A confirmed sign-up lands on Home with a brief "Plan saved".
+      const landing = !isRecovery && next === AFTER_AUTH ? `${next}?saved=1` : next;
+      return NextResponse.redirect(`${origin}${landing}`);
     }
     // Code and status only: the message can echo the token.
     console.error("auth/confirm: verifyOtp failed", error.code, error.status);

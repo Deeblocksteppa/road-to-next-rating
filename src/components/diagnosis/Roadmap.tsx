@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+
+import { ShotDemo } from "@/components/session/ShotDemo";
 import { Drill } from "@/lib/drills";
 import { Roadmap } from "@/lib/roadmap";
 import { SESSIONS_PER_WEEK, sessionShape } from "@/lib/session-plan";
@@ -52,7 +55,7 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
           </div>
           <div className="space-y-3">
             {roadmap.weeklyDrills.map((drill) => (
-              <DrillCard key={drill.id} drill={drill} hasPartner={roadmap.hasPartner} />
+              <DrillCard key={drill.id} drill={drill} />
             ))}
           </div>
         </div>
@@ -101,34 +104,58 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
   );
 }
 
-export function DrillCard({ drill, hasPartner }: { drill: Drill; hasPartner: boolean }) {
-  // A partner drill that was prescribed in its solo version.
-  const showSoloBadge = drill.requiresPartner && !hasPartner && Boolean(drill.solo);
+/**
+ * A drill on the plan. Collapsed, it is the same three rows as the Plan tab's
+ * card: name, mono metadata, one sentence. Tapping it opens the full brief in
+ * place: the technique instructions, the shot diagram and what gets logged,
+ * the same fields the guided session's brief screen shows.
+ *
+ * One setup label only. A partner drill prescribed in its solo version used
+ * to carry a "Solo version" badge beside a metadata line that already said
+ * "Solo".
+ */
+export function DrillCard({ drill }: { drill: Drill }) {
+  const [open, setOpen] = useState(false);
+  const panelId = `drill-${drill.id}-brief`;
 
-  // Same three rows as the Plan tab's card: name, mono metadata, one sentence.
-  // The technique instructions wait for the guided session, where the shot
-  // is animated beside them.
   return (
-    <div className="rounded-2xl border border-line bg-surface px-5 py-4">
-      <div className="flex items-start justify-between gap-3">
-        <p className="font-display text-[17px] font-semibold leading-[1.3] text-ink">
+    <div className="rounded-2xl border border-line bg-surface transition-colors hover:border-line-hover">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={panelId}
+        className="flex w-full flex-col rounded-2xl px-5 py-4 text-left"
+      >
+        <span className="font-display text-[17px] font-semibold leading-[1.3] text-ink">
           {drill.name}
-        </p>
-        {/*
-          Neutral, not `warn`. The state colours are a scale — warn means
-          "due today", danger means "regressed" — and a solo variant is
-          neither; it is a note about which version you are being given.
-        */}
-        {showSoloBadge && (
-          <span className="shrink-0 rounded-xs border border-line-strong bg-surface-2 px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.1em] text-ink-2">
-            Solo version
-          </span>
-        )}
-      </div>
-      <p className="mt-1.5 font-mono text-[11px] uppercase leading-[1.5] tracking-[0.1em] text-ink-3">
-        {drill.duration} · {drill.setup}
-      </p>
-      <p className="mt-2.5 text-pretty text-[14px] leading-[1.5] text-ink-2">{drill.task}</p>
+        </span>
+        <span className="mt-1.5 font-mono text-[11px] uppercase leading-[1.5] tracking-[0.1em] text-ink-3">
+          {drill.duration} · {drill.setup}
+        </span>
+        <span className="mt-2.5 text-pretty text-[14px] leading-[1.5] text-ink-2">{drill.task}</span>
+        <span className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 underline decoration-line-hover underline-offset-4">
+          {open ? "Hide instructions" : "View instructions"}
+        </span>
+      </button>
+
+      {open && (
+        <div id={panelId} className="flex flex-col gap-4 border-t border-line px-5 pb-5 pt-4">
+          <p className="text-pretty text-[15px] leading-[1.6] text-ink">{drill.description}</p>
+          <ShotDemo drillId={drill.id} />
+          <div className="flex flex-col gap-1.5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+              When the timer ends
+            </p>
+            <p className="text-pretty text-[14px] leading-[1.5] text-ink-2">
+              <span className="font-semibold text-ink">{drill.logProtocol}</span> {drill.counts}
+            </p>
+            <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-2">
+              Practice target <span className="text-ink">{drill.practiceTarget}</span>
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

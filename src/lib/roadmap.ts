@@ -1,6 +1,7 @@
 import { Diagnosis, AnswerMap, SkillId } from "./types";
 import { DRILLS, Drill } from "./drills";
 import { SKILL_LABELS } from "./diagnoses";
+import { QUESTIONS } from "./questions";
 
 export interface Roadmap {
   goalLabel: string;
@@ -34,16 +35,51 @@ const IN_GAME_RULES: Record<SkillId, string> = {
     "In every dink rally, wait for a ball that is above net height AND out in front before you speed up. Reset everything else, no exceptions.",
 };
 
-const RETEST_METRICS: Record<SkillId, string> = {
+const RETEST_METRICS: Record<Exclude<SkillId, "third_shot_drop">, string> = {
   reset:
     "Can you reset a hard ball at your feet from mid-court without it floating up? Count 10 attempts — aim for 6+ clean.",
-  third_shot_drop:
-    "Out of 10 drops in a real game, how many land soft without getting attacked? Aim for 5+ (up from where you started).",
   net_defense:
     "When someone speeds up at your body, can you block it back and stay in the point? Aim for 6 of 10.",
   dink_patience:
     "In your next 3 games, count how many times you speed up on a ball that wasn't actually attackable. Aim for fewer than 3 per game.",
 };
+
+/**
+ * The third-shot drop's re-test target, set from where the player started.
+ *
+ * It is the one skill the assessment asks about as a count out of ten, so it
+ * is the one target that can be stated against a starting point. The start
+ * is the range they chose (never a single number nobody collected), and the
+ * target is one the re-test can actually register: the re-test asks the same
+ * question with the same four ranges (0, 1–3, 4–6, 7–10).
+ *
+ *   - started at 0 or 1–3 → "Target: 5+" (lands in the next range up);
+ *   - started at 4–6, already around five → "Target: 7+", the next range;
+ *   - started at 7–10 → nothing higher to aim at, so hold it under pressure.
+ *
+ * This used to read "Aim for 5+ (up from where you started)" for everyone,
+ * including a player who had answered 4–6.
+ */
+function thirdShotRetestMetric(answers: AnswerMap): string {
+  const measure =
+    "Out of 10 drops in a real game, count how many land soft without getting attacked.";
+  const option = QUESTIONS.find((q) => q.id === "third_shot")?.options?.find(
+    (o) => o.id === answers["third_shot"]
+  );
+  // "1–3 — most sit up or go into the net" → "1–3"
+  const range = option?.label.split(" — ")[0]?.trim();
+  if (!option || !range) return `${measure} Target: 5+.`;
+
+  const level = option.skillLevel ?? 0;
+  if (level >= 3) return `${measure} You started at ${range}. Hold 7+ under game pressure.`;
+  return `${measure} You started at ${range}. Target: ${level >= 2 ? "7+" : "5+"}.`;
+}
+
+function retestMetricFor(bottleneck: SkillId, answers: AnswerMap): string {
+  return bottleneck === "third_shot_drop"
+    ? thirdShotRetestMetric(answers)
+    : RETEST_METRICS[bottleneck];
+}
 
 /**
  * Whether the plan should assume a drilling partner. One rule, used when the
@@ -80,7 +116,7 @@ export function generateRoadmap(diagnosis: Diagnosis, answers: AnswerMap): Roadm
     weeklyDrills,
     hasPartner,
     inGameRule: IN_GAME_RULES[diagnosis.bottleneck],
-    retestMetric: RETEST_METRICS[diagnosis.bottleneck],
+    retestMetric: retestMetricFor(diagnosis.bottleneck, answers),
     weeksTarget: 3,
   };
 }
