@@ -12,6 +12,7 @@ import {
   getWeeklyStreak,
 } from "@/lib/drill-sessions";
 import { DRILLS } from "@/lib/drills";
+import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import {
   buildHistoryRows,
@@ -124,6 +125,10 @@ export default async function ProgressPage() {
     // current bottleneck's drills. Picks the drill with the most scored
     // sessions; renders only with 2+ (pickSessionSeries returns null otherwise).
     const bottleneckDrills = DRILLS[last.bottleneck as SkillId] ?? [];
+    // Named as prescribed to this player: a solo version can have its own name.
+    const prescribedNames = new Map(
+      (plan ? await loadPlanDrills(supabase, plan) : []).map((d) => [d.id, d.name])
+    );
     const scoredByDrill = await getScoredSessionsByDrill(
       supabase,
       bottleneckDrills.map((d) => d.id)
@@ -132,7 +137,7 @@ export default async function ProgressPage() {
       bottleneckDrills.map((d) => {
         const results = scoredByDrill.get(d.id) ?? [];
         return {
-          drillName: d.name,
+          drillName: prescribedNames.get(d.id) ?? d.name,
           values: results.map((r) => r.resultValue),
           lastAt: results.at(-1)?.completedAt ?? null,
         };

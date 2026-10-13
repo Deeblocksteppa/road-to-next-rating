@@ -1,6 +1,7 @@
 import { findDrillById } from "@/lib/drill-lookup";
 import { startOfTodayUTC, startOfWeekUTC } from "@/lib/drill-sessions";
 import { sendDrillReminder } from "@/lib/email";
+import { loadPlanDrills } from "@/lib/plan-drills";
 import {
   SESSIONS_PER_WEEK,
   countSessions,
@@ -33,7 +34,8 @@ export interface ReminderRunSummary {
  *
  * Runs with the service-role client (no auth context), so it reads across all
  * users. Batched into three queries (profiles → plans → this-week sessions)
- * rather than a query per user.
+ * rather than a query per user; only a user who is actually being emailed
+ * costs more, to name their drills as prescribed (partner or solo).
  */
 export async function runDrillReminders(): Promise<ReminderRunSummary> {
   const admin = createAdminClient();
@@ -59,7 +61,7 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
   // 2. Their plans, newest first → keep the most recent per user.
   const { data: plans, error: plansError } = await admin
     .from("plans")
-    .select("id, user_id, drill_ids, status, created_at")
+    .select("id, user_id, diagnosis_id, drill_ids, status, created_at")
     .in(
       "user_id",
       users.map((u) => u.id)
@@ -69,13 +71,14 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
 
   const planByUser = new Map<
     string,
-    { id: string; drillIds: string[]; status: string | null }
+    { id: string; diagnosisId: unknown; drillIds: string[]; status: string | null }
   >();
   for (const p of plans ?? []) {
     const userId = p.user_id as string;
     if (planByUser.has(userId)) continue; // first = most recent
     planByUser.set(userId, {
       id: p.id as string,
+      diagnosisId: p.diagnosis_id,
       drillIds: (p.drill_ids as string[] | null) ?? [],
       status: (p.status as string | null) ?? null,
     });
@@ -142,11 +145,17 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
     }
 
     try {
+      // A solo version can have its own name, so the email names the drills
+      // the player was actually given. Durations are the same either way.
+      const prescribed = await loadPlanDrills(admin, {
+        drill_ids: plan.drillIds,
+        diagnosis_id: plan.diagnosisId,
+      });
       await sendDrillReminder(
         user.email as string,
         sessionsLeft,
         sessionShape(planDrills),
-        planDrills.map((d) => `${d.name} (${d.duration})`).join(", ")
+        prescribed.map((d) => `${d.name} (${d.duration})`).join(", ")
       );
       summary.sent++;
     } catch (err) {
