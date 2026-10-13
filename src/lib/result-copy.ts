@@ -46,21 +46,16 @@ export function focusAnswer(bottleneck: SkillId, answers: AnswerMap): string | n
  * Why this skill, in one sentence from their answers.
  *
  * The skill itself is never in doubt: it is the largest gap once each skill
- * is weighted by how much it matters at 4.0. What can be unclear is the
- * training cause, and only when the engine returns `unclear` for it. That
- * case gets its own plain sentence. (The reveal's fallback line, "Your
- * answers don't fit one clean pattern", is shown for every skill-and-cause
- * pair without an authored story, including ones whose cause is clear, so
- * it is not used here.)
+ * is weighted by how much it matters at 4.0. This used to add a sentence for
+ * an `unclear` training cause, but a completed assessment never returns one
+ * (every combination of the three training answers lands on another cause),
+ * so it never showed.
  */
 export function focusReason(diagnosis: Diagnosis, answers: AnswerMap): string {
   const answer = focusAnswer(diagnosis.bottleneck, answers);
-  const why = answer
+  return answer
     ? `Of the four skills, this is where your answers leave the most room. You said: “${answer}.”`
     : "Of the four skills, this is where your answers leave the most room.";
-  return diagnosis.rootCause === "unclear"
-    ? `${why} Your answers about how you practice were mixed, so the plan is built on the skill alone.`
-    : why;
 }
 
 /**

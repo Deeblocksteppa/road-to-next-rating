@@ -1,6 +1,6 @@
 import { AnswerMap, Diagnosis, RootCauseId, SkillId, SkillScore } from "./types";
 import { QUESTIONS } from "./questions";
-import { STORIES, FALLBACK, SKILL_LABELS } from "./diagnoses";
+import { STORIES, ALL_TOP, FALLBACK, Line, StoryCopy, StoryFacts } from "./diagnoses";
 import { fillLevel, levelPhrase } from "./rating";
 
 const IMPORTANCE: Record<SkillId, number> = {
@@ -75,7 +75,13 @@ function buildMirror(answers: AnswerMap): string[] {
   const plateauOption = QUESTIONS.find((q) => q.id === "plateau_duration")
     ?.options?.find((o) => o.id === answers["plateau_duration"]);
   if (plateauOption) {
-    bullets.push(`You've been at this level for: ${plateauOption.label.toLowerCase()}.`);
+    // "I don't feel stuck, I just want to improve" is not a length of time,
+    // so it doesn't go through the "at this level for" sentence.
+    bullets.push(
+      plateauOption.id === "e"
+        ? "You don't feel stuck. You want to keep improving."
+        : `You've been at this level for: ${plateauOption.label.toLowerCase()}.`
+    );
   }
 
   const ratioOption = QUESTIONS.find((q) => q.id === "open_play_ratio")
@@ -102,9 +108,13 @@ export function diagnose(answers: AnswerMap): Diagnosis {
 
   const rootCause = inferRootCause(answers);
 
-  const story = STORIES.find(
-    (s) => s.match.bottleneck === bottleneck && s.match.rootCause === rootCause
-  );
+  // Rated at the top on all four: there is no gap for a cause story to explain.
+  const allTop = scores.every((s) => s.level >= 3);
+  const copy: StoryCopy = allTop
+    ? ALL_TOP
+    : STORIES.find(
+        (s) => s.match.bottleneck === bottleneck && s.match.rootCause === rootCause
+      ) ?? FALLBACK;
 
   const sumOfLevels = scores.reduce((sum, s) => sum + s.level, 0);
   const maxLevels = scores.length * 3;
@@ -112,29 +122,32 @@ export function diagnose(answers: AnswerMap): Diagnosis {
 
   const mirror = buildMirror(answers);
 
-  const bottleneckLabel = SKILL_LABELS[bottleneck];
+  // What the copy may key on (see `StoryFacts`): the answers a line quotes,
+  // and whether the focus skill is also the lowest-rated one.
+  const facts: StoryFacts = {
+    skill: bottleneck,
+    lowest: scores.every((s) => s.level >= bottleneckScore.level),
+    ratio: answers["open_play_ratio"],
+    drilling: answers["drilling_quality"],
+    dink: answers["dink_patience"],
+  };
   // Every story line goes through the `{level}` slot (see diagnoses.ts).
   const level = levelPhrase(answers.rating);
-  const fill = (text: string) => fillLevel(text, level);
+  const fill = (line: Line) =>
+    fillLevel(typeof line === "function" ? line(facts) : line, level);
 
   return {
     bottleneck,
     runnersUp,
     rootCause,
-    storyId: story?.id ?? FALLBACK.id,
+    storyId: copy.id,
     readiness,
     mirror,
-    bottleneckVerdict: fill(
-      story?.bottleneckVerdict ??
-        `Based on your answers, this is the best place to start: ${bottleneckLabel} is where you rated yourself lowest, weighted by how much it matters for 4.0.`
-    ),
-    bottleneckText: fill(
-      story?.bottleneckText ??
-        `Your answers point to ${bottleneckLabel} as the skill to work on first.`
-    ),
-    insightHeadline: fill(story?.insightHeadline ?? FALLBACK.insightHeadline),
-    insightBody: fill(story?.insightBody ?? FALLBACK.insightBody),
-    absolution: fill(story?.absolution ?? FALLBACK.absolution),
-    absolutionClose: fill(story?.absolutionClose ?? FALLBACK.absolutionClose),
+    bottleneckVerdict: fill(copy.bottleneckVerdict),
+    bottleneckText: fill(copy.bottleneckText),
+    insightHeadline: fill(copy.insightHeadline),
+    insightBody: fill(copy.insightBody),
+    absolution: fill(copy.absolution),
+    absolutionClose: fill(copy.absolutionClose),
   };
 }
