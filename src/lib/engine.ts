@@ -34,6 +34,17 @@ function getRootCauseFlag(questionId: string, optionId: string): RootCauseId | n
   return opt?.rootCauseFlag ?? null;
 }
 
+/**
+ * The lowest level among the answers that measure a skill. Only the reset
+ * has more than one; for it this is the answer the saved-result page quotes.
+ */
+function lowestAnswerLevel(skill: SkillId, answers: AnswerMap): number {
+  const levels = QUESTIONS.filter((q) => q.measures === skill).map((q) =>
+    getSkillLevel(q.id, answers[q.id] ?? "")
+  );
+  return levels.length > 0 ? Math.min(...levels) : 0;
+}
+
 export function scoreSkills(answers: AnswerMap): SkillScore[] {
   // net_hold and transition_reset both measure reset — average them
   const netHoldLevel = getSkillLevel("net_hold", answers["net_hold"] ?? "");
@@ -131,10 +142,14 @@ export function diagnose(answers: AnswerMap): Diagnosis {
   const mirror = buildMirror(answers);
 
   // What the copy may key on (see `StoryFacts`): the answers a line quotes,
-  // and whether the focus skill is also the lowest-rated one.
+  // and whether the focus skill is also the lowest-rated one. That is judged
+  // on the focus skill's lowest answer, not its score: the reset's score
+  // averages two questions, and a player whose worst answer anywhere is a
+  // reset answer was being told it "isn't the shot you rated lowest".
+  const focusLow = lowestAnswerLevel(bottleneck, answers);
   const facts: StoryFacts = {
     skill: bottleneck,
-    lowest: scores.every((s) => s.level >= bottleneckScore.level),
+    lowest: scores.every((s) => s.skill === bottleneck || s.level >= focusLow),
     ratio: answers["open_play_ratio"],
     drilling: answers["drilling_quality"],
     dink: answers["dink_patience"],

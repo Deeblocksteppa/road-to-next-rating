@@ -22,7 +22,10 @@ export const SKILL_TITLES: Record<SkillId, string> = {
  */
 export interface StoryFacts {
   skill: SkillId;
-  /** No other skill was rated lower than the focus skill (a tie counts). */
+  /**
+   * No other skill was rated lower than the focus skill's lowest answer (a
+   * tie counts). The reset is asked about twice; one low answer is enough.
+   */
   lowest: boolean;
   /** `open_play_ratio` — a: almost all open play, b: mostly games, c: a real mix, d: mostly drilling. */
   ratio?: string;
@@ -89,8 +92,10 @@ export interface DiagnosisStory extends StoryCopy {
 /** How every verdict starts; `diagnose` puts the story's clause after it. */
 export const VERDICT_OPENER = "Based on your answers, this is the best place to start.";
 
-// With today's weights only the reset can be the focus without being the
-// lowest-rated skill, and it is the heaviest, so "matters most" holds.
+// A guard, not a line anyone sees today: with the current questions and
+// weights the focus skill always holds the player's lowest answer, or ties
+// for it. It would take a change in weights for a heavier skill to win
+// outright over a lower-rated one, and then "matters most" is what's true.
 const NOT_LOWEST =
   "It isn't the shot you rated lowest, but it matters most for getting to 4.0.";
 
