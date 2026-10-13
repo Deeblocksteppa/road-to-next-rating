@@ -51,6 +51,7 @@ export interface Diagnosis {
   readiness: number;
   mirror: string[];
   bottleneckVerdict: string; // reveal beat 2 — why this shot, from their answers
+  verdictClause: string;     // the verdict without its opener — the saved-result page's reason
   bottleneckText: string;    // longer version for the roadmap; not on the reveal
   insightHeadline: string;   // reveal beat 3 — the practice problem, one line
   insightBody: string;       // reveal beat 3 — how their training produced it

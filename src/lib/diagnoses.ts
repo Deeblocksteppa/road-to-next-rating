@@ -67,7 +67,12 @@ export type Line = string | ((facts: StoryFacts) => string);
  */
 export interface StoryCopy {
   id: string;
-  bottleneckVerdict: Line; // reveal beat 2 — why this shot, from their answers
+  /**
+   * Reveal beat 2, after `VERDICT_OPENER` — why this shot, from their answers.
+   * Kept apart from the opener because the saved-result page shows the same
+   * sentence on its own (`focusReason`).
+   */
+  verdictClause: Line;
   bottleneckText: Line;    // deeper version, used later in the roadmap
   insightHeadline: Line;   // reveal beat 3 — the practice problem, in one line
   insightBody: Line;       // reveal beat 3 — how their training produced it
@@ -81,14 +86,15 @@ export interface DiagnosisStory extends StoryCopy {
 
 /* ── Lines shared between stories ─────────────────────────────── */
 
-const OPENER = "Based on your answers, this is the best place to start.";
+/** How every verdict starts; `diagnose` puts the story's clause after it. */
+export const VERDICT_OPENER = "Based on your answers, this is the best place to start.";
 
 // With today's weights only the reset can be the focus without being the
 // lowest-rated skill, and it is the heaviest, so "matters most" holds.
 const NOT_LOWEST =
   "It isn't the shot you rated lowest, but it matters most for getting to 4.0.";
 
-/** The second sentence of every verdict: why this skill, from their answers. */
+/** Each skill's verdict clause: why this skill, from their answers. */
 const SKILL_CLAUSE: Record<SkillId, (f: StoryFacts) => string> = {
   reset: (f) =>
     f.lowest
@@ -112,8 +118,6 @@ const SKILL_CLAUSE: Record<SkillId, (f: StoryFacts) => string> = {
     return f.lowest ? "The soft game is where you rated yourself lowest." : NOT_LOWEST;
   },
 };
-
-const verdict = (skill: SkillId): Line => (f) => `${OPENER} ${SKILL_CLAUSE[skill](f)}`;
 
 /**
  * How much of their court time is games, in the words of the ratio answer
@@ -149,7 +153,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "reset_open_play",
     match: { bottleneck: "reset", rootCause: "open_play_only" },
-    bottleneckVerdict: verdict("reset"),
+    verdictClause: SKILL_CLAUSE.reset,
     bottleneckText: DEPTH.reset,
     insightHeadline: "Games don't teach the reset.",
     insightBody: (f) =>
@@ -161,7 +165,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "reset_random_drilling",
     match: { bottleneck: "reset", rootCause: "random_drilling" },
-    bottleneckVerdict: verdict("reset"),
+    verdictClause: SKILL_CLAUSE.reset,
     bottleneckText: DEPTH.reset,
     insightHeadline: "You practice, but not this ball.",
     // `random_drilling` is also reached from "mostly drilling" plus "I don't
@@ -177,7 +181,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "reset_well_coached",
     match: { bottleneck: "reset", rootCause: "well_coached" },
-    bottleneckVerdict: verdict("reset"),
+    verdictClause: SKILL_CLAUSE.reset,
     bottleneckText:
       "The reset is the skill that separates {level} from 4.0 — absorbing pace in the transition zone, going soft when everything in you wants to hit back hard, and earning your way to the kitchen rather than hoping your opponents miss. It's unglamorous, repetitive, and absolutely decisive. Players who own it control the tempo of nearly every point. Players who haven't cracked it yet are at the mercy of whoever's being aggressive.",
     insightHeadline: "The reset holds in practice and slips in games.",
@@ -195,7 +199,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "third_shot_open_play",
     match: { bottleneck: "third_shot_drop", rootCause: "open_play_only" },
-    bottleneckVerdict: verdict("third_shot_drop"),
+    verdictClause: SKILL_CLAUSE.third_shot_drop,
     bottleneckText: DEPTH.third_shot_drop,
     insightHeadline: "Games give the drop almost no clean reps.",
     insightBody: (f) =>
@@ -207,7 +211,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "third_shot_random_drilling",
     match: { bottleneck: "third_shot_drop", rootCause: "random_drilling" },
-    bottleneckVerdict: verdict("third_shot_drop"),
+    verdictClause: SKILL_CLAUSE.third_shot_drop,
     bottleneckText: DEPTH.third_shot_drop,
     insightHeadline: "The drop gets practiced, never measured.",
     // "Picked by feel" is the random-shots answer; the other two routes get
@@ -227,7 +231,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "third_shot_well_coached",
     match: { bottleneck: "third_shot_drop", rootCause: "well_coached" },
-    bottleneckVerdict: verdict("third_shot_drop"),
+    verdictClause: SKILL_CLAUSE.third_shot_drop,
     bottleneckText: DEPTH.third_shot_drop,
     insightHeadline: "The drop holds in practice and slips in games.",
     insightBody:
@@ -241,7 +245,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "net_defense_open_play",
     match: { bottleneck: "net_defense", rootCause: "open_play_only" },
-    bottleneckVerdict: verdict("net_defense"),
+    verdictClause: SKILL_CLAUSE.net_defense,
     bottleneckText: DEPTH.net_defense,
     insightHeadline: "It feels like slow hands. It's fewer reps.",
     insightBody:
@@ -253,7 +257,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "net_defense_random_drilling",
     match: { bottleneck: "net_defense", rootCause: "random_drilling" },
-    bottleneckVerdict: verdict("net_defense"),
+    verdictClause: SKILL_CLAUSE.net_defense,
     bottleneckText: DEPTH.net_defense,
     insightHeadline: "Your practice rarely sends this ball.",
     insightBody:
@@ -265,7 +269,7 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "net_defense_well_coached",
     match: { bottleneck: "net_defense", rootCause: "well_coached" },
-    bottleneckVerdict: verdict("net_defense"),
+    verdictClause: SKILL_CLAUSE.net_defense,
     bottleneckText: DEPTH.net_defense,
     insightHeadline: "Your hands are trained for drill pace.",
     insightBody:
@@ -279,25 +283,50 @@ export const STORIES: DiagnosisStory[] = [
   {
     id: "dink_patience_open_play",
     match: { bottleneck: "dink_patience", rootCause: "open_play_only" },
-    bottleneckVerdict: verdict("dink_patience"),
+    verdictClause: SKILL_CLAUSE.dink_patience,
     bottleneckText: DEPTH.dink_patience,
-    insightHeadline: "Games give patience almost no practice.",
-    insightBody:
-      "Most of your kitchen reps come in games, where every rally has a score and pressure to end it. Patience is a decision about which ball to attack, and a game gives you one rushed try at that decision, then moves on.",
-    absolution:
-      "This isn't a discipline flaw. It's a decision that has never had calm, repeated practice.",
+    // "My dink breaks down first" is a consistency answer, not an attack
+    // decision, so that player gets the same cause told about the dink.
+    insightHeadline: (f) =>
+      f.dink === "d"
+        ? "Games don't build a steady dink."
+        : "Games give patience almost no practice.",
+    insightBody: (f) =>
+      f.dink === "d"
+        ? "Most of your kitchen reps come in games, where a dink that breaks down just costs the point and the rally moves on. A steady dink is built in long, calm rallies, and games rarely give you one."
+        : "Most of your kitchen reps come in games, where every rally has a score and pressure to end it. Patience is a decision about which ball to attack, and a game gives you one rushed try at that decision, then moves on.",
+    absolution: (f) =>
+      f.dink === "d"
+        ? "This isn't a discipline flaw. It's a dink that has never had calm, repeated practice."
+        : "This isn't a discipline flaw. It's a decision that has never had calm, repeated practice.",
     absolutionClose: "Three weeks of dinking with a rule.",
   },
   {
     id: "dink_patience_random_drilling",
     match: { bottleneck: "dink_patience", rootCause: "random_drilling" },
-    bottleneckVerdict: verdict("dink_patience"),
+    verdictClause: SKILL_CLAUSE.dink_patience,
     bottleneckText: DEPTH.dink_patience,
-    insightHeadline: "Practice without a rule doesn't build judgment.",
-    insightBody:
-      "In a warm-up, dinking has no consequence, so any ball can be attacked or left alone. Patience at the kitchen is a decision about which ball to attack, and a decision only sharpens when practice has a rule and a score.",
-    absolution:
-      "This isn't a personality trait. It's a decision your practice never asked you to make.",
+    insightHeadline: (f) =>
+      f.dink === "d"
+        ? "Your dinking practice has no target."
+        : "Practice without a rule doesn't build judgment.",
+    // The dink-breaks-down version says how they practice, so it is keyed to
+    // the drilling answer like the other random-drilling stories.
+    insightBody: (f) => {
+      if (f.dink !== "d")
+        return "In a warm-up, dinking has no consequence, so any ball can be attacked or left alone. Patience at the kitchen is a decision about which ball to attack, and a decision only sharpens when practice has a rule and a score.";
+      const opening =
+        f.drilling === "b"
+          ? "When you practice, dinking is a warm-up, not a drill with a count."
+          : f.drilling === "c"
+            ? "When you drill, dinking is one shot among several, picked by feel and never counted."
+            : "You said you don't really drill, so dinking never comes with a count.";
+      return `${opening} A steady dink is built by counting how long it holds and pushing that number up, and nothing in your practice asks for that.`;
+    },
+    absolution: (f) =>
+      f.dink === "d"
+        ? "This isn't a personality trait. It's a count your practice never asked you to keep."
+        : "This isn't a personality trait. It's a decision your practice never asked you to make.",
     absolutionClose: "Three weeks of dinking with a rule attached.",
   },
   {
@@ -305,7 +334,7 @@ export const STORIES: DiagnosisStory[] = [
     // one of the three answers that reach this story.
     id: "dink_patience_well_coached",
     match: { bottleneck: "dink_patience", rootCause: "well_coached" },
-    bottleneckVerdict: verdict("dink_patience"),
+    verdictClause: SKILL_CLAUSE.dink_patience,
     bottleneckText: DEPTH.dink_patience,
     insightHeadline: (f) => {
       if (f.dink === "d") return "The dink holds in drills and breaks down when there's a score.";
@@ -336,7 +365,8 @@ export const STORIES: DiagnosisStory[] = [
  */
 export const ALL_TOP: StoryCopy = {
   id: "all_top",
-  bottleneckVerdict: `${OPENER} You rated yourself at the top on all four skills, so no gap stands out. The reset matters most for getting to 4.0.`,
+  verdictClause:
+    "You rated yourself at the top on all four skills, so no gap stands out. The reset matters most for getting to 4.0.",
   bottleneckText: DEPTH.reset,
   insightHeadline: "Your answers don't point to a weak shot.",
   insightBody:
@@ -355,8 +385,8 @@ export const ALL_TOP: StoryCopy = {
  */
 export const FALLBACK: StoryCopy = {
   id: "fallback",
-  bottleneckVerdict: (f) =>
-    `${OPENER} Weighted by how much each skill matters for 4.0, the largest gap in your answers is ${SKILL_LABELS[f.skill]}.`,
+  verdictClause: (f) =>
+    `Weighted by how much each skill matters for 4.0, the largest gap in your answers is ${SKILL_LABELS[f.skill]}.`,
   bottleneckText: (f) =>
     `Your answers point to ${SKILL_LABELS[f.skill]} as the skill to work on first.`,
   insightHeadline: "Your answers point to the skill, not the cause.",

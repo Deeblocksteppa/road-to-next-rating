@@ -43,19 +43,24 @@ export function focusAnswer(bottleneck: SkillId, answers: AnswerMap): string | n
 }
 
 /**
- * Why this skill, in one sentence from their answers.
+ * Why this skill: the reveal's verdict clause for this player, then the
+ * answer behind it in their own words.
  *
- * The skill itself is never in doubt: it is the largest gap once each skill
- * is weighted by how much it matters at 4.0. This used to add a sentence for
- * an `unclear` training cause, but a completed assessment never returns one
- * (every combination of the three training answers lands on another cause),
- * so it never showed.
+ * It is the same sentence the reveal showed (`verdictClause`), so the two
+ * can't disagree. This used to say "this is where your answers leave the
+ * most room" to everyone, including a player whose focus is the reset on its
+ * weight rather than on their lowest rating, and one who rated all four
+ * skills at the top.
+ *
+ * The quote is left off when the clause already opens by restating their
+ * answers ("You said your dinks break down…", "You rated yourself at the
+ * top…"); it would say the same thing twice.
  */
 export function focusReason(diagnosis: Diagnosis, answers: AnswerMap): string {
+  const clause = diagnosis.verdictClause;
   const answer = focusAnswer(diagnosis.bottleneck, answers);
-  return answer
-    ? `Of the four skills, this is where your answers leave the most room. You said: “${answer}.”`
-    : "Of the four skills, this is where your answers leave the most room.";
+  if (!answer || /^You (said|rated)\b/.test(clause)) return clause;
+  return `${clause} You said: “${answer}.”`;
 }
 
 /**

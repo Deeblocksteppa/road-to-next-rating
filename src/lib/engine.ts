@@ -1,6 +1,14 @@
 import { AnswerMap, Diagnosis, RootCauseId, SkillId, SkillScore } from "./types";
 import { QUESTIONS } from "./questions";
-import { STORIES, ALL_TOP, FALLBACK, Line, StoryCopy, StoryFacts } from "./diagnoses";
+import {
+  STORIES,
+  ALL_TOP,
+  FALLBACK,
+  VERDICT_OPENER,
+  Line,
+  StoryCopy,
+  StoryFacts,
+} from "./diagnoses";
 import { fillLevel, levelPhrase } from "./rating";
 
 const IMPORTANCE: Record<SkillId, number> = {
@@ -135,6 +143,7 @@ export function diagnose(answers: AnswerMap): Diagnosis {
   const level = levelPhrase(answers.rating);
   const fill = (line: Line) =>
     fillLevel(typeof line === "function" ? line(facts) : line, level);
+  const verdictClause = fill(copy.verdictClause);
 
   return {
     bottleneck,
@@ -143,7 +152,8 @@ export function diagnose(answers: AnswerMap): Diagnosis {
     storyId: copy.id,
     readiness,
     mirror,
-    bottleneckVerdict: fill(copy.bottleneckVerdict),
+    bottleneckVerdict: `${VERDICT_OPENER} ${verdictClause}`,
+    verdictClause,
     bottleneckText: fill(copy.bottleneckText),
     insightHeadline: fill(copy.insightHeadline),
     insightBody: fill(copy.insightBody),
