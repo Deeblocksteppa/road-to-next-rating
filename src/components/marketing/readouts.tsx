@@ -183,7 +183,7 @@ export function ScoreReadout({ glow = false }: { glow?: boolean }) {
                   }`}
                 >
                   <div
-                    className={`min-w-0 flex-1 text-[15px] font-semibold leading-[1.3] md:w-[12rem] md:flex-none md:text-[17px] ${
+                    className={`min-w-0 flex-1 text-[16px] font-semibold leading-[1.3] md:w-[12rem] md:flex-none md:text-[17px] ${
                       isBottleneck ? "text-ink" : "text-ink-2"
                     }`}
                   >
@@ -309,7 +309,7 @@ export function PriorityTable() {
         working, for the visitor who wants to check it.
       */}
       <details className="group mt-4">
-        <summary className="-my-2 flex cursor-pointer list-none items-center gap-2 py-2 text-[14px] font-semibold text-ink-1 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+        <summary className="-my-2 flex cursor-pointer list-none items-center gap-2 py-2 text-[16px] font-semibold text-ink-1 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
           <span
             aria-hidden="true"
             className="inline-block text-ink-3 transition-transform group-open:rotate-90"
@@ -318,7 +318,7 @@ export function PriorityTable() {
           </span>
           How your priority is chosen
         </summary>
-        <div className="mt-3 flex max-w-[640px] flex-col gap-3 pl-4 text-[14px] leading-[1.55] text-ink-2">
+        <div className="mt-3 flex max-w-[640px] flex-col gap-3 pl-4 text-[16px] leading-[1.55] text-ink-2">
           <p>
             Each skill&apos;s level comes from your answers, 0 to 3. The gap is how far below 3
             it sits, multiplied by how much that skill separates 3.5 from 4.0. The largest
@@ -359,41 +359,41 @@ export function PriorityTable() {
  */
 export function RootCauseSplit({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="grid gap-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-16 lg:gap-24">
-      <div>
-        {/* The step's own heading leads the evidence column, so the step is
-            two columns from its first line rather than a header over a pair. */}
-        {children ? <div className="mb-10">{children}</div> : null}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Unit>Your practice answers</Unit>
-          <ExampleTag />
+    <div>
+      {children ? <div className="mb-10 max-w-[620px]">{children}</div> : null}
+      {/* Centred on each other, so the conclusion sits level with the answers
+          it is drawn from rather than under or over them. */}
+      <div className="grid gap-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-16 lg:gap-24">
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Unit>Your practice answers</Unit>
+            <ExampleTag />
+          </div>
+          <ul className="mt-4 border-b border-line">
+            {DEMO_SIGNALS.map((signal) => (
+              <li key={signal.title} className="flex flex-col gap-2 border-t border-line py-4">
+                <Unit>{signal.title}</Unit>
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <p className="text-pretty text-[16px] leading-[1.45] text-ink">
+                    {signal.answer}
+                  </p>
+                  <Chip>{SIGNAL_READINGS[signal.flag]}</Chip>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="mt-4 border-b border-line">
-          {DEMO_SIGNALS.map((signal) => (
-            <li key={signal.title} className="flex flex-col gap-2 border-t border-line py-4">
-              <Unit>{signal.title}</Unit>
-              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                <p className="text-pretty text-[15px] leading-[1.45] text-ink md:text-[16px]">
-                  {signal.answer}
-                </p>
-                <Chip>{SIGNAL_READINGS[signal.flag]}</Chip>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
 
-      {/* Bottom-aligned with the list on a wide viewport, so the conclusion
-          sits level with the answers it is drawn from. */}
-      <div className="md:self-end md:pb-2">
-        <span aria-hidden="true" className="block h-[2px] w-12 rounded-full bg-optic" />
-        <Unit className="mt-5 block">Root cause</Unit>
-        <p className="mt-4 text-balance font-display text-[34px] font-extrabold leading-[1.08] tracking-[-0.02em] text-ink md:text-[46px] md:leading-[1.05]">
-          {DEMO_DIAGNOSIS.insightHeadline}
-        </p>
-        <p className="mt-4 text-pretty text-[16px] leading-[1.55] text-ink-1 md:text-[18px]">
-          {DEMO_DIAGNOSIS.absolutionClose}
-        </p>
+        <div>
+          <span aria-hidden="true" className="block h-[2px] w-12 rounded-full bg-optic" />
+          <Unit className="mt-5 block">Root cause</Unit>
+          <p className="mt-4 text-balance font-display text-[34px] font-extrabold leading-[1.08] tracking-[-0.02em] text-ink md:text-[46px] md:leading-[1.05]">
+            {DEMO_DIAGNOSIS.insightHeadline}
+          </p>
+          <p className="mt-4 text-pretty text-[16px] leading-[1.55] text-ink-1 md:text-[18px]">
+            {DEMO_DIAGNOSIS.absolutionClose}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -402,14 +402,14 @@ export function RootCauseSplit({ children }: { children?: React.ReactNode }) {
 /* ──────────────── Step three: the reading ──────────────── */
 
 /**
- * The readiness number as the walkthrough's last word: centred, large, with
- * the track under it and the tag beside it. No card. The reveal centres this
- * screen in the app for the same reason.
+ * The readiness number as the walkthrough's last word: large, with the track
+ * under it and the tag beside it, no card. Left-aligned in the rail's column
+ * like steps one and two, so the walkthrough keeps one edge to the end.
  */
 export function ReadingCenterpiece() {
   const readiness = DEMO_DIAGNOSIS.readiness;
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className="flex flex-col items-start">
       <Unit>Readiness for 4.0</Unit>
       <p className="mt-4 font-display text-[72px] font-extrabold leading-none tabular-nums text-ink md:text-[96px]">
         {readiness}
@@ -479,7 +479,7 @@ export function RetestStrip() {
                 i < 2 ? "border-b border-line md:border-b-0" : ""
               } md:border-l md:pl-6 md:pr-6 ${i === 0 ? "md:border-l-0 md:pl-0" : ""}`}
             >
-              <dt className={`text-[15px] font-semibold leading-[1.3] ${moved ? "text-ink" : "text-ink-2"}`}>
+              <dt className={`text-[16px] font-semibold leading-[1.3] ${moved ? "text-ink" : "text-ink-2"}`}>
                 {SKILL_TITLES[row.skill]}
               </dt>
               <dd className="flex items-baseline gap-2 font-mono text-[13px] tabular-nums">
@@ -503,7 +503,7 @@ export function RetestStrip() {
         The handover, straight off the second diagnosis: fixing the reset does
         not finish the player, it promotes the next-largest gap.
       */}
-      <p className="mt-5 text-pretty text-[15px] leading-[1.55] text-ink-2">
+      <p className="mt-5 text-pretty text-[16px] leading-[1.55] text-ink-2">
         {fixed} is no longer the largest gap, so {next.toLowerCase()} becomes the next
         three-week plan.
       </p>
@@ -538,7 +538,7 @@ export function SessionBriefReadout() {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <span className="text-[14px] leading-[1.45] text-ink-2">
+        <span className="text-[16px] leading-[1.45] text-ink-2">
           {weeklyCommitment(roadmap.weeklyDrills)}
         </span>
         <ExampleTag />
@@ -549,7 +549,7 @@ export function SessionBriefReadout() {
             Drill 1 of {roadmap.weeklyDrills.length} · {drill.duration} · {drill.setup}
           </Unit>
           <div className="flex flex-col gap-5">
-            <DrillBriefContent drill={drill} retestMetric={null} as="h3" />
+            <DrillBriefContent drill={drill} retestMetric={null} as="h3" textSize="page" />
             <ShotDemo drillId={drill.id} />
           </div>
         </div>

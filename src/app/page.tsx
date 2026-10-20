@@ -10,7 +10,6 @@ import {
   Progress,
   SiteHeader,
 } from "@/components/marketing/sections";
-import { StatRow } from "@/components/marketing/StatRow";
 
 /**
  * The public storefront. A server component on purpose: it is the first thing
@@ -59,12 +58,10 @@ export default function MarketingHome() {
         `main` starts at the hero, not after it. The hero was previously the
         page's `<header>` — the banner landmark — while holding the h1, the
         lede and the primary CTA, so a screen-reader user jumping to `main`
-        landed past all three. StatRow sat between `</header>` and `<main>`,
-        inside no landmark at all.
+        landed past all three.
       */}
       <main id="main">
         <Hero />
-        <StatRow />
         <Problem />
         <HowItWorks />
         <Plan />

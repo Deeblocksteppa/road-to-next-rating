@@ -14,18 +14,27 @@ export function DrillBriefContent({
   drill,
   retestMetric,
   as: Heading = "h1",
+  textSize = "app",
 }: {
   drill: GuidedDrill;
   retestMetric: string | null;
   as?: "h1" | "h3";
+  /**
+   * `page` sets the running text at 16px for the marketing page, where every
+   * sentence is at least body size. The app keeps its own denser steps.
+   */
+  textSize?: "app" | "page";
 }) {
+  const page = textSize === "page";
   return (
     <>
       <Heading className="font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em]">
         {drill.name}
       </Heading>
 
-      <p className="text-[15px] leading-[1.6] text-ink">{drill.instructions}</p>
+      <p className={`${page ? "text-[16px]" : "text-[15px]"} leading-[1.6] text-ink`}>
+        {drill.instructions}
+      </p>
 
       {/*
         What gets logged, settled before the clock starts. One protocol for
@@ -37,7 +46,7 @@ export function DrillBriefContent({
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
           When the timer ends
         </p>
-        <p className="text-[14px] leading-[1.5] text-ink">
+        <p className={`${page ? "text-[16px]" : "text-[14px]"} leading-[1.5] text-ink`}>
           <span className="font-semibold">{drill.logProtocol}</span> {drill.counts}
         </p>
         <div className="flex flex-col gap-1 border-t border-line pt-2.5">

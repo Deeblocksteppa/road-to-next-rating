@@ -42,7 +42,7 @@ export function Caption({
   className?: string;
 }) {
   return (
-    <p className={`text-pretty text-[14px] leading-[1.5] text-ink-2 ${className}`}>{children}</p>
+    <p className={`text-pretty text-[16px] leading-[1.5] text-ink-2 ${className}`}>{children}</p>
   );
 }
 

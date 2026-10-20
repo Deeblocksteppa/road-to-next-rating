@@ -200,8 +200,9 @@ function StepHeading({ children }: { children: React.ReactNode }) {
  * Each step takes the shape of what it shows, rather than all three sharing
  * a "heading left, paragraph right, card underneath" frame: step one is a
  * ranking set straight on the page, step two is evidence beside its
- * conclusion, step three is one number, centred, with the page's second CTA
- * directly under it so the argument and the action read top to bottom.
+ * conclusion, step three is one number with the page's second CTA directly
+ * under it, so the argument and the action read top to bottom. All three keep
+ * the rail's left edge.
  */
 export function HowItWorks() {
   return (
@@ -246,19 +247,19 @@ export function HowItWorks() {
           <RiseIn>
             <StepHeading>Step three: one number you can re-test against.</StepHeading>
           </RiseIn>
-          {/* The rail stops here, so the reading takes the full width back and
-              centres on the page rather than on the column beside the rail. */}
-          <RiseIn delay={80} className="-ml-11 mt-12 flex flex-col items-center md:-ml-20 md:mt-16">
+          {/* Same left edge as steps one and two: the walkthrough keeps one
+              column from its first step to the CTA. */}
+          <RiseIn delay={80} className="mt-10 flex flex-col items-start md:mt-12">
             <ReadingCenterpiece />
-            <Body className="mt-8 max-w-[44ch] text-center">
+            <Body className="mt-8 max-w-[44ch]">
               Your skill and practice answers roll up into one readiness score. Re-test after
               the plan and see how far it moved.
             </Body>
-            <div className="mt-9 flex w-full flex-col items-center gap-3">
+            <div className="mt-9 flex w-full flex-col items-start gap-3">
               <Cta href={START} className="w-full sm:w-auto">
                 {CTA_LABEL}
               </Cta>
-              <Caption className="text-center">
+              <Caption>
                 {QUESTIONS.length} questions · about 4 minutes · no signup
               </Caption>
             </div>
@@ -272,17 +273,29 @@ export function HowItWorks() {
 /* ─────────────────────────── The plan ─────────────────────────── */
 
 /**
- * What the plan is, one line each. They used to be four headed points with a
- * sentence apiece beside a drill card that already shows most of it.
+ * What the plan is: a point and one line on what it means. Set at body size
+ * so the column carries its own weight beside the drill card.
  */
 const PLAN_POINTS = [
-  "One skill for three weeks, not a library to browse.",
-  "Named drills, each with the shot shown.",
-  // A logged count is a practice record kept beside the plan. The re-test
-  // (and every readiness number on this page) is the twelve questions
-  // answered again; nothing logged in a session feeds it.
-  "A count out of 10 logged every session, kept apart from the re-test.",
-  "One rule to carry into your games.",
+  {
+    title: "One skill for three weeks.",
+    body: "Every session works the gap that matters most, not a library to browse.",
+  },
+  {
+    title: "Named drills, with the shot shown.",
+    body: "Each drill comes with a diagram of the shot and a count to aim for.",
+  },
+  {
+    // A logged count is a practice record kept beside the plan. The re-test
+    // (and every readiness number on this page) is the twelve questions
+    // answered again; nothing logged in a session feeds it.
+    title: "A count logged every session.",
+    body: "Your makes out of 10, kept as a practice record apart from the re-test.",
+  },
+  {
+    title: "One rule for your games.",
+    body: "A single thing to do in open play while the drills do their work.",
+  },
 ];
 
 export function Plan() {
@@ -293,11 +306,13 @@ export function Plan() {
           <SectionHeading>Three weeks, one skill, and a number at the end of it.</SectionHeading>
           <ul className="mt-8 border-b border-line">
             {PLAN_POINTS.map((point) => (
-              <li
-                key={point}
-                className="border-t border-line py-3.5 text-pretty text-[15px] leading-[1.5] text-ink-1 md:text-[16px]"
-              >
-                {point}
+              <li key={point.title} className="border-t border-line py-5">
+                <h3 className="text-pretty text-[16px] font-semibold leading-[1.45] text-ink md:text-[18px]">
+                  {point.title}
+                </h3>
+                <p className="mt-1.5 text-pretty text-[16px] leading-[1.55] text-ink-2 md:text-[18px]">
+                  {point.body}
+                </p>
               </li>
             ))}
           </ul>
@@ -385,11 +400,11 @@ function TierList({ items, tone }: { items: string[]; tone: "ink-1" | "ink-2" })
       {items.map((item) => (
         <li
           key={item}
-          className={`flex gap-3 text-[15px] leading-[1.55] ${tone === "ink-1" ? "text-ink-1" : "text-ink-2"}`}
+          className={`flex gap-3 text-[16px] leading-[1.55] ${tone === "ink-1" ? "text-ink-1" : "text-ink-2"}`}
         >
           <span
             aria-hidden="true"
-            className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-ink-3"
+            className="mt-[10px] h-[5px] w-[5px] shrink-0 rounded-full bg-ink-3"
           />
           {item}
         </li>
@@ -432,7 +447,7 @@ export function Pricing() {
           <p className="mt-6 font-display text-[48px] font-extrabold leading-none tabular-nums text-ink">
             $0
           </p>
-          <p className="mt-3 text-[14px] leading-[1.5] text-ink-2">No trial clock.</p>
+          <p className="mt-3 text-[16px] leading-[1.5] text-ink-2">No trial clock.</p>
           <div className="mt-8">
             <TierList items={FREE} tone="ink-1" />
           </div>
@@ -456,10 +471,10 @@ export function Pricing() {
             $79
             <span className="text-[17px] font-semibold tracking-normal text-ink-2">/year</span>
           </p>
-          <p className="mt-3 text-[14px] leading-[1.5] tabular-nums text-ink-2">
+          <p className="mt-3 text-[16px] leading-[1.5] tabular-nums text-ink-2">
             $6.58 a month, billed yearly. Saves 17% over monthly.
           </p>
-          <p className="mt-1 text-[14px] leading-[1.5] tabular-nums text-ink-2">
+          <p className="mt-1 text-[16px] leading-[1.5] tabular-nums text-ink-2">
             Or $7.99 a month, billed monthly.
           </p>
           <p className="mt-7 text-pretty text-[17px] font-semibold leading-[1.4] text-ink">
@@ -471,7 +486,7 @@ export function Pricing() {
           <div className="mt-auto pt-8">
             <div className="flex gap-3 border-t border-line pt-5">
               <BreakMark className="mt-1 shrink-0" />
-              <p className="text-pretty text-[14px] leading-[1.5] text-ink-1">
+              <p className="text-pretty text-[16px] leading-[1.5] text-ink-1">
                 Offered inside the app after a re-test, right beside the change it explains.
               </p>
             </div>
@@ -531,7 +546,7 @@ export function FinalCta() {
             {CTA_LABEL}
           </Link>
 
-          <p className="mt-5 text-[14px] leading-[1.5] text-optic-ink/80">
+          <p className="mt-5 text-[16px] leading-[1.5] text-optic-ink/80">
             {QUESTIONS.length} questions · about 4 minutes · no signup
           </p>
         </RiseIn>

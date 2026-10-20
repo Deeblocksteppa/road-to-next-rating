@@ -52,7 +52,11 @@ export function ShotDemo({
 
   return (
     <div role="img" aria-label={demo.aria} className="w-full">
-      <svg viewBox="0 0 320 140" className="h-auto w-full" aria-hidden="true">
+      <svg
+        viewBox={`0 ${demo.top} 320 ${140 - demo.top}`}
+        className="h-auto w-full"
+        aria-hidden="true"
+      >
         {/* Ground + net — shared by every shot so the family reads as one set.
             The net is labelled: without it the post read as a stray tick. */}
         <line x1="12" y1={GROUND} x2="308" y2={GROUND} stroke={COURT} strokeWidth="1" />
@@ -179,6 +183,12 @@ function Ball({ reduced, motion }: { reduced: boolean; motion: Motion }) {
 
 interface Demo {
   aria: string;
+  /**
+   * The highest y the shot reaches, less a margin for the ball. The diagram
+   * is cropped to start here: every shot used the drop's full height, so the
+   * flatter ones (reset, dink, speed-up) sat under 60–70 units of empty sky.
+   */
+  top: number;
   marks: React.ReactNode;
   labels: React.ReactNode;
   motion: Motion;
@@ -188,6 +198,7 @@ const DEMOS: Record<ShotType, Demo> = {
   /* Drop — a high, floaty parabola from the baseline that settles at the apex
      and drops soft into the kitchen just past the net. */
   drop: {
+    top: 18,
     aria:
       "Side view of a third-shot drop: the ball floats up from the baseline in a soft high arc and drops gently into the kitchen just past the net.",
     marks: (
@@ -221,6 +232,7 @@ const DEMOS: Record<ShotType, Demo> = {
      the kitchen. The whole point is killing pace, so this output must read as
      obviously lower and flatter than the drop's tall floaty arc. */
   reset: {
+    top: 62,
     aria:
       "Side view of a reset: a hard, flat ball skids in to mid-court, is absorbed as the pace comes off, then comes out low and soft, barely clearing the net before settling down into the kitchen.",
     marks: (
@@ -253,6 +265,7 @@ const DEMOS: Record<ShotType, Demo> = {
   /* Dink — small, low, controlled arcs back and forth over the net between two
      players at the kitchen line. Steady and continuous; no dramatic pause. */
   dink: {
+    top: 66,
     aria:
       "Side view of a dink rally: the ball travels in small, low arcs back and forth over the net between two players at the kitchen line, staying low and controlled.",
     marks: (
@@ -277,6 +290,7 @@ const DEMOS: Record<ShotType, Demo> = {
   /* Net defense — a fast, flat speed-up at body height crosses the net, is
      blocked back quick with almost no pause. The quickest of the four. */
   net_defense: {
+    top: 58,
     aria:
       "Side view of a speed-up block: a fast, flat ball comes in at body height, is blocked back quickly over the net with almost no pause.",
     marks: (
