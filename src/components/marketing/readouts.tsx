@@ -1,9 +1,9 @@
-import { ReadinessReading } from "@/components/diagnosis/Reveal";
 import { DrillBriefContent } from "@/components/session/DrillBrief";
 import { ShotDemo } from "@/components/session/ShotDemo";
 import { SKILL_TITLES } from "@/lib/diagnoses";
 import { toGuidedDrill } from "@/lib/drill-lookup";
 import { generateRoadmap } from "@/lib/roadmap";
+import { weeklyCommitment } from "@/lib/session-plan";
 import {
   DEMO_ANSWERS,
   DEMO_DIAGNOSIS,
@@ -11,49 +11,35 @@ import {
   DEMO_RETEST_DIAGNOSIS,
   DEMO_RETEST_SKILLS,
   DEMO_SIGNALS,
-  EXAMPLE_LABEL,
   RETEST_LABEL,
   SIGNAL_READINGS,
 } from "./demo-run";
+import { ExampleTag } from "./primitives";
 
 /**
- * Landscape data objects: the product's own readouts, rendered live at page
- * scale rather than photographed.
+ * The product's own readouts, rendered live from the engine at build time
+ * (see `demo-run.ts`) rather than photographed.
  *
- * The reveal screens this page used to show are mostly-text by design — one
- * idea per screen — so framing them larger only ever produced bigger words on a
- * page. These carry the interface density instead: the real four-skill scoring,
- * the real weighted-gap arithmetic, the real training-signal vote, every value
- * computed by `engine.ts` at build time (see `demo-run.ts`). They are real
- * product UI in the app's card language, laid out wide so they fill the page's
- * column instead of standing in a phone-shaped frame.
+ * Each one used to sit in the same frame: a full-width rounded card with a
+ * header row naming it and a provenance line. Five of those in a row made the
+ * page one composition repeated, so each readout now takes the shape of what
+ * it shows. The priority table is a table on the page, the root cause is a
+ * conclusion beside its evidence, the reading is one number, the re-test is a
+ * before and after. Only the two objects that are product surfaces in the app
+ * (the hero reading and the drill brief) keep a card. Every one still carries
+ * its `ExampleTag` beside the data it qualifies.
  */
 
-/* ─────────────────────── Shared frame ─────────────────────── */
+/* ─────────────────────── Shared pieces ─────────────────────── */
 
-/**
- * The object's shell: the app's card (radius-2xl, `line` border, `surface`
- * ground, no shadow) with a titled instrument header, which is what makes a
- * block of numbers read as a panel of a running product rather than as a table
- * dropped into a marketing page.
- */
-function Readout({
-  eyebrow,
-  meta,
+/** The app's card: radius-2xl, `line` border, `surface` ground, no shadow. */
+function Panel({
   children,
   glow = false,
   className = "",
 }: {
-  eyebrow: string;
-  /**
-   * Right-hand instrument line: the run's provenance label (`EXAMPLE_LABEL`
-   * or `RETEST_LABEL`). It sits in the panel's own header so it cannot be
-   * separated from the numbers it qualifies at any viewport — at 375px the
-   * header wraps and the label drops under the eyebrow, still inside the card.
-   */
-  meta: string;
   children: React.ReactNode;
-  /** Ambient optic field behind the panel. Hero only — one per page. */
+  /** Ambient optic field behind the panel. Hero only, one per page. */
   glow?: boolean;
   className?: string;
 }) {
@@ -71,28 +57,12 @@ function Readout({
           }}
         />
       ) : null}
-
-      <figure className="overflow-hidden rounded-2xl border border-line bg-surface">
-        {/*
-          Sentence case, not mono caps. Both lines run five to eight words, and
-          at 375px a spaced-out uppercase line that long wraps to two or three
-          lines of letters to be decoded rather than read. Mono caps stay for
-          short labels (units, column heads, the step markers).
-        */}
-        <figcaption className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 border-b border-line px-5 py-3.5 md:px-7 md:py-4">
-          <span className="text-[14px] font-semibold leading-[1.45] text-ink-1">{eyebrow}</span>
-          {/* `ink-2`, not `ink-3`: this is the line that says the numbers are
-              not a customer's, so it is not allowed to be the dimmest thing in
-              the panel. */}
-          <span className="text-[13px] leading-[1.45] text-ink-2">{meta}</span>
-        </figcaption>
-        <div className="px-5 py-6 md:px-7 md:py-7">{children}</div>
-      </figure>
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface">{children}</div>
     </div>
   );
 }
 
-/** Mono status pill — the app's badge: 10px, tracking 0.10em, `radius-xs`. */
+/** Mono status pill, the app's badge: 10px, tracking 0.10em, `radius-xs`. */
 function Badge({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex shrink-0 items-center rounded-xs bg-optic-dim px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.10em] text-optic">
@@ -101,34 +71,30 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Neutral counterpart to Badge — reads a value back without pointing at it. */
+/** Neutral counterpart to Badge: reads a value back without pointing at it. */
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-xs border border-line-strong px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.10em] text-ink-2">
+    <span className="inline-flex w-fit shrink-0 items-center rounded-xs border border-line-strong px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.10em] text-ink-2">
       {children}
     </span>
   );
 }
 
-/**
- * The instrument label above a value, mobile only — on a wide viewport the
- * table's column heads do this job and repeating it per row would be noise.
- */
-function ValueLabel({ children }: { children: React.ReactNode }) {
+/** A short mono instrument label: a unit, a column head, a field name. */
+function Unit({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className="mb-1.5 block font-mono text-[11px] uppercase leading-none tracking-[0.12em] text-ink-3 md:hidden">
+    <span
+      className={`font-mono text-[11px] uppercase leading-none tracking-[0.12em] text-ink-3 ${className}`}
+    >
       {children}
     </span>
   );
 }
 
-/* ──────────────── 1. The reading (hero) ──────────────── */
-
 /**
- * Three-segment level meter — the 0–3 scale the assessment actually scores.
+ * Three-segment level meter: the 0–3 scale the assessment actually scores.
  * Fixed and compact at 375px; on a wide viewport the segments stretch to fill
- * the row, so the readout uses its landscape width instead of leaving a corridor
- * of dead space between the skill name and its reading.
+ * the row.
  */
 function LevelMeter({ level }: { level: number }) {
   return (
@@ -152,123 +118,138 @@ function levelText(level: number): string {
   return Number.isInteger(level) ? String(level) : level.toFixed(1);
 }
 
+/** The 0–100 readiness track with its two ends named. */
+function ReadinessTrack({ value, before }: { value: number; before?: number }) {
+  return (
+    <div className="w-full">
+      <div className="relative h-1.5 overflow-hidden rounded-full bg-line">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-optic"
+          style={{ width: `${value}%` }}
+        />
+        {/* A re-test draws the baseline over the gain in neutral, so the
+            accent marks only the ground it moved. */}
+        {before !== undefined ? (
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-line-hover"
+            style={{ width: `${before}%` }}
+          />
+        ) : null}
+      </div>
+      <div className="mt-2.5 flex justify-between">
+        <Unit>3.0</Unit>
+        <Unit>4.0</Unit>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────── The reading (hero) ──────────────── */
+
 /**
  * The whole reading in one object: readiness for 4.0, and the four skills that
- * produced it with the diagnosed one flagged. The page's headline claim —
- * ten things to fix versus one to start with — stated as data instead of as a
- * sentence.
+ * produced it with the diagnosed one flagged. The page's headline claim (ten
+ * things to fix versus one to start with) stated as data. The one marketing
+ * object on a card with the hero's ambient field behind it: it stands in for
+ * the result screen, so it looks like a product surface.
  */
 export function ScoreReadout({ glow = false }: { glow?: boolean }) {
   const bottleneck = DEMO_DIAGNOSIS.bottleneck;
 
   return (
-    <Readout
-      glow={glow}
-      eyebrow={`The reading — ${DEMO_RANKED_SKILLS.length} skills scored`}
-      meta={EXAMPLE_LABEL}
-    >
-      <div className="grid gap-8 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-12">
-        <div className="md:self-center">
-          <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-ink-3">
-            Readiness for 4.0
-          </p>
-          <p className="mt-3 font-display text-[56px] font-extrabold leading-none tabular-nums text-ink md:text-[72px]">
-            {DEMO_DIAGNOSIS.readiness}
-            <span className="text-[24px] font-semibold text-ink-3"> /100</span>
-          </p>
-          <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-line">
-            <div
-              className="h-full rounded-full bg-optic"
-              style={{ width: `${DEMO_DIAGNOSIS.readiness}%` }}
-            />
+    <div>
+      <ExampleTag className="mb-3" />
+      <Panel glow={glow}>
+        <div className="grid gap-8 px-5 py-6 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-12 md:px-7 md:py-8">
+          <div className="md:self-center">
+            <Unit>Readiness for 4.0</Unit>
+            <p className="mt-3 font-display text-[56px] font-extrabold leading-none tabular-nums text-ink md:text-[72px]">
+              {DEMO_DIAGNOSIS.readiness}
+              <span className="text-[24px] font-semibold text-ink-3"> /100</span>
+            </p>
+            <div className="mt-5">
+              <ReadinessTrack value={DEMO_DIAGNOSIS.readiness} />
+            </div>
           </div>
-          <div className="mt-2.5 flex justify-between font-mono text-[11px] tracking-[0.1em] text-ink-3">
-            <span>3.0</span>
-            <span>4.0</span>
-          </div>
-        </div>
 
-        <ul className="md:border-l md:border-line md:pl-12">
-          {DEMO_RANKED_SKILLS.map((score, i) => {
-            const isBottleneck = score.skill === bottleneck;
-            return (
-              <li
-                key={score.skill}
-                className={`flex items-center gap-3 py-3.5 md:gap-5 md:py-4 ${
-                  i === 0 ? "pt-0 md:pt-0" : "border-t border-line"
-                }`}
-              >
-                <div
-                  className={`min-w-0 flex-1 text-[15px] font-semibold leading-[1.3] md:w-[12rem] md:flex-none md:text-[17px] ${
-                    isBottleneck ? "text-ink" : "text-ink-2"
+          <ul className="md:border-l md:border-line md:pl-12">
+            {DEMO_RANKED_SKILLS.map((score, i) => {
+              const isBottleneck = score.skill === bottleneck;
+              return (
+                <li
+                  key={score.skill}
+                  className={`flex items-center gap-3 py-3.5 md:gap-5 md:py-4 ${
+                    i === 0 ? "pt-0 md:pt-0" : "border-t border-line"
                   }`}
                 >
-                  {SKILL_TITLES[score.skill]}
-                  {/* At 375px the flag drops under the name it marks: inline, it
-                      squeezes the name column until the one row that matters
-                      most is also the only one that wraps. */}
-                  {isBottleneck ? (
-                    <span className="mt-1.5 block md:hidden">
-                      <Badge>Bottleneck</Badge>
-                    </span>
-                  ) : null}
-                </div>
-                {/* Wide layout: the flag keeps its own column on every row,
-                    filled or not, so the meters stay on one axis instead of
-                    stepping right on the row that carries a badge. */}
-                <span className="hidden shrink-0 md:block md:w-[7rem]">
-                  {isBottleneck ? <Badge>Bottleneck</Badge> : null}
-                </span>
-                <LevelMeter level={score.level} />
-                <span className="w-[2.75rem] shrink-0 text-right font-mono text-[13px] tabular-nums text-ink-2">
-                  {levelText(score.level)}
-                  <span className="text-ink-3">/3</span>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </Readout>
+                  <div
+                    className={`min-w-0 flex-1 text-[15px] font-semibold leading-[1.3] md:w-[12rem] md:flex-none md:text-[17px] ${
+                      isBottleneck ? "text-ink" : "text-ink-2"
+                    }`}
+                  >
+                    {SKILL_TITLES[score.skill]}
+                    {/* At 375px the flag drops under the name it marks:
+                        inline, it squeezes the name column until the one row
+                        that matters most is also the only one that wraps. */}
+                    {isBottleneck ? (
+                      <span className="mt-1.5 block md:hidden">
+                        <Badge>Bottleneck</Badge>
+                      </span>
+                    ) : null}
+                  </div>
+                  {/* Wide layout: the flag keeps its own column on every row,
+                      filled or not, so the meters stay on one axis. */}
+                  <span className="hidden shrink-0 md:block md:w-[7rem]">
+                    {isBottleneck ? <Badge>Bottleneck</Badge> : null}
+                  </span>
+                  <LevelMeter level={score.level} />
+                  <span className="w-[2.75rem] shrink-0 text-right font-mono text-[13px] tabular-nums text-ink-2">
+                    {levelText(score.level)}
+                    <span className="text-ink-3">/3</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </Panel>
+    </div>
   );
 }
 
-/* ──────────────── 2. The weighted gap (step 01) ──────────────── */
+/* ──────────────── Step one: the priority table ──────────────── */
 
 /**
- * Why one of those four is the constraint: each skill's level turned into a
- * weighted gap by how much that skill separates 3.5 from 4.0, ranked, with the
- * arithmetic left visible. The accent marks the winning bar — the only place in
- * this object anything is pointed at.
+ * Why one of the four is the place to start: each skill's level turned into a
+ * weighted gap by how much that skill separates 3.5 from 4.0, ranked. Set
+ * straight on the page as a table with hairline rules, no card: it is a
+ * ranking, and a ranking reads best as rows. The accent marks the winning bar.
  */
-export function GapLedger() {
+export function PriorityTable() {
   const maxGap = Math.max(...DEMO_RANKED_SKILLS.map((s) => s.gap));
 
   return (
-    <Readout eyebrow="Priority, all four skills" meta={EXAMPLE_LABEL}>
+    <div>
+      <ExampleTag />
+
       {/* Column heads carry the table on a wide viewport; at 375px each row
-          labels its own values instead, because a header row that far from
-          the fourth row is recall, not recognition. */}
-      <div className="hidden items-center gap-6 pb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3 md:flex">
-        {/* Indented past the rank column so the head sits over the names. */}
-        <span className="w-[13rem] shrink-0 pl-8">Skill</span>
-        <span className="w-[3.25rem] shrink-0">Level</span>
-        <span className="flex-1">Priority</span>
+          labels its own values, because a header row that far from the fourth
+          row is recall, not recognition. */}
+      <div className="mt-5 hidden items-center gap-6 pb-3 md:flex">
+        <Unit className="w-[14rem] shrink-0 pl-9">Skill</Unit>
+        <Unit className="w-[3.25rem] shrink-0">Level</Unit>
+        <Unit className="flex-1">Priority</Unit>
       </div>
 
-      <ul>
+      <ul className="mt-4 border-b border-line md:mt-0">
         {DEMO_RANKED_SKILLS.map((score, i) => {
           const isBottleneck = score.skill === DEMO_DIAGNOSIS.bottleneck;
           return (
             <li
               key={score.skill}
-              // The column heads are desktop-only, so on mobile the first row's
-              // top rule would double up with the panel header's divider.
-              className={`flex flex-col gap-3 border-line py-4 md:flex-row md:items-center md:gap-6 md:border-t ${
-                i === 0 ? "pt-0 md:pt-4" : "border-t"
-              }`}
+              className="flex flex-col gap-3 border-t border-line py-5 md:flex-row md:items-center md:gap-6"
             >
-              <div className="flex items-baseline gap-3 md:w-[13rem] md:shrink-0">
+              <div className="flex items-baseline gap-4 md:w-[14rem] md:shrink-0">
                 <span
                   className={`w-5 shrink-0 font-mono text-[11px] tabular-nums ${
                     isBottleneck ? "text-optic" : "text-ink-3"
@@ -277,7 +258,7 @@ export function GapLedger() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span
-                  className={`text-[15px] font-semibold leading-[1.3] md:text-[17px] ${
+                  className={`text-[16px] font-semibold leading-[1.3] md:text-[18px] ${
                     isBottleneck ? "text-ink" : "text-ink-2"
                   }`}
                 >
@@ -286,25 +267,22 @@ export function GapLedger() {
               </div>
 
               {/*
-                Mobile wraps this into two lines — the three labelled values,
-                then the bar full width beneath them. `order` is what lets one
-                DOM serve both: the bar sits last on mobile and third on a wide
-                viewport, where the column heads above already name the cells.
-                The bar also stops being a 97px stub, which is the only reason
-                the "largest gap wins" comparison is visible at all at 375px.
+                Mobile wraps this into two lines: the labelled values, then the
+                bar full width beneath them. `order` lets one DOM serve both;
+                on a wide viewport the column heads above name the cells.
               */}
-              <div className="flex flex-wrap items-start gap-x-6 gap-y-3.5 md:flex-1 md:flex-nowrap md:items-center md:gap-6">
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-3.5 pl-9 md:flex-1 md:flex-nowrap md:items-center md:gap-6 md:pl-0">
                 <div className="order-1 md:order-none md:w-[3.25rem] md:shrink-0">
-                  <ValueLabel>Level</ValueLabel>
+                  <Unit className="mb-1.5 block md:hidden">Level</Unit>
                   <span className="block font-mono text-[13px] tabular-nums text-ink-2">
                     {levelText(score.level)}
                     <span className="text-ink-3">/3</span>
                   </span>
                 </div>
                 <div className="order-3 md:order-last md:w-[2.5rem] md:shrink-0 md:text-right">
-                  <ValueLabel>Priority</ValueLabel>
+                  <Unit className="mb-1.5 block md:hidden">Priority</Unit>
                   <span
-                    className={`block font-display text-[17px] font-bold tabular-nums md:text-[20px] ${
+                    className={`block font-display text-[18px] font-bold tabular-nums md:text-[22px] ${
                       isBottleneck ? "text-ink" : "text-ink-2"
                     }`}
                   >
@@ -316,9 +294,7 @@ export function GapLedger() {
                   className="order-4 h-2 w-full overflow-hidden rounded-full bg-line md:order-none md:w-auto md:flex-1"
                 >
                   <div
-                    className={`h-full rounded-full ${
-                      isBottleneck ? "bg-optic" : "bg-line-hover"
-                    }`}
+                    className={`h-full rounded-full ${isBottleneck ? "bg-optic" : "bg-line-hover"}`}
                     style={{ width: `${(score.gap / maxGap) * 100}%` }}
                   />
                 </div>
@@ -329,13 +305,11 @@ export function GapLedger() {
       </ul>
 
       {/*
-        The arithmetic, one tap away. Shown inline — a formula line above the
-        rows and a ×1.4 weight on every row — it made step 01 read like
-        documentation. The table above is the argument; this is the working,
-        for the visitor who wants to check it.
+        The arithmetic, one tap away. The table is the argument; this is the
+        working, for the visitor who wants to check it.
       */}
-      <details className="group mt-2 border-t border-line pt-4">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-[14px] font-semibold text-ink-1 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+      <details className="group mt-4">
+        <summary className="-my-2 flex cursor-pointer list-none items-center gap-2 py-2 text-[14px] font-semibold text-ink-1 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
           <span
             aria-hidden="true"
             className="inline-block text-ink-3 transition-transform group-open:rotate-90"
@@ -344,7 +318,7 @@ export function GapLedger() {
           </span>
           How your priority is chosen
         </summary>
-        <div className="mt-3 flex flex-col gap-3 pl-4 text-[14px] leading-[1.55] text-ink-2">
+        <div className="mt-3 flex max-w-[640px] flex-col gap-3 pl-4 text-[14px] leading-[1.55] text-ink-2">
           <p>
             Each skill&apos;s level comes from your answers, 0 to 3. The gap is how far below 3
             it sits, multiplied by how much that skill separates 3.5 from 4.0. The largest
@@ -369,254 +343,217 @@ export function GapLedger() {
           </ul>
         </div>
       </details>
-    </Readout>
+    </div>
   );
 }
 
-/* ──────────────── 3. The root cause (step 02) ──────────────── */
+/* ──────────────── Step two: the root cause ──────────────── */
 
 /**
- * The second axis, scored from the same twelve answers: three training signals,
- * what each one implies about how the skill gets practiced, and the
- * conclusion they resolve to. Court time is marked as
- * the master variable because that is literally how `inferRootCause` works — it
- * settles the reading outright, and the other two only break a tie.
+ * The second axis, from the same twelve answers: the three practice answers
+ * on the left as a plain list, each tagged with what it implies, and on the
+ * right the conclusion the engine draws from them, large, under a single
+ * accent rule. The conclusion is the engine's own output for this example
+ * (the insight headline and plan line the reveal shows for this bottleneck
+ * × root cause), so it can't drift from what the product tells a player.
  */
-export function RootCauseReadout() {
+export function RootCauseSplit({ children }: { children?: React.ReactNode }) {
   return (
-    <Readout eyebrow="How you practice" meta={EXAMPLE_LABEL}>
-      <ul>
-        {DEMO_SIGNALS.map((signal, i) => (
-          <li
-            key={signal.title}
-            className={`flex flex-col gap-2.5 py-4 md:grid md:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] md:items-center md:gap-6 ${
-              i === 0 ? "pt-0 md:pt-0" : "border-t border-line"
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.14em] text-ink-3">
-                {signal.title}
-              </span>
-              {signal.master ? (
-                <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.1em] text-ink-2">
-                  · settles it
-                </span>
-              ) : null}
-            </div>
-            <p className="text-pretty text-[15px] leading-[1.4] text-ink md:text-[16px]">
-              {signal.answer}
-            </p>
-            <div className="md:justify-self-end">
-              <Chip>{SIGNAL_READINGS[signal.flag]}</Chip>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {/*
-        The accent-tinted card variant (DESIGN.md §Components): border `optic`
-        over a 5% tint, for the one moment this object is pointing at — the
-        conclusion the three signals resolve to.
-
-        The conclusion is the engine's own output for this example: the
-        insight line and plan line the reveal shows for this bottleneck ×
-        root cause. It is a claim about the mechanism ("Games don't teach
-        the reset."), not a label for the answers above it, and it can't
-        drift from what the product actually tells a player.
-      */}
-      <div className="mt-6 flex flex-col gap-2 rounded-xl border border-optic bg-optic/[0.05] px-5 py-4 md:px-6 md:py-5">
-        <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-optic">
-          Root cause
-        </p>
-        <p className="text-balance font-display text-[22px] font-bold leading-[1.2] tracking-[-0.01em] text-ink md:text-[24px]">
-          {DEMO_DIAGNOSIS.insightHeadline}
-        </p>
-        <p className="text-pretty text-[14px] leading-[1.45] text-ink-2">
-          {DEMO_DIAGNOSIS.absolutionClose}
-        </p>
-      </div>
-    </Readout>
-  );
-}
-
-/* ──────────────── 4. The re-test (proof it moved) ──────────────── */
-
-/**
- * The same run, re-scored after the plan — the section's whole claim as one
- * landscape object instead of two phone captures.
- *
- * It replaced a pair of screenshots that could not be made to match: they were
- * captures of two different app surfaces, so one sat on the app ground
- * (#0B0B0C) and the other on `reveal-bg` (#060607) and read as two different
- * greys side by side, and their crops could not be squared without either
- * exposing a "0 weeks" streak card or slicing a CTA in half. Rendered, the
- * object has one ground, one width and no crop to negotiate.
- *
- * It also fixes a number. The captures showed a different player entirely
- * (68 → 81 on hands at the net), which matched neither the 63 this page's own
- * engine returns for the example run nor anything a single-bottleneck fix can
- * produce. Every figure below is the engine's second pass over the same
- * answers with only the diagnosed skill's questions moved (`demo-run.ts`
- * enforces that at build time), so the claim cannot drift from the model.
- */
-export function RetestReadout() {
-  const before = DEMO_DIAGNOSIS.readiness;
-  const after = DEMO_RETEST_DIAGNOSIS.readiness;
-  const delta = after - before;
-  const fixed = SKILL_TITLES[DEMO_DIAGNOSIS.bottleneck];
-  const nextBottleneck = SKILL_TITLES[DEMO_RETEST_DIAGNOSIS.bottleneck];
-
-  return (
-    <Readout eyebrow="Re-test, three weeks later" meta={RETEST_LABEL}>
-      <div className="grid gap-8 md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] md:gap-12">
-        <div className="md:self-center">
-          <p className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.16em] text-ink-3">
-            Readiness for 4.0
-          </p>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="font-display text-[40px] font-extrabold leading-none tabular-nums text-ink-3 md:text-[48px]">
-              {before}
-            </span>
-            <span aria-hidden="true" className="font-display text-[24px] leading-none text-ink-3">
-              →
-            </span>
-            <span className="font-display text-[56px] font-extrabold leading-none tabular-nums text-ink md:text-[72px]">
-              {after}
-            </span>
-            <span className="font-mono text-[13px] leading-none tabular-nums text-optic">
-              +{delta}
-            </span>
-          </div>
-
-          {/*
-            One track, two fills: the baseline in neutral, the ground it gained
-            in the accent. The accent marks exactly one thing on this object —
-            movement — which is the only thing the section is claiming.
-          */}
-          <div className="relative mt-5 h-1.5 overflow-hidden rounded-full bg-line">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-optic"
-              style={{ width: `${after}%` }}
-            />
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-line-hover"
-              style={{ width: `${before}%` }}
-            />
-          </div>
-          <div className="mt-2.5 flex justify-between font-mono text-[11px] tracking-[0.1em] text-ink-3">
-            <span>3.0</span>
-            <span>4.0</span>
-          </div>
+    <div className="grid gap-12 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-16 lg:gap-24">
+      <div>
+        {/* The step's own heading leads the evidence column, so the step is
+            two columns from its first line rather than a header over a pair. */}
+        {children ? <div className="mb-10">{children}</div> : null}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Unit>Your practice answers</Unit>
+          <ExampleTag />
         </div>
-
-        <ul className="md:border-l md:border-line md:pl-12">
-          {DEMO_RETEST_SKILLS.map((row, i) => {
-            const moved = row.after > row.before;
-            return (
-              <li
-                key={row.skill}
-                className={`flex items-center gap-3 py-3.5 md:gap-5 md:py-4 ${
-                  i === 0 ? "pt-0 md:pt-0" : "border-t border-line"
-                }`}
-              >
-                <span
-                  className={`min-w-0 flex-1 text-[15px] font-semibold leading-[1.3] md:text-[17px] ${
-                    moved ? "text-ink" : "text-ink-2"
-                  }`}
-                >
-                  {SKILL_TITLES[row.skill]}
-                </span>
-                <span className="shrink-0 font-mono text-[13px] tabular-nums text-ink-3">
-                  {levelText(row.before)}
-                </span>
-                <span aria-hidden="true" className="shrink-0 font-mono text-[13px] text-ink-3">
-                  →
-                </span>
-                <span
-                  className={`w-[1.75rem] shrink-0 font-mono text-[13px] tabular-nums ${
-                    moved ? "text-ink" : "text-ink-3"
-                  }`}
-                >
-                  {levelText(row.after)}
-                  <span className="text-ink-3">/3</span>
-                </span>
-                <span
-                  className={`w-[2.25rem] shrink-0 text-right font-mono text-[13px] tabular-nums ${
-                    moved ? "text-optic" : "text-ink-3"
-                  }`}
-                >
-                  {moved ? `+${levelText(row.after - row.before)}` : "—"}
-                </span>
-              </li>
-            );
-          })}
+        <ul className="mt-4 border-b border-line">
+          {DEMO_SIGNALS.map((signal) => (
+            <li key={signal.title} className="flex flex-col gap-2 border-t border-line py-4">
+              <Unit>{signal.title}</Unit>
+              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <p className="text-pretty text-[15px] leading-[1.45] text-ink md:text-[16px]">
+                  {signal.answer}
+                </p>
+                <Chip>{SIGNAL_READINGS[signal.flag]}</Chip>
+              </div>
+            </li>
+          ))}
         </ul>
       </div>
 
-      {/*
-        The handover, straight off the second diagnosis: fixing the reset does
-        not finish the player, it promotes the next-largest gap. This is the
-        section's "then the next bottleneck becomes the next three weeks" as a
-        computed fact rather than a promise.
-      */}
-      <p className="mt-6 border-t border-line pt-4 text-[14px] leading-[1.5] text-ink-2">
-        {fixed} is no longer the largest gap, so {nextBottleneck.toLowerCase()} becomes the
-        next three-week plan.
-      </p>
-    </Readout>
+      {/* Bottom-aligned with the list on a wide viewport, so the conclusion
+          sits level with the answers it is drawn from. */}
+      <div className="md:self-end md:pb-2">
+        <span aria-hidden="true" className="block h-[2px] w-12 rounded-full bg-optic" />
+        <Unit className="mt-5 block">Root cause</Unit>
+        <p className="mt-4 text-balance font-display text-[34px] font-extrabold leading-[1.08] tracking-[-0.02em] text-ink md:text-[46px] md:leading-[1.05]">
+          {DEMO_DIAGNOSIS.insightHeadline}
+        </p>
+        <p className="mt-4 text-pretty text-[16px] leading-[1.55] text-ink-1 md:text-[18px]">
+          {DEMO_DIAGNOSIS.absolutionClose}
+        </p>
+      </div>
+    </div>
   );
 }
 
-/* ──────────────── 5. The session (the plan) ──────────────── */
+/* ──────────────── Step three: the reading ──────────────── */
+
+/**
+ * The readiness number as the walkthrough's last word: centred, large, with
+ * the track under it and the tag beside it. No card. The reveal centres this
+ * screen in the app for the same reason.
+ */
+export function ReadingCenterpiece() {
+  const readiness = DEMO_DIAGNOSIS.readiness;
+  return (
+    <div className="flex flex-col items-center text-center">
+      <Unit>Readiness for 4.0</Unit>
+      <p className="mt-4 font-display text-[72px] font-extrabold leading-none tabular-nums text-ink md:text-[96px]">
+        {readiness}
+        <span className="text-[28px] font-semibold text-ink-3 md:text-[32px]"> /100</span>
+      </p>
+      <div className="mt-7 w-full max-w-[420px]">
+        <ReadinessTrack value={readiness} />
+      </div>
+      <ExampleTag className="mt-5" />
+    </div>
+  );
+}
+
+/* ──────────────── The re-test ──────────────── */
+
+/**
+ * The same run, re-scored after the plan: the before and after at display
+ * size, then each skill's movement as a strip of four readings. Every figure
+ * is the engine's second pass over the same answers with only the diagnosed
+ * skill's questions moved (`demo-run.ts` enforces that at build time).
+ */
+export function RetestNumbers() {
+  const before = DEMO_DIAGNOSIS.readiness;
+  const after = DEMO_RETEST_DIAGNOSIS.readiness;
+  return (
+    <div className="w-full">
+      {/* One grid, so both labels share a line and both numbers share a
+          baseline, whatever their sizes. */}
+      <div className="grid w-fit grid-cols-[auto_auto_auto] items-baseline gap-x-5 gap-y-3 md:gap-x-7">
+        <Unit>Before</Unit>
+        <span />
+        <Unit>After</Unit>
+        <p className="font-display text-[40px] font-extrabold leading-none tabular-nums text-ink-3 md:text-[48px]">
+          {before}
+        </p>
+        <span aria-hidden="true" className="font-display text-[28px] leading-none text-ink-3">
+          →
+        </span>
+        <p className="flex items-baseline gap-3 font-display text-[56px] font-extrabold leading-none tabular-nums text-ink md:text-[72px]">
+          {after}
+          <span className="font-mono text-[15px] font-normal tabular-nums text-optic">
+            +{after - before}
+          </span>
+        </p>
+      </div>
+      <div className="mt-6 max-w-[420px]">
+        <ReadinessTrack value={after} before={before} />
+      </div>
+      <ExampleTag className="mt-5">{RETEST_LABEL}</ExampleTag>
+    </div>
+  );
+}
+
+/** Each skill's level before and after, as four readings in a strip. */
+export function RetestStrip() {
+  const fixed = SKILL_TITLES[DEMO_DIAGNOSIS.bottleneck];
+  const next = SKILL_TITLES[DEMO_RETEST_DIAGNOSIS.bottleneck];
+  return (
+    <div>
+      <dl className="grid grid-cols-2 border-y border-line md:grid-cols-4">
+        {DEMO_RETEST_SKILLS.map((row, i) => {
+          const moved = row.after > row.before;
+          return (
+            <div
+              key={row.skill}
+              className={`flex flex-col gap-3 py-5 ${i % 2 === 1 ? "border-l border-line pl-5" : "pr-5"} ${
+                i < 2 ? "border-b border-line md:border-b-0" : ""
+              } md:border-l md:pl-6 md:pr-6 ${i === 0 ? "md:border-l-0 md:pl-0" : ""}`}
+            >
+              <dt className={`text-[15px] font-semibold leading-[1.3] ${moved ? "text-ink" : "text-ink-2"}`}>
+                {SKILL_TITLES[row.skill]}
+              </dt>
+              <dd className="flex items-baseline gap-2 font-mono text-[13px] tabular-nums">
+                <span className="text-ink-3">{levelText(row.before)}</span>
+                <span aria-hidden="true" className="text-ink-3">
+                  →
+                </span>
+                <span className={moved ? "text-ink" : "text-ink-3"}>
+                  {levelText(row.after)}
+                  <span className="text-ink-3">/3</span>
+                </span>
+                <span className={`ml-auto ${moved ? "text-optic" : "text-ink-3"}`}>
+                  {moved ? `+${levelText(row.after - row.before)}` : "0"}
+                </span>
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+      {/*
+        The handover, straight off the second diagnosis: fixing the reset does
+        not finish the player, it promotes the next-largest gap.
+      */}
+      <p className="mt-5 text-pretty text-[15px] leading-[1.55] text-ink-2">
+        {fixed} is no longer the largest gap, so {next.toLowerCase()} becomes the next
+        three-week plan.
+      </p>
+    </div>
+  );
+}
+
+/* ──────────────── The plan ──────────────── */
+
+/** The example plan, as `generateRoadmap` prescribes it to the example player. */
+function examplePlan() {
+  const roadmap = generateRoadmap(DEMO_DIAGNOSIS, DEMO_ANSWERS);
+  if (roadmap.weeklyDrills.length === 0) {
+    // Loud on purpose: this renders at build time, so a renamed drill fails
+    // the build rather than shipping an empty panel.
+    throw new Error("demo-run: the example plan has no drills");
+  }
+  return roadmap;
+}
 
 /**
  * The example plan's first drill, rendered with the guided session's own brief
- * component and shot diagram — the same code the app runs, fed the same drill
- * data. It replaced `session.png`, a capture that had gone stale twice as the
- * drill copy changed; a live render cannot drift.
- *
- * The drill is the one `generateRoadmap` prescribes to the example player —
- * the solo version, since their answers say they have no drilling partner.
+ * component and shot diagram, fed straight from `drills.ts` through the same
+ * prescription the app uses (the example player has no drilling partner, so
+ * this is the solo version). The brief's re-test footnote is left off: the
+ * page has no plan beside it to point to.
  */
 export function SessionBriefReadout() {
-  const roadmap = generateRoadmap(DEMO_DIAGNOSIS, DEMO_ANSWERS);
-  // Already prescribed: the example player has no drilling partner, so this
-  // is the solo version — the same one the app now shows them.
-  const first = roadmap.weeklyDrills[0];
-  if (!first) {
-    // Loud on purpose: this renders at build time, so a renamed drill fails
-    // the build rather than shipping an empty panel.
-    throw new Error("demo-run: the example plan has no first drill");
-  }
-  const drill = toGuidedDrill(first);
+  const roadmap = examplePlan();
+  const drill = toGuidedDrill(roadmap.weeklyDrills[0]);
 
   return (
-    <Readout
-      eyebrow={`Drill 1 of ${roadmap.weeklyDrills.length} · ${drill.duration} · ${drill.setup}`}
-      meta="From the example plan"
-    >
-      <div className="flex flex-col gap-5">
-        <DrillBriefContent drill={drill} retestMetric={roadmap.retestMetric} as="h3" />
-        <ShotDemo drillId={drill.id} />
+    <div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <span className="text-[14px] leading-[1.45] text-ink-2">
+          {weeklyCommitment(roadmap.weeklyDrills)}
+        </span>
+        <ExampleTag />
       </div>
-    </Readout>
-  );
-}
-
-/* ──────────────── 6. The reading (step 03) ──────────────── */
-
-/**
- * The last screen of the result, rendered live for the example run with the
- * reveal's own component. It replaced `reveal-readiness.png`, whose copy ("the
- * biggest thing between you and 4.0…") was two edits behind the app.
- */
-export function ReadinessRevealReadout() {
-  return (
-    <Readout eyebrow="The last screen of your result" meta={EXAMPLE_LABEL}>
-      <ReadinessReading
-        readiness={DEMO_DIAGNOSIS.readiness}
-        bottleneck={DEMO_DIAGNOSIS.bottleneck}
-      />
-    </Readout>
+      <Panel>
+        <div className="flex flex-col gap-5 px-5 py-6 md:px-7 md:py-7">
+          <Unit>
+            Drill 1 of {roadmap.weeklyDrills.length} · {drill.duration} · {drill.setup}
+          </Unit>
+          <div className="flex flex-col gap-5">
+            <DrillBriefContent drill={drill} retestMetric={null} as="h3" />
+            <ShotDemo drillId={drill.id} />
+          </div>
+        </div>
+      </Panel>
+    </div>
   );
 }

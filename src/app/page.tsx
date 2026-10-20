@@ -20,7 +20,7 @@ import { StatRow } from "@/components/marketing/StatRow";
  * The anonymous assessment funnel lives at /start.
  */
 export const metadata: Metadata = {
-  title: "Road to Next Rating — find the pickleball skill to work on first",
+  title: "Road to Next Rating · Find the pickleball skill to work on first",
   description:
     "You don't need to fix ten things. Start with one. Twelve questions find the skill to work on first, why it hasn't moved, and a three-week plan to work on it. Free.",
   openGraph: {

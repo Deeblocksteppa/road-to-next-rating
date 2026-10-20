@@ -1,29 +1,30 @@
 import Link from "next/link";
-import { BreakMark } from "./BreakRule";
+import { EXAMPLE_LABEL } from "./demo-run";
 
 /**
  * Shared marketing primitives. Everything here is server-safe; the only client
  * component on the marketing site is RiseIn.
  */
 
-/** Mono smallcaps label — the system's instrument voice. */
-export function Label({
-  children,
-  tone = "muted",
+/**
+ * The provenance tag every example carries, set right beside the data it
+ * qualifies. It replaced a full header row on every readout card, which was
+ * half of what made each section look like the last one: the label belongs
+ * to the numbers, not to a frame around them.
+ */
+export function ExampleTag({
+  children = EXAMPLE_LABEL,
   className = "",
 }: {
-  children: React.ReactNode;
-  tone?: "muted" | "accent" | "body";
+  children?: React.ReactNode;
   className?: string;
 }) {
-  const color =
-    tone === "accent" ? "text-optic" : tone === "body" ? "text-ink-2" : "text-ink-3";
   return (
-    <p
-      className={`text-balance font-mono text-[11px] uppercase leading-[1.6] tracking-[0.16em] ${color} ${className}`}
+    <span
+      className={`inline-flex w-fit shrink-0 items-center rounded-xs border border-line-strong px-2 py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.12em] text-ink-2 ${className}`}
     >
       {children}
-    </p>
+    </span>
   );
 }
 
@@ -42,29 +43,6 @@ export function Caption({
 }) {
   return (
     <p className={`text-pretty text-[14px] leading-[1.5] text-ink-2 ${className}`}>{children}</p>
-  );
-}
-
-/**
- * A section's opening marker: the logo's break motif, then the mono label.
- * Gives every section the same recognizable entry point instead of a bare
- * line of small caps.
- */
-export function SectionLabel({
-  children,
-  align = "left",
-}: {
-  children: React.ReactNode;
-  /** `center` is for a header that sits above a group rather than beside it. */
-  align?: "left" | "center";
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 ${align === "center" ? "justify-center" : ""}`}
-    >
-      <BreakMark />
-      <Label>{children}</Label>
-    </div>
   );
 }
 
@@ -141,28 +119,22 @@ export function Section({
   );
 }
 
-/** Section headline — one per section, no competing focal point. */
+/**
+ * Section headline, one per section. It opens each section on its own: the
+ * mono eyebrow that used to sit over every heading is gone, because a kicker
+ * on every section is template grammar rather than a system. One size for
+ * every section, a clear step above the walkthrough's step headings.
+ */
 export function SectionHeading({
   children,
-  size = "section",
   className = "",
 }: {
   children: React.ReactNode;
-  /**
-   * `group` is for a heading that has to hold three numbered steps under it
-   * rather than one column of prose. At section scale a centred heading over a
-   * 2,300px group reads as a caption that lost its paragraph.
-   */
-  size?: "section" | "group";
   className?: string;
 }) {
-  const scale =
-    size === "group"
-      ? "text-[26px] leading-[1.25] md:text-[32px] md:leading-[1.2]"
-      : "text-[22px] leading-[1.3] md:text-[24px] md:leading-[1.3]";
   return (
     <h2
-      className={`text-balance font-display font-bold tracking-[-0.01em] text-ink ${scale} ${className}`}
+      className={`text-balance font-display text-[26px] font-bold leading-[1.22] tracking-[-0.01em] text-ink md:text-[36px] md:leading-[1.12] ${className}`}
     >
       {children}
     </h2>

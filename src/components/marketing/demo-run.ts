@@ -3,13 +3,13 @@ import { QUESTIONS } from "@/lib/questions";
 import type { AnswerMap, RootCauseId } from "@/lib/types";
 
 /**
- * The two labels every surface carrying this run has to show, next to the
- * numbers themselves. PRODUCT.md: no customers exist, so nothing on the site
- * may read as a customer result — one wording, owned here, so no readout can
- * soften it independently.
+ * The two labels every surface carrying this run has to show, set as the
+ * small tag beside each example (`ExampleTag`). PRODUCT.md: no customers
+ * exist, so nothing on the site may read as a customer result — one wording,
+ * owned here, so no readout can soften it independently.
  */
-export const EXAMPLE_LABEL = "Example assessment — illustrative answers";
-export const RETEST_LABEL = "Illustrative re-test — not a customer result";
+export const EXAMPLE_LABEL = "Example · illustrative answers";
+export const RETEST_LABEL = "Illustrative · not a customer result";
 
 /**
  * One complete pass through the real diagnostic engine, used as the source of

@@ -2,13 +2,14 @@ import Link from "next/link";
 import { LogoFull, Logo } from "@/components/brand/Logo";
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 import { QUESTIONS } from "@/lib/questions";
-import { BreakRule } from "./BreakRule";
+import { BreakMark, BreakRule } from "./BreakRule";
 import { RiseIn } from "./RiseIn";
 import {
-  GapLedger,
-  ReadinessRevealReadout,
-  RetestReadout,
-  RootCauseReadout,
+  PriorityTable,
+  ReadingCenterpiece,
+  RetestNumbers,
+  RetestStrip,
+  RootCauseSplit,
   ScoreReadout,
   SessionBriefReadout,
 } from "./readouts";
@@ -16,13 +17,15 @@ import {
   Body,
   Caption,
   Cta,
+  GhostCta,
   Section,
   SectionHeading,
-  SectionLabel,
   Statement,
 } from "./primitives";
 
 const START = "/start";
+/** The page's one action, said the same way every time it appears. */
+const CTA_LABEL = "Find your bottleneck, free";
 
 /* ─────────────────────────── Hero ─────────────────────────── */
 
@@ -95,7 +98,7 @@ export function Hero() {
               style={{ "--hero-delay": "300ms" } as React.CSSProperties}
             >
               <Cta href={START} className="w-full sm:w-auto">
-                Find your bottleneck — free
+                {CTA_LABEL}
               </Cta>
               <Caption>{QUESTIONS.length} questions · about 4 minutes · no signup</Caption>
             </div>
@@ -122,22 +125,17 @@ export function Hero() {
 /* ───────────────────────── The problem ───────────────────────── */
 
 /**
- * The plateau, as a statement rather than a paragraph.
- *
- * This used to be an eyebrow, a heading and a paragraph in a 52ch column on a
- * full-width section — a composition that is over half empty by construction,
- * sitting at position 2, exactly where a visitor decides whether the page is
- * serious. One sentence at display scale across the whole container has no
- * empty half to explain, and gives the page a change of rhythm before the
- * three mechanism steps start.
+ * The plateau, as a statement rather than a paragraph: one sentence at
+ * display scale across the whole container, a change of rhythm before the
+ * walkthrough starts.
  */
 export function Problem() {
   return (
     <Section tone="raised" className="border-t border-line-soft !py-24 md:!py-36">
       <RiseIn>
         <Statement>
-          Open play rewards what you&apos;re already good at — so the one shot gating
-          your next level never gets the reps.
+          Open play rewards what you&apos;re already good at. The shot holding you back never
+          gets the reps.
         </Statement>
       </RiseIn>
     </Section>
@@ -146,239 +144,168 @@ export function Problem() {
 
 /* ───────────────────────── How it works ───────────────────────── */
 
-/** The numbered marker every step opens with: "01 —— THE SKILL". */
-function StepMarker({ index, label }: { index: string; label: string }) {
+/**
+ * One step on the walkthrough rail.
+ *
+ * The rail is the logo's plateau line turned on its side: a flat muted
+ * hairline running from step to step, which the three steps hang from instead
+ * of each opening with its own eyebrow and card. It ends at step three, the
+ * reading, where its marker takes the accent: the one place the line breaks.
+ *
+ * Each step draws the segment below its own marker, down to the next step's
+ * marker, so the line is continuous however tall a step grows.
+ */
+function RailStep({
+  index,
+  last = false,
+  children,
+}: {
+  index: string;
+  last?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="font-mono text-[11px] leading-none tracking-[0.16em] text-optic">
+    <li className={`relative pl-11 md:pl-20 ${last ? "" : "pb-20 md:pb-32"}`}>
+      {last ? null : (
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0 left-[13px] top-7 w-px bg-line md:left-[19px] md:top-10"
+        />
+      )}
+      <span
+        aria-hidden="true"
+        className={`absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full border bg-background font-mono text-[11px] tabular-nums md:h-10 md:w-10 ${
+          last ? "border-optic text-ink" : "border-line-strong text-ink-2"
+        }`}
+      >
         {index}
       </span>
-      <span aria-hidden="true" className="h-px w-8 bg-line-strong" />
-      <span className="font-mono text-[11px] uppercase leading-none tracking-[0.16em] text-ink-3">
-        {label}
-      </span>
-    </div>
+      {children}
+    </li>
   );
 }
 
-/**
- * A step whose evidence is a landscape data object rather than a phone-shaped
- * screenshot: the argument runs across the top in two columns, and the object
- * takes the section's full width underneath.
- */
-function DataStep({
-  index,
-  label,
-  heading,
-  body,
-  children,
-}: {
-  index: string;
-  label: string;
-  heading: string;
-  body: string;
-  children: React.ReactNode;
-}) {
+/** A step's heading: hangs level with its rail marker. */
+function StepHeading({ children }: { children: React.ReactNode }) {
   return (
-    <RiseIn>
-      {/* `items-start`, not `items-end`: every step in this group hangs its
-          text from one top axis, so the heading and the paragraph beside it
-          begin on the same line rather than ending on one. */}
-      <div className="grid gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-x-12 lg:gap-x-16">
-        <div>
-          <StepMarker index={index} label={label} />
-          <h3 className="mt-4 text-balance font-display text-[20px] font-bold leading-[1.3] text-ink md:text-[22px]">
-            {heading}
-          </h3>
-        </div>
-        <Body className="max-w-[46ch] md:pb-1">{body}</Body>
-      </div>
-      <div className="mt-8 md:mt-10">{children}</div>
-    </RiseIn>
+    <h3 className="text-balance font-display text-[22px] font-bold leading-[1.27] tracking-[-0.01em] text-ink md:pt-[3px] md:text-[26px] md:leading-[1.3]">
+      {children}
+    </h3>
   );
 }
 
 /**
- * One step of the mechanism: numbered marker, argument, and a live readout.
+ * The mechanism, as one walkthrough down a single rail.
  *
- * Text left, visual right — the same hand as the two DataSteps above it. The
- * side used to be switchable via a `flip` prop, which nothing ever set; the
- * prop is gone so "these three never alternate" is structural rather than a
- * default nobody happened to override. The 01/02/03 numerals already carry
- * the sequence, so alternating sides would only cost alignment discipline.
- */
-function Step({
-  index,
-  label,
-  heading,
-  body,
-  children,
-}: {
-  index: string;
-  label: string;
-  heading: string;
-  body: string;
-  children: React.ReactNode;
-}) {
-  return (
-    /*
-      `items-start`, not `items-center`. Centred, the text block floated 171px
-      below the card's top edge — the two shared no horizontal line, which is
-      what read as disconnected. Top-aligned, the marker and the card's top
-      edge start together.
-    */
-    <RiseIn className="grid items-start gap-y-8 gap-x-10 md:grid-cols-[minmax(0,1fr)_minmax(0,440px)] md:gap-x-14 lg:gap-x-20">
-      <div>
-        <StepMarker index={index} label={label} />
-        <h3 className="mt-4 text-balance font-display text-[20px] font-bold leading-[1.3] text-ink md:text-[22px]">
-          {heading}
-        </h3>
-        <Body className="mt-3 max-w-[42ch]">{body}</Body>
-      </div>
-      {/* Full width at 375 like the two readouts above it. */}
-      <div className="w-full">{children}</div>
-    </RiseIn>
-  );
-}
-
-/**
- * The mechanism, in three steps.
- *
- * "How it works" is no longer a section of its own. As one it was a preamble
- * to a preamble: a heading and a paragraph saying twelve answers get scored on
- * both axes, immediately followed by 01 and 02 saying the same thing with the
- * actual data attached. It survives as the group's header — a centred eyebrow
- * and one heading naming the two axes the three steps then walk through.
+ * Each step takes the shape of what it shows, rather than all three sharing
+ * a "heading left, paragraph right, card underneath" frame: step one is a
+ * ranking set straight on the page, step two is evidence beside its
+ * conclusion, step three is one number, centred, with the page's second CTA
+ * directly under it so the argument and the action read top to bottom.
  */
 export function HowItWorks() {
   return (
     <Section className="border-t border-line-soft">
-      {/*
-        Max-width in px, not ch: `ch` resolves against this wrapper's own 16px
-        body font rather than the 32px heading inside it, which sized the
-        header to a third of its intended measure.
-      */}
-      <RiseIn className="mx-auto max-w-[420px] text-center md:max-w-[620px]">
-        <SectionLabel align="center">How it works</SectionLabel>
-        <SectionHeading size="group" className="mt-5">
+      <RiseIn className="max-w-[620px]">
+        <SectionHeading>
           Two questions, not one: what&apos;s broken, and why it never fixed itself.
         </SectionHeading>
       </RiseIn>
 
-      <div className="mt-16 flex flex-col gap-16 md:mt-24 md:gap-24">
-        <DataStep
-          index="01"
-          label="The skill"
-          heading="Which of the four skills that gate 4.0 to work on first."
-          body="Each skill is scored from your answers and weighted by how much it matters at 4.0. The largest gap is where the plan starts."
-        >
-          <GapLedger />
-        </DataStep>
-        <DataStep
-          index="02"
-          label="The root cause"
-          heading="And why that skill hasn't developed, given how you train."
-          body="Three answers describe how you practice. A player who mostly plays games needs a different plan from one who drills but can't carry it into matches."
-        >
-          <RootCauseReadout />
-        </DataStep>
-        <Step
-          index="03"
-          label="The reading"
-          heading="One number you can re-test against, instead of a vibe."
-          body="Both answers roll up into a readiness score for 4.0. Re-test after the plan and you see how far it moved."
-        >
-          <ReadinessRevealReadout />
-        </Step>
-      </div>
+      <ol className="mt-14 md:mt-20">
+        <RailStep index="01">
+          <RiseIn className="max-w-[620px]">
+            <StepHeading>Step one: the skill that matters most for 4.0.</StepHeading>
+            <Body className="mt-3">
+              Each skill is scored from your answers and weighted by how much it matters at
+              4.0. The largest gap is where the plan starts.
+            </Body>
+          </RiseIn>
+          <RiseIn delay={80} className="mt-10 md:mt-12">
+            <PriorityTable />
+          </RiseIn>
+        </RailStep>
 
-      {/*
-        The argument closes here, and belief is highest at exactly this point.
-        Without this the page runs ~7,700px on mobile between the hero CTA and
-        the next one — the whole persuasion arc with nothing to tap.
-      */}
-      <RiseIn className="mt-16 flex flex-col items-center gap-4 md:mt-20">
-        <Cta href={START}>Find your bottleneck — free</Cta>
-        <Caption className="text-center">
-          {QUESTIONS.length} questions · about 4 minutes · no signup
-        </Caption>
-      </RiseIn>
+        <RailStep index="02">
+          <RiseIn>
+            <RootCauseSplit>
+              <StepHeading>Step two: why it hasn&apos;t improved.</StepHeading>
+              {/* The root cause changes the explanation, not the drills: the
+                  plan is built from the skill, so this says "stuck for
+                  different reasons" rather than "needs a different plan". */}
+              <Body className="mt-3">
+                Three answers describe how you practice. A player who mostly plays games and
+                one who drills but can&apos;t carry it into matches are stuck for different
+                reasons.
+              </Body>
+            </RootCauseSplit>
+          </RiseIn>
+        </RailStep>
+
+        <RailStep index="03" last>
+          <RiseIn>
+            <StepHeading>Step three: one number you can re-test against.</StepHeading>
+          </RiseIn>
+          {/* The rail stops here, so the reading takes the full width back and
+              centres on the page rather than on the column beside the rail. */}
+          <RiseIn delay={80} className="-ml-11 mt-12 flex flex-col items-center md:-ml-20 md:mt-16">
+            <ReadingCenterpiece />
+            <Body className="mt-8 max-w-[44ch] text-center">
+              Your skill and practice answers roll up into one readiness score. Re-test after
+              the plan and see how far it moved.
+            </Body>
+            <div className="mt-9 flex w-full flex-col items-center gap-3">
+              <Cta href={START} className="w-full sm:w-auto">
+                {CTA_LABEL}
+              </Cta>
+              <Caption className="text-center">
+                {QUESTIONS.length} questions · about 4 minutes · no signup
+              </Caption>
+            </div>
+          </RiseIn>
+        </RailStep>
+      </ol>
     </Section>
   );
 }
 
 /* ─────────────────────────── The plan ─────────────────────────── */
 
+/**
+ * What the plan is, one line each. They used to be four headed points with a
+ * sentence apiece beside a drill card that already shows most of it.
+ */
 const PLAN_POINTS = [
-  {
-    title: "A plan built on one skill",
-    body: "A sequence aimed at the single constraint — not a library to browse.",
-  },
-  {
-    title: "Named drills, with visual demos",
-    body: "Every session names the drill and shows the shot.",
-  },
-  {
-    // Precise about what a logged session is and is not: it is a practice
-    // record kept beside the plan. The re-test — and every readiness number on
-    // this page — is the twelve questions answered again, and nothing logged
-    // in a session feeds it. The old line ("so the plan measures something")
-    // read as though it did.
-    title: "Sessions you log as you go",
-    body: "Each drill records makes out of attempts, so your practice has a history — kept beside the plan, separate from the re-test.",
-  },
-  {
-    title: "An in-game rule for the week",
-    body: "One constraint to carry into open play.",
-  },
+  "One skill for three weeks, not a library to browse.",
+  "Named drills, each with the shot shown.",
+  // A logged count is a practice record kept beside the plan. The re-test
+  // (and every readiness number on this page) is the twelve questions
+  // answered again; nothing logged in a session feeds it.
+  "A count out of 10 logged every session, kept apart from the re-test.",
+  "One rule to carry into your games.",
 ];
 
 export function Plan() {
   return (
     <Section tone="raised" className="border-t border-line-soft">
-      <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_minmax(0,400px)] md:items-center md:gap-x-14 lg:gap-x-20">
-        <div>
-          <RiseIn>
-            <SectionLabel>The plan</SectionLabel>
-            <SectionHeading className="mt-5">
-              Three weeks, one skill, and a number at the end of it.
-            </SectionHeading>
-          </RiseIn>
+      <div className="grid gap-y-12 md:grid-cols-[minmax(0,1fr)_minmax(0,460px)] md:items-start md:gap-x-16 lg:gap-x-24">
+        <RiseIn>
+          <SectionHeading>Three weeks, one skill, and a number at the end of it.</SectionHeading>
+          <ul className="mt-8 border-b border-line">
+            {PLAN_POINTS.map((point) => (
+              <li
+                key={point}
+                className="border-t border-line py-3.5 text-pretty text-[15px] leading-[1.5] text-ink-1 md:text-[16px]"
+              >
+                {point}
+              </li>
+            ))}
+          </ul>
+        </RiseIn>
 
-          <RiseIn delay={80}>
-            <ul className="mt-8 flex flex-col">
-              {PLAN_POINTS.map((point, i) => (
-                <li
-                  key={point.title}
-                  className={`flex gap-4 py-5 ${i === 0 ? "" : "border-t border-line"}`}
-                >
-                  {/* Neutral, not optic. A list marker is not something the
-                      page is pointing at, and nine accent dots spend the
-                      break's currency before the break arrives. */}
-                  <span
-                    aria-hidden="true"
-                    className="mt-[11px] h-[6px] w-[6px] shrink-0 rounded-full bg-ink-3"
-                  />
-                  <div>
-                    <h3 className="font-display text-[18px] font-semibold leading-[1.35] text-ink md:text-[20px]">
-                      {point.title}
-                    </h3>
-                    <p className="mt-1.5 text-[15px] leading-[1.55] text-ink-2 md:text-[16px]">
-                      {point.body}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </RiseIn>
-        </div>
-
-        {/*
-          The example plan's first drill, rendered live with the guided
-          session's own brief and shot diagram. It replaced `session.png`, a
-          capture that went stale every time the drill copy changed.
-        */}
-        <RiseIn delay={120} className="w-full">
+        {/* The example plan's first drill, rendered live with the guided
+            session's own brief and shot diagram. */}
+        <RiseIn delay={100} className="w-full">
           <SessionBriefReadout />
         </RiseIn>
       </div>
@@ -388,32 +315,28 @@ export function Plan() {
 
 /* ───────────────────────── Re-test ───────────────────────── */
 
+/**
+ * The re-test as a before and after: the claim on the left, the two numbers
+ * on the right at display size, and each skill's movement as a strip of four
+ * readings across the full width underneath.
+ */
 export function Progress() {
   return (
     <Section className="border-t border-line-soft">
-      <RiseIn className="max-w-[52ch]">
-        {/* Not "Proof it moved": the numbers below are illustrative, and an
-            illustration can't be proof of anything. */}
-        <SectionLabel>Re-testing</SectionLabel>
-        <SectionHeading className="mt-5">Re-test after three weeks. See what changed.</SectionHeading>
-        <Body className="mt-4">
-          Answer the same twelve questions again and see how your score moved. The next gap
-          becomes the next plan.
-        </Body>
-      </RiseIn>
-
-      {/*
-        One landscape object, the same shape as steps 01 and 02, rather than
-        two phone captures side by side. The captures were of two different app
-        surfaces — one on the app ground, one on `reveal-bg` — so they read as
-        two different greys no markup could reconcile; their crops could not be
-        squared without exposing a "0 weeks" streak card on one or slicing a
-        CTA in half on the other; and they showed a second player (68 → 81 on
-        hands at the net) under a page whose every other number is the reset
-        player at 63. See `RetestReadout` and `demo-run.ts` for the numbers.
-      */}
-      <RiseIn delay={80} className="mt-12 md:mt-14">
-        <RetestReadout />
+      <div className="grid gap-y-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end md:gap-x-16">
+        <RiseIn>
+          <SectionHeading>Re-test after three weeks. See what changed.</SectionHeading>
+          <Body className="mt-4 max-w-[44ch]">
+            Answer the same twelve questions again and see how your score moved. The next
+            gap becomes the next plan.
+          </Body>
+        </RiseIn>
+        <RiseIn delay={80}>
+          <RetestNumbers />
+        </RiseIn>
+      </div>
+      <RiseIn delay={140} className="mt-12 md:mt-16">
+        <RetestStrip />
       </RiseIn>
     </Section>
   );
@@ -456,133 +379,109 @@ const PAID = [
   "Weekly session streaks",
 ];
 
-/** A price line: the amount at display weight, and the billing basis under it in mono. */
-function PriceLine({
-  amount,
-  unit,
-  basis,
-  mark,
-}: {
-  amount: string;
-  unit: string;
-  basis: string;
-  /** Optional neutral chip — the annual line's "better value" mark. */
-  mark?: string;
-}) {
+function TierList({ items, tone }: { items: string[]; tone: "ink-1" | "ink-2" }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-      <div>
-        <p className="font-display text-[32px] font-extrabold leading-none tracking-[-0.01em] tabular-nums text-ink">
-          {amount}
-          <span className="text-[15px] font-semibold tracking-normal text-ink-2">{unit}</span>
-        </p>
-        {/* Sentence case, `ink-2`: this is pricing terms, and it was a
-            spaced mono-caps line in the dimmest grey. */}
-        <p className="mt-2 text-[14px] leading-[1.45] tabular-nums text-ink-2">{basis}</p>
-      </div>
-      {mark ? (
-        <span className="inline-flex shrink-0 items-center rounded-xs border border-line-strong px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.10em] text-ink-2">
-          {mark}
-        </span>
-      ) : null}
-    </div>
+    <ul className="flex flex-col gap-3.5">
+      {items.map((item) => (
+        <li
+          key={item}
+          className={`flex gap-3 text-[15px] leading-[1.55] ${tone === "ink-1" ? "text-ink-1" : "text-ink-2"}`}
+        >
+          <span
+            aria-hidden="true"
+            className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-ink-3"
+          />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** A tier's name: a short mono label, never the accent. */
+function TierName({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.16em] text-ink-2">
+      {children}
+    </h3>
   );
 }
 
 export function Pricing() {
   return (
     <Section id="pricing" className="border-t border-line-soft">
-      <RiseIn className="max-w-[52ch]">
-        <SectionLabel>Pricing</SectionLabel>
-        <SectionHeading className="mt-5">
-          The diagnosis is free. So is every plan after it.
-        </SectionHeading>
+      <RiseIn className="max-w-[56ch]">
+        <SectionHeading>The diagnosis is free. So is every plan after it.</SectionHeading>
+        {/* "No card" is said here, once, for the whole section. */}
         <Body className="mt-4">
-          No card to start. Paying adds the record of what changed, skill by skill.
+          No card to start. Everything you need to train stays free; paying adds the record
+          of what changed, skill by skill.
         </Body>
       </RiseIn>
 
+      {/*
+        Two cards at the same weight: same border, same ground. Neither owns
+        the accent. The free card used to wear an optic border and tint, which
+        made the two read as "recommended" and "other" rather than as two
+        tiers. The free action is a neutral button here because the page's
+        loudest ask is the optic close directly below.
+      */}
       <RiseIn delay={80} className="mt-10 grid gap-5 md:mt-12 md:grid-cols-2 md:gap-6">
-        {/*
-          Free carries the accent, because it is the only card on this page the
-          visitor can act on. Pointing the accent at a tier that is offered
-          inside the app made the loudest element on the page the one thing
-          nobody here can buy.
-        */}
-        <div className="flex flex-col rounded-2xl border border-optic bg-[rgba(216,227,76,0.05)] p-6 md:p-8">
-          {/* Not `text-optic`: DESIGN.md forbids the accent as a heading
-              colour outright. The card's optic border and 5% tint already
-              rank this tier, and its CTA is the one thing in the pricing
-              viewport that should carry the accent. */}
-          <h3 className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.16em] text-ink-2">
-            Free
-          </h3>
-          <div className="mt-5">
-            <PriceLine amount="$0" unit="" basis="No card, no trial clock" />
+        <div className="flex flex-col rounded-2xl border border-line bg-surface p-6 md:p-8">
+          <TierName>Free</TierName>
+          <p className="mt-6 font-display text-[48px] font-extrabold leading-none tabular-nums text-ink">
+            $0
+          </p>
+          <p className="mt-3 text-[14px] leading-[1.5] text-ink-2">No trial clock.</p>
+          <div className="mt-8">
+            <TierList items={FREE} tone="ink-1" />
           </div>
-          <ul className="mt-8 flex flex-col gap-3.5">
-            {FREE.map((item) => (
-              <li key={item} className="flex gap-3 text-[15px] leading-[1.55] text-ink-1">
-                <span
-                  aria-hidden="true"
-                  className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-ink-3"
-                />
-                {item}
-              </li>
-            ))}
-          </ul>
           <div className="mt-auto pt-8">
-            <Cta href={START} className="w-full">
+            <GhostCta href={START} className="w-full">
               Start the assessment
-            </Cta>
+            </GhostCta>
           </div>
         </div>
 
-        {/*
-          Paid — stated plainly, never louder than the free action. Both
-          billing options sit at the same display weight: the monthly price
-          used to be a mono footnote after the annual one, which hid the
-          lower-commitment way in behind the higher-commitment one. Annual is
-          marked as the better value with a neutral chip, not with the accent.
-        */}
         <div className="flex flex-col rounded-2xl border border-line bg-surface p-6 md:p-8">
-          <h3 className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.16em] text-ink-3">
-            The record
-          </h3>
-          <div className="mt-5 flex flex-col gap-4 divide-y divide-line">
-            <PriceLine
-              amount="$79"
-              unit="/year"
-              basis="Equivalent to $6.58 a month, billed annually. Saves 17% over monthly."
-              mark="Best value"
-            />
-            <div className="pt-4">
-              <PriceLine amount="$7.99" unit="/month" basis="Billed monthly" />
-            </div>
+          <div className="flex items-center justify-between gap-4">
+            <TierName>The record</TierName>
+            <span className="inline-flex shrink-0 items-center rounded-xs bg-optic px-[9px] py-[5px] font-mono text-[10px] uppercase leading-none tracking-[0.10em] text-optic-ink">
+              Best value
+            </span>
           </div>
-          <ul className="mt-8 flex flex-col gap-3.5">
-            {PAID.map((item) => (
-              <li key={item} className="flex gap-3 text-[15px] leading-[1.55] text-ink-2">
-                <span
-                  aria-hidden="true"
-                  className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-ink-3"
-                />
-                {item}
-              </li>
-            ))}
-          </ul>
+          {/* Annual is the hero; monthly is the same offer stated smaller,
+              not hidden. */}
+          <p className="mt-6 font-display text-[48px] font-extrabold leading-none tabular-nums text-ink">
+            $79
+            <span className="text-[17px] font-semibold tracking-normal text-ink-2">/year</span>
+          </p>
+          <p className="mt-3 text-[14px] leading-[1.5] tabular-nums text-ink-2">
+            $6.58 a month, billed yearly. Saves 17% over monthly.
+          </p>
+          <p className="mt-1 text-[14px] leading-[1.5] tabular-nums text-ink-2">
+            Or $7.99 a month, billed monthly.
+          </p>
+          <p className="mt-7 text-pretty text-[17px] font-semibold leading-[1.4] text-ink">
+            See exactly which skills moved, every re-test.
+          </p>
+          <div className="mt-5">
+            <TierList items={PAID} tone="ink-2" />
+          </div>
           <div className="mt-auto pt-8">
-            {/* Where the offer shows up, and nothing the bullets already say. */}
-            <p className="text-[14px] leading-[1.5] text-ink-2">
-              Offered inside the app after a re-test. Never needed to keep training.
-            </p>
+            <div className="flex gap-3 border-t border-line pt-5">
+              <BreakMark className="mt-1 shrink-0" />
+              <p className="text-pretty text-[14px] leading-[1.5] text-ink-1">
+                Offered inside the app after a re-test, right beside the change it explains.
+              </p>
+            </div>
           </div>
         </div>
       </RiseIn>
 
       <RiseIn delay={140} className="mt-8">
         <Caption className="text-center">
-          No card to start. Cancel anytime; cancelling stops billing and keeps the free tier.
+          Cancel anytime. Cancelling stops billing and keeps the free tier.
         </Caption>
       </RiseIn>
 
@@ -629,7 +528,7 @@ export function FinalCta() {
             href={START}
             className="mt-10 inline-flex h-[52px] w-full items-center justify-center rounded-lg bg-[#131408] px-7 text-[15px] font-semibold text-optic transition-colors hover:bg-[#0B0B0C] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-optic-ink active:scale-[0.98] sm:w-auto"
           >
-            Find your bottleneck — free
+            {CTA_LABEL}
           </Link>
 
           <p className="mt-5 text-[14px] leading-[1.5] text-optic-ink/80">
