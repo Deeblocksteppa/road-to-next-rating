@@ -108,7 +108,8 @@ export function RoadmapScreen({ roadmap, onCommit }: { roadmap: Roadmap; onCommi
  * A drill on the plan. Collapsed, it is the same three rows as the Plan tab's
  * card: name, mono metadata, one sentence. Tapping it opens the full brief in
  * place: the technique instructions, the shot diagram and what gets logged,
- * the same fields the guided session's brief screen shows.
+ * the same fields the guided session's brief screen shows. The one-sentence
+ * task gives way to the instructions it summarises.
  *
  * One setup label only. A partner drill prescribed in its solo version used
  * to carry a "Solo version" badge beside a metadata line that already said
@@ -133,7 +134,13 @@ export function DrillCard({ drill }: { drill: Drill }) {
         <span className="mt-1.5 font-mono text-[11px] uppercase leading-[1.5] tracking-[0.1em] text-ink-3">
           {drill.duration} · {drill.setup}
         </span>
-        <span className="mt-2.5 text-pretty text-[14px] leading-[1.5] text-ink-2">{drill.task}</span>
+        {/* The task is the instructions in one line; once the brief is open
+            below, it would say the same thing twice. */}
+        {!open && (
+          <span className="mt-2.5 text-pretty text-[14px] leading-[1.5] text-ink-2">
+            {drill.task}
+          </span>
+        )}
         <span className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 underline decoration-line-hover underline-offset-4">
           {open ? "Hide instructions" : "View instructions"}
         </span>
