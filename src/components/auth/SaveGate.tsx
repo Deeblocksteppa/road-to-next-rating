@@ -38,6 +38,7 @@ export function SaveGate({
   weeksTarget,
   pendingEmail,
   onPendingChange,
+  reason = "save",
 }: {
   /** Back to the result page. */
   onSkip: () => void;
@@ -47,6 +48,8 @@ export function SaveGate({
   /** The address a sign-up on this device is waiting on, if any. */
   pendingEmail: string | null;
   onPendingChange: (email: string | null) => void;
+  /** `session`: opened from "Start session", so it says why an account is needed. */
+  reason?: "save" | "session";
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -202,13 +205,21 @@ export function SaveGate({
         <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
           Keep what you just found.
         </h1>
-        {/* One promise each way, the same ones the result page makes: an
-            account adds other devices; skipping keeps the plan on this one. */}
+        {/* What each choice gets, plainly: the account is what runs sessions
+            and keeps the counts. Skipping keeps the plan on this device and
+            nothing more; it used to read as though sessions came with it. */}
         <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
-          An account lets you open your plan and logged sessions on any device. Skip it and
-          your plan stays on this one. No card, nothing to pay.
+          A free account runs your guided sessions and keeps what you log, on any device.
+          Skip it and your plan stays on this device, but sessions and logging need the
+          account. No card, nothing to pay.
         </p>
       </div>
+
+      {reason === "session" && (
+        <p className="border-y border-line py-3 text-pretty text-[15px] font-medium leading-[1.5] text-ink">
+          Sessions need a free account so your progress is saved.
+        </p>
+      )}
 
       {/* The real bottleneck and plan being saved. */}
       <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-[18px] py-4">

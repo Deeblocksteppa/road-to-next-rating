@@ -368,8 +368,9 @@ export function Progress() {
  *     There is no "first plan"; every plan is free.
  *   – `recordDrillSession` has no subscription check either. Logging never
  *     runs out.
- *   – The Delta screen shows the headline score change (old → new, +N) to
- *     everyone and locks only the per-skill rows. Progress shows the current
+ *   – The Delta screen shows the headline score change (old → new, +N) and
+ *     the trained skill's before and after to everyone, and locks only the
+ *     other skills' rows. Progress shows the current
  *     readiness and "+N since start" to everyone once there is a re-test, and
  *     locks the chart, the history list and the streak card.
  *   – The next bottleneck is diagnosed and planned for on every re-test
@@ -382,13 +383,13 @@ export function Progress() {
 const FREE = [
   "The 12-question assessment and your diagnosis",
   "A three-week plan, and a new one after every re-test",
-  "Guided sessions with drill demos and logging",
-  "Re-tests showing your new score and how far it moved",
+  "Guided sessions with drill demos and logging (free account)",
+  "Re-tests showing your new score and how your trained skill moved",
   "Your current readiness",
 ];
 
 const PAID = [
-  "Which skills moved on each re-test, and by how much",
+  "How the other skills moved on each re-test",
   "Your readiness chart across every re-test",
   "Full re-test history",
   "Weekly session streaks",
@@ -478,7 +479,7 @@ export function Pricing() {
             Or $7.99 a month, billed monthly.
           </p>
           <p className="mt-7 text-pretty text-[17px] font-semibold leading-[1.4] text-ink">
-            See exactly which skills moved, every re-test.
+            See how every skill moved, every re-test.
           </p>
           <div className="mt-5">
             <TierList items={PAID} tone="ink-2" />

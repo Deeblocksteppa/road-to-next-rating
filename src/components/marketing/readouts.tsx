@@ -118,7 +118,10 @@ function levelText(level: number): string {
   return Number.isInteger(level) ? String(level) : level.toFixed(1);
 }
 
-/** The 0–100 readiness track with its two ends named. */
+/**
+ * The 0–100 readiness track. Its ends are not labelled 3.0 and 4.0: the score
+ * comes from answers, not a rating, and labelled with ratings it read as one.
+ */
 function ReadinessTrack({ value, before }: { value: number; before?: number }) {
   return (
     <div className="w-full">
@@ -136,11 +139,16 @@ function ReadinessTrack({ value, before }: { value: number; before?: number }) {
           />
         ) : null}
       </div>
-      <div className="mt-2.5 flex justify-between">
-        <Unit>3.0</Unit>
-        <Unit>4.0</Unit>
-      </div>
     </div>
+  );
+}
+
+/** Said wherever readiness first appears. */
+function NotARating({ className = "" }: { className?: string }) {
+  return (
+    <p className={`text-[16px] leading-[1.5] text-ink-2 ${className}`}>
+      A score from your answers, not a DUPR estimate.
+    </p>
   );
 }
 
@@ -170,6 +178,7 @@ export function ScoreReadout({ glow = false }: { glow?: boolean }) {
             <div className="mt-5">
               <ReadinessTrack value={DEMO_DIAGNOSIS.readiness} />
             </div>
+            <NotARating className="mt-3" />
           </div>
 
           <ul className="md:border-l md:border-line md:pl-12">
@@ -418,6 +427,7 @@ export function ReadingCenterpiece() {
       <div className="mt-7 w-full max-w-[420px]">
         <ReadinessTrack value={readiness} />
       </div>
+      <NotARating className="mt-3" />
       <ExampleTag className="mt-5" />
     </div>
   );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SessionDrills } from "@/components/plan/SessionDrills";
+import { RetestOpen } from "@/components/retest/RetestOpen";
 import { getTodayLog, getWeeklyProgress } from "@/lib/drill-sessions";
 import { sessionShape } from "@/lib/session-plan";
 import { loadPlanDrills } from "@/lib/plan-drills";
@@ -51,8 +52,17 @@ export default async function PlanPage() {
 
   const bottleneck = diagnosis?.bottleneck as SkillId | undefined;
 
+  const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
+
   return (
     <main className="flex flex-col gap-3.5 px-6 py-8">
+      {/* Open re-test: said first, on every tab, whatever today holds. */}
+      {retestOpen && (
+        <div className="pt-4">
+          <RetestOpen variant="banner" />
+        </div>
+      )}
+
       {/*
         Small week marker, the heading, one plain line saying what today is,
         and a compact status. The status used to be an optic "0/2 SESSIONS"

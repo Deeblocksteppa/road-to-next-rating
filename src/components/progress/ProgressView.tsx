@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { RetestOpen } from "@/components/retest/RetestOpen";
 import { LockedCard } from "@/components/ui/locked-card";
 import type { HistoryRow, ReadinessPoint, SessionSeries } from "@/lib/progress";
 import { retestHref } from "@/lib/retest-view";
@@ -12,7 +13,6 @@ export interface StreakData {
 
 interface ChartData {
   series: ReadinessPoint[];
-  target: number;
   weeksSpan: number;
   totalChange: number;
   startLabel: string;
@@ -47,15 +47,27 @@ export type ProgressViewData =
       readingCount: number;
     };
 
-export function ProgressView({ data }: { data: ProgressViewData }) {
+export function ProgressView({
+  data,
+  retestOpenFor = null,
+}: {
+  data: ProgressViewData;
+  /**
+   * The current plan's re-test is open: the in-sentence skill it tests
+   * ("your third-shot drop"). Progress then leads with it in every state.
+   */
+  retestOpenFor?: string | null;
+}) {
   return (
     <main className="flex min-h-app-tabbed flex-col gap-3.5 px-6 py-8">
       <header className="pt-4">
         <h1 className="font-display text-2xl font-bold tracking-[-0.01em]">Progress</h1>
       </header>
 
+      {retestOpenFor && data.kind !== "empty" && <RetestOpen skillPhrase={retestOpenFor} />}
+
       {data.kind === "empty" && <EmptyPrompt />}
-      {data.kind === "day-one" && <DayOneState data={data} />}
+      {data.kind === "day-one" && <DayOneState data={data} retestOpen={Boolean(retestOpenFor)} />}
       {data.kind === "full" && <FullState data={data} />}
       {data.kind === "locked" && <LockedState data={data} />}
     </main>
@@ -65,29 +77,34 @@ export function ProgressView({ data }: { data: ProgressViewData }) {
 /* ── State 1: Day One ─────────────────────────────────────────── */
 function DayOneState({
   data,
+  retestOpen,
 }: {
   data: Extract<ProgressViewData, { kind: "day-one" }>;
+  /** The re-test card above already says it is open and how to take it. */
+  retestOpen: boolean;
 }) {
   return (
     <>
-      <section className="flex flex-col gap-3 rounded-2xl border border-optic bg-optic/[0.05] p-6">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-optic">
-          Your first re-test
-        </p>
-        <p className="font-display text-[40px] font-extrabold leading-none tracking-[-0.01em]">
-          {data.retestDateLabel}
-        </p>
-        <p className="font-mono text-[11px] tracking-[0.1em] text-ink-2">
-          {data.daysUntilRetest > 0
-            ? `IN ${data.daysUntilRetest} DAY${data.daysUntilRetest === 1 ? "" : "S"}`
-            : "OPEN NOW"}{" "}
-          · WEEK {data.weekNumber} OF {data.weeksTarget}
-        </p>
-        <p className="mt-0.5 text-pretty text-[14px] leading-[1.55] text-ink-2">
-          This is the day you find out if {data.bottleneckPhrase} moved.
-          Everything until then is building toward it.
-        </p>
-      </section>
+      {!retestOpen && (
+        <section className="flex flex-col gap-3 rounded-2xl border border-optic bg-optic/[0.05] p-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-optic">
+            Your first re-test
+          </p>
+          <p className="font-display text-[40px] font-extrabold leading-none tracking-[-0.01em]">
+            {data.retestDateLabel}
+          </p>
+          <p className="font-mono text-[11px] tracking-[0.1em] text-ink-2">
+            {data.daysUntilRetest > 0
+              ? `IN ${data.daysUntilRetest} DAY${data.daysUntilRetest === 1 ? "" : "S"}`
+              : "OPEN NOW"}{" "}
+            · WEEK {data.weekNumber} OF {data.weeksTarget}
+          </p>
+          <p className="mt-0.5 text-pretty text-[14px] leading-[1.55] text-ink-2">
+            This is the day you find out if {data.bottleneckPhrase} moved.
+            Everything until then is building toward it.
+          </p>
+        </section>
+      )}
 
       <div className="flex gap-4">
         <StatCard line1="Sessions" line2="done" value={String(data.sessionsDone)} />
@@ -127,9 +144,11 @@ function DayOneState({
         </svg>
         <p className="text-pretty text-[13px] leading-[1.5] text-ink-3">
           One point so far: your baseline.{" "}
-          {data.retestDateLabel === "—"
-            ? "Your first re-test adds the second reading."
-            : `Your first re-test on ${data.retestDateLabel} adds the second reading.`}
+          {retestOpen
+            ? "Your re-test, open now, adds the second reading."
+            : data.retestDateLabel === "—"
+              ? "Your first re-test adds the second reading."
+              : `Your first re-test on ${data.retestDateLabel} adds the second reading.`}
         </p>
       </section>
     </>
@@ -191,6 +210,9 @@ function LockedState({
           <p className="font-display text-[40px] font-extrabold leading-none tabular-nums">
             {data.currentReadiness}
           </p>
+          <p className="text-[13px] leading-[1.5] text-ink-3">
+            A score from your answers, not a DUPR estimate.
+          </p>
         </div>
         <p className={`font-mono text-[11px] ${up ? "text-optic" : "text-danger"}`}>
           {up ? "+" : ""}
@@ -202,7 +224,7 @@ function LockedState({
         <ChartPlaceholder readings={data.readingCount} />
       </LockedCard>
 
-      <LockedCard teaser="Re-test history, with each re-test's skill-by-skill breakdown">
+      <LockedCard teaser="Re-test history, with how every skill moved each time">
         <HistoryPlaceholder readings={data.readingCount} />
       </LockedCard>
 
@@ -235,8 +257,8 @@ function ChartContent({ data }: { data: ChartData }) {
   return (
     <>
       <p className="text-pretty text-[13px] leading-[1.45] text-ink-3">
-        Your readiness score tracks how close you are to 4.0. Each re-test
-        shows how much it moved.
+        A score from your answers, not a DUPR estimate. Each re-test shows how
+        much it moved.
       </p>
       <div className="mt-2.5 flex items-baseline justify-between">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
@@ -248,13 +270,10 @@ function ChartContent({ data }: { data: ChartData }) {
         </p>
       </div>
       <div className="mt-3.5">
-        <ReadinessChart points={data.series} target={data.target} />
+        <ReadinessChart points={data.series} />
       </div>
       <div className="mt-3.5 flex justify-between">
         <span className="font-mono text-[10px] text-ink-3">{data.startLabel}</span>
-        <span className="font-mono text-[10px] text-ink-3">
-          RE-TEST LINE ···· {data.target}
-        </span>
         <span className="font-mono text-[10px] text-ink-3">{data.endLabel}</span>
       </div>
 

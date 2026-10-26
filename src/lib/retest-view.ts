@@ -36,14 +36,23 @@ export interface RetestView {
     direction: Direction;
   } | null;
   /**
-   * Per-skill movement. `null` for a free viewer (locked) and when there is no
-   * comparable baseline; check `isPaid` and `comparison` to tell them apart.
+   * Per-skill movement for the skills other than `trained`. `null` for a free
+   * viewer (locked) and when there is no comparable baseline; check `isPaid`
+   * and `comparison` to tell them apart.
    */
   skills: SkillDelta[] | null;
   /** The skill the plan before this re-test worked on. */
   previousBottleneck: SkillId;
   /** The skill the plan after this re-test works on. */
   newBottleneck: SkillId;
+  /** The focus skill changed with this re-test. */
+  switched: boolean;
+  /**
+   * The skill the previous plan trained, before and after, in the words of
+   * the player's own answers ("1–3" → "4–6"), and its level change. Free for
+   * every tier; `null` when there is no comparable baseline.
+   */
+  trained: { skill: SkillId; before: string; after: string; change: number } | null;
   isPaid: boolean;
 }
 
@@ -54,4 +63,14 @@ export interface RetestView {
  */
 export function retestHref(diagnosisId: string): string {
   return `/retest/${diagnosisId}`;
+}
+
+/**
+ * Where "See my next plan" goes from a re-test result. A re-test that moved
+ * the focus to a new skill first explains it (the reveal's verdict, insight
+ * and absolution for the new diagnosis); one that kept the same skill goes
+ * straight to the plan.
+ */
+export function nextPlanHref(view: Pick<RetestView, "diagnosisId" | "switched" | "isLatest">): string {
+  return view.switched && view.isLatest ? `${retestHref(view.diagnosisId)}/next` : "/plan";
 }

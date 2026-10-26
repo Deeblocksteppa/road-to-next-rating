@@ -81,6 +81,9 @@ export async function startCheckout(
       subscription_data: {
         metadata: { supabase_user_id: user.id, plan },
       },
+      // No custom_text here: this account has Stripe Managed Payments on,
+      // which rejects it and fails the whole checkout. What the subscription
+      // adds is described by the product in the Stripe dashboard.
       success_url: `${origin}/paywall/success?session_id={CHECKOUT_SESSION_ID}&from=${encodeURIComponent(destination)}`,
       cancel_url: `${origin}/paywall?from=${encodeURIComponent(destination)}`,
       allow_promotion_codes: true,

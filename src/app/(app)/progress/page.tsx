@@ -14,6 +14,7 @@ import {
 import { DRILLS } from "@/lib/drills";
 import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
+import { readinessOfRow } from "@/lib/readiness";
 import {
   buildHistoryRows,
   buildReadinessSeries,
@@ -24,9 +25,6 @@ import {
 } from "@/lib/progress";
 import { createClient } from "@/lib/supabase/server";
 import type { SkillId } from "@/lib/types";
-
-/** Readiness score that marks 4.0-ready — the dashed line on the chart. */
-const READINESS_TARGET = 80;
 
 /**
  * Progress — three states driven by real data:
@@ -49,7 +47,7 @@ export default async function ProgressPage() {
   const [diagnosesRes, planRes, profileRes] = await Promise.all([
     supabase
       .from("diagnoses")
-      .select("id, readiness, bottleneck, created_at")
+      .select("id, readiness, skill_scores, bottleneck, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true }),
     // Every plan, newest first: [0] drives Day One / the session target, and the
@@ -66,7 +64,9 @@ export default async function ProgressPage() {
       .maybeSingle(),
   ]);
 
-  const diags = diagnosesRes.data ?? [];
+  // Readiness from each row's skill levels, on the current 0–100 scale, so
+  // rows saved under the old 40–85 formula line up with new ones.
+  const diags = (diagnosesRes.data ?? []).map((d) => ({ ...d, readiness: readinessOfRow(d) }));
   const plans = planRes.data ?? [];
   const plan = plans[0] ?? null;
 
@@ -147,7 +147,6 @@ export default async function ProgressPage() {
     viewData = {
       kind: "full",
       series: buildReadinessSeries(diags),
-      target: READINESS_TARGET,
       weeksSpan: weeksBetween(first.created_at, last.created_at),
       totalChange: (last.readiness ?? 0) - (first.readiness ?? 0),
       startLabel: shortDate(first.created_at),
@@ -158,5 +157,15 @@ export default async function ProgressPage() {
     };
   }
 
-  return <ProgressView data={viewData} />;
+  // Whether the current plan's re-test is open, in every state, so Progress
+  // always offers it on the day it opens.
+  const currentTimeline =
+    plan?.retest_date && plan.created_at ? getPlanTimeline(plan.created_at, plan.retest_date) : null;
+  const latestBottleneck = diags.length > 0 ? (diags[diags.length - 1].bottleneck as SkillId) : null;
+  const retestOpenFor =
+    currentTimeline && currentTimeline.daysUntilRetest <= 0 && latestBottleneck
+      ? SKILL_LABELS[latestBottleneck]
+      : null;
+
+  return <ProgressView data={viewData} retestOpenFor={retestOpenFor} />;
 }

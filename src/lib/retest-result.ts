@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeDiagnosisDelta, parseStoredSkillScores } from "@/lib/delta";
 import { scoreSkills } from "@/lib/engine";
 import { monthDay } from "@/lib/progress";
+import { QUESTIONS } from "@/lib/questions";
+import { readinessFromScores, readinessOfRow } from "@/lib/readiness";
 import { directionOf, type Direction, type RetestView } from "@/lib/retest-view";
 import type { AnswerMap, SkillId, SkillScore } from "@/lib/types";
 
@@ -16,7 +18,7 @@ interface DiagnosisRecord {
 }
 
 /**
- * A diagnosis's per-skill levels, resolved in order:
+ * A diagnosis's answers and per-skill levels. Levels resolve in order:
  *   1. its assessment's answers, re-scored — canonical, and independent of
  *      whatever shape the stored column holds;
  *   2. its stored `skill_scores`, if they validate as a complete set;
@@ -26,10 +28,10 @@ interface DiagnosisRecord {
  * the screen shows it as a reading rather than as a delta against assumed
  * zeros (the bug that once showed "+2" on skills nobody had moved).
  */
-async function resolveSkillScores(
+async function resolveReading(
   supabase: SupabaseClient,
   diagnosis: DiagnosisRecord
-): Promise<SkillScore[] | null> {
+): Promise<{ answers: AnswerMap | null; scores: SkillScore[] | null }> {
   if (diagnosis.assessment_id) {
     const { data: assessment } = await supabase
       .from("assessments")
@@ -37,10 +39,44 @@ async function resolveSkillScores(
       .eq("id", diagnosis.assessment_id)
       .maybeSingle();
     if (assessment?.answers && typeof assessment.answers === "object") {
-      return scoreSkills(assessment.answers as AnswerMap);
+      const answers = assessment.answers as AnswerMap;
+      return { answers, scores: scoreSkills(answers) };
     }
   }
-  return parseStoredSkillScores(diagnosis.skill_scores);
+  return { answers: null, scores: parseStoredSkillScores(diagnosis.skill_scores) };
+}
+
+/**
+ * The skill the last plan trained, before and after, in the player's own
+ * answers ("1–3" → "4–6"). Free for every tier: it answers the one question
+ * a player brings to a re-test, whether the thing they practised moved.
+ *
+ * The reset is asked about twice; the question quoted is the one that was
+ * weaker at the baseline (the mid-court one on a tie), and the same question
+ * is quoted after, so the two sides always compare like with like. Labels are
+ * cut at their dash: "1–3 — most sit up…" reads "1–3".
+ */
+function trainedSkill(
+  skill: SkillId,
+  before: AnswerMap,
+  after: AnswerMap,
+  change: number
+): RetestView["trained"] {
+  const questions = QUESTIONS.filter((q) => q.measures === skill);
+  const option = (answers: AnswerMap, id: string) =>
+    QUESTIONS.find((q) => q.id === id)?.options?.find((o) => o.id === answers[id]);
+  const level = (answers: AnswerMap, id: string) => option(answers, id)?.skillLevel ?? 0;
+  const question = [...questions].sort(
+    (a, b) =>
+      level(before, a.id) - level(before, b.id) ||
+      (a.id === "transition_reset" ? -1 : b.id === "transition_reset" ? 1 : 0)
+  )[0];
+  if (!question) return null;
+  const short = (label: string | undefined) => label?.split(" — ")[0]?.trim() ?? null;
+  const beforeLabel = short(option(before, question.id)?.label);
+  const afterLabel = short(option(after, question.id)?.label);
+  if (!beforeLabel || !afterLabel) return null;
+  return { skill, before: beforeLabel, after: afterLabel, change };
 }
 
 async function isPaidUser(supabase: SupabaseClient, userId: string): Promise<boolean> {
@@ -61,7 +97,8 @@ async function isPaidUser(supabase: SupabaseClient, userId: string): Promise<boo
  * re-test. Returns `null` when the diagnosis isn't the signed-in player's.
  *
  * The tier decision is made here, on the server: a free viewer gets the
- * readiness comparison (free for everyone) and `skills: null`.
+ * readiness comparison and the trained skill's before and after (free for
+ * everyone) and `skills: null`.
  */
 export async function loadRetestView(
   supabase: SupabaseClient,
@@ -85,16 +122,22 @@ export async function loadRetestView(
   let comparison: RetestView["comparison"] = null;
   let skills: RetestView["skills"] = null;
 
-  if (previous && typeof previous.readiness === "number" && typeof current.readiness === "number") {
-    const [previousScores, currentScores] = await Promise.all([
-      resolveSkillScores(supabase, previous),
-      resolveSkillScores(supabase, current),
+  const previousBottleneck = (previous?.bottleneck ?? current.bottleneck) as SkillId;
+  let trained: RetestView["trained"] = null;
+
+  if (previous) {
+    const [before, after] = await Promise.all([
+      resolveReading(supabase, previous),
+      resolveReading(supabase, current),
     ]);
+    // Readiness is computed from the levels, never read from the stored
+    // column, so a baseline saved under the old 40–85 scale is compared on
+    // the same 0–100 scale as the re-test (see `readiness.ts`).
     const delta =
-      previousScores && currentScores
+      before.scores && after.scores
         ? computeDiagnosisDelta(
-            { readiness: previous.readiness, skillScores: previousScores },
-            { readiness: current.readiness, skillScores: currentScores }
+            { readiness: readinessFromScores(before.scores), skillScores: before.scores },
+            { readiness: readinessFromScores(after.scores), skillScores: after.scores }
           )
         : null;
 
@@ -105,20 +148,27 @@ export async function loadRetestView(
         change: delta.readiness.delta,
         direction: directionOf(delta.readiness.delta),
       };
-      // Withheld, not hidden: the free screen renders a placeholder.
-      if (isPaid) skills = delta.skills;
+      const trainedDelta = delta.skills.find((d) => d.skill === previousBottleneck);
+      if (before.answers && after.answers && trainedDelta) {
+        trained = trainedSkill(previousBottleneck, before.answers, after.answers, trainedDelta.delta);
+      }
+      // The other skills are withheld, not hidden: the free screen renders a
+      // placeholder of their names and the levels never reach the browser.
+      if (isPaid) skills = delta.skills.filter((d) => d.skill !== previousBottleneck);
     }
   }
 
   return {
     diagnosisId: current.id,
-    readiness: current.readiness ?? 0,
+    readiness: readinessOfRow(current) ?? 0,
     takenOn: monthDay(current.created_at),
     isLatest: index === diagnoses.length - 1,
     comparison,
     skills,
-    previousBottleneck: (previous?.bottleneck ?? current.bottleneck) as SkillId,
+    previousBottleneck,
     newBottleneck: current.bottleneck as SkillId,
+    switched: Boolean(previous) && previousBottleneck !== current.bottleneck,
+    trained,
     isPaid,
   };
 }
@@ -136,11 +186,11 @@ export async function loadRetestDirection(
 ): Promise<{ direction: Direction; change: number } | null> {
   const { data } = await supabase
     .from("diagnoses")
-    .select("id, readiness")
+    .select("id, readiness, skill_scores")
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
-  const rows = data ?? [];
+  const rows = (data ?? []).map((row) => ({ id: row.id, readiness: readinessOfRow(row) }));
   const index = diagnosisId ? rows.findIndex((d) => d.id === diagnosisId) : rows.length - 1;
   if (index < 1) return null;
 

@@ -26,7 +26,7 @@ export const RETEST_LABEL = "Illustrative · not a customer result";
  *
  * The answers are chosen so the engine returns the same reading the reveal
  * screenshot further down the page already shows — the reset as the bottleneck,
- * 63/100 readiness — so the section's three visuals describe one run instead of
+ * 45/100 readiness — so the section's three visuals describe one run instead of
  * three unrelated ones.
  */
 export const DEMO_ANSWERS: AnswerMap = {
@@ -66,7 +66,7 @@ export const DEMO_RANKED_SKILLS = [...scoreSkills(DEMO_ANSWERS)].sort(
  * mastery would be the "more impressive number" this file exists to rule out.
  *
  * Nothing here is a claimed outcome. It is the engine answering a second
- * answer set: move the skill this plan drills and `diagnose` returns 66, and
+ * answer set: move the skill this plan drills and `diagnose` returns 55, and
  * the bottleneck hands over to dink patience, which is the "next bottleneck
  * becomes the next three weeks" the section already describes in prose. The
  * improvement is the model's arithmetic, not a result anyone has measured —

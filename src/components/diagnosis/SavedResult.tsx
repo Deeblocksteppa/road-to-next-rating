@@ -39,6 +39,7 @@ export function SavedResult({
   answers,
   pendingEmail,
   onCreateAccount,
+  onStartSession,
   onChangeEmail,
   onReplay,
   onStartOver,
@@ -49,6 +50,8 @@ export function SavedResult({
   /** The address a sign-up on this device is waiting on, if any. */
   pendingEmail: string | null;
   onCreateAccount: () => void;
+  /** "Start session": sessions need an account, so this opens the save form saying so. */
+  onStartSession: () => void;
   /** Drop the pending sign-up and reopen the form. */
   onChangeEmail: () => void;
   onReplay: () => void;
@@ -123,6 +126,9 @@ export function SavedResult({
               <span className="font-sans text-[13px] font-normal text-ink-3"> /100</span>
             </span>
           </div>
+          <p className="-mt-2 text-[13px] leading-[1.5] text-ink-3">
+            A score from your answers, not a DUPR estimate.
+          </p>
 
           <button
             type="button"
@@ -151,12 +157,23 @@ export function SavedResult({
             </p>
           </div>
 
-          {/* Level 1: the drills. The only interactive surfaces here. */}
+          {/* Level 1: the drills, and the way to run them. */}
           <div className="flex flex-col gap-3">
             {roadmap.weeklyDrills.map((drill) => (
               <DrillCard key={drill.id} drill={drill} />
             ))}
           </div>
+
+          {/* Sessions and logging need an account (that is where the counts
+              are kept), so this opens the save form, which says so. A plan
+              with no way to start it was where "Not now" used to lead. */}
+          <button
+            type="button"
+            onClick={onStartSession}
+            className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+          >
+            Start session
+          </button>
 
           {/* Level 2: the in-game rule. A callout, marked, not boxed. */}
           <div className="flex gap-3.5 pt-1">
@@ -192,15 +209,17 @@ export function SavedResult({
         {!pendingEmail && (
           <section className="flex flex-col gap-4 rounded-2xl border border-line bg-surface px-5 py-5">
             <p className="text-pretty text-[15px] leading-[1.55] text-ink">
-              Your plan is saved on this device. An account lets you open it, and your logged
-              sessions, on any device.
+              Your plan is saved on this device. A free account runs your sessions, keeps what
+              you log, and opens your plan on any device.
             </p>
+            {/* Secondary: "Start session" above is the page's main action,
+                and it leads to the same form. */}
             <button
               type="button"
               onClick={onCreateAccount}
-              className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+              className="flex h-[52px] w-full items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover active:scale-[0.98]"
             >
-              Create account
+              Create free account
             </button>
           </section>
         )}

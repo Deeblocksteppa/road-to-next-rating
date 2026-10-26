@@ -50,6 +50,9 @@ export default function Start() {
   // Drives the Save Gate's check-your-inbox screen and the result page's
   // status banner, so neither pitches an account to someone who just made one.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  // Why the save form is open: "Start session" adds one line saying sessions
+  // need an account.
+  const [gateReason, setGateReason] = useState<"save" | "session">("save");
 
   // localStorage is only readable after mount, so the first render is a blank
   // "loading" frame rather than question one flashing before the saved result.
@@ -139,6 +142,7 @@ export default function Start() {
   }
 
   function handleLeaveGate() {
+    setGateReason("save");
     setSettled(true);
     setPhase("saved");
   }
@@ -178,6 +182,7 @@ export default function Start() {
         onSkip={handleLeaveGate}
         pendingEmail={pendingEmail}
         onPendingChange={setPendingEmail}
+        reason={gateReason}
       />
     );
   }
@@ -190,6 +195,12 @@ export default function Start() {
         answers={answers}
         pendingEmail={pendingEmail}
         onCreateAccount={() => {
+          setGateReason("save");
+          setPhase("savegate");
+          window.scrollTo(0, 0);
+        }}
+        onStartSession={() => {
+          setGateReason("session");
           setPhase("savegate");
           window.scrollTo(0, 0);
         }}

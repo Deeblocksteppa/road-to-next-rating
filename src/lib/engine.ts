@@ -1,5 +1,6 @@
 import { AnswerMap, Diagnosis, RootCauseId, SkillId, SkillScore } from "./types";
 import { QUESTIONS } from "./questions";
+import { readinessFromScores } from "./readiness";
 import {
   STORIES,
   ALL_TOP,
@@ -135,9 +136,8 @@ export function diagnose(answers: AnswerMap): Diagnosis {
         (s) => s.match.bottleneck === bottleneck && s.match.rootCause === rootCause
       ) ?? FALLBACK;
 
-  const sumOfLevels = scores.reduce((sum, s) => sum + s.level, 0);
-  const maxLevels = scores.length * 3;
-  const readiness = Math.round(40 + (sumOfLevels / maxLevels) * 45);
+  // 0–100 across every possible set of answers (see `readiness.ts`).
+  const readiness = readinessFromScores(scores);
 
   const mirror = buildMirror(answers);
 

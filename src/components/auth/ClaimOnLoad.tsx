@@ -17,7 +17,18 @@ import { clearSignupPending } from "@/lib/signup-pending";
  * way in, at the Save Gate or on the confirmation link. Being on /home means
  * being signed in, so the device's "sign-up pending" note is cleared too.
  */
-export function ClaimOnLoad({ saved = false }: { saved?: boolean }) {
+export function ClaimOnLoad({
+  saved = false,
+  hasPlan = false,
+}: {
+  saved?: boolean;
+  /**
+   * The account has a diagnosis to show. "Plan saved" used to appear on every
+   * confirmed sign-up, including one with nothing to save (a sign-up from
+   * /signup, or a claim that failed), right above "No diagnosis yet".
+   */
+  hasPlan?: boolean;
+}) {
   const router = useRouter();
   const [justSaved, setJustSaved] = useState(saved);
 
@@ -43,7 +54,8 @@ export function ClaimOnLoad({ saved = false }: { saved?: boolean }) {
     };
   }, [router, saved]);
 
-  if (!justSaved) return null;
+  // A claim made here refreshes the page, so `hasPlan` turns true with it.
+  if (!justSaved || !hasPlan) return null;
 
   return (
     <p

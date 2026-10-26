@@ -1,17 +1,27 @@
 import type { ReadinessPoint } from "@/lib/progress";
 
-// Readiness domain. The engine emits 40–85 (40 + ratio*45), so a 30–90 window
-// keeps real scores comfortably inside the frame with the 80 target near the top.
-const Y_MIN = 30;
-const Y_MAX = 90;
 const TOP = 12;
 const BOTTOM = 108;
 const LEFT = 6;
 const RIGHT = 294;
 
-function yFor(readiness: number): number {
-  const clamped = Math.max(Y_MIN, Math.min(Y_MAX, readiness));
-  return BOTTOM - ((clamped - Y_MIN) / (Y_MAX - Y_MIN)) * (BOTTOM - TOP);
+/**
+ * The vertical window: the readings themselves with some room around them,
+ * inside 0–100. A fixed 0–100 frame would flatten a real few-point change
+ * into a level line; this keeps the movement visible without inventing a
+ * target to measure against (the dashed "80" line is gone: nothing in the
+ * product defines 80 as ready).
+ */
+function domainFor(points: ReadinessPoint[]): [number, number] {
+  const values = points.map((p) => p.readiness);
+  const lo = Math.max(0, Math.min(...values) - 15);
+  const hi = Math.min(100, Math.max(...values) + 15);
+  return hi - lo < 30 ? [Math.max(0, lo - 10), Math.min(100, hi + 10)] : [lo, hi];
+}
+
+function yFor(readiness: number, [min, max]: [number, number]): number {
+  const clamped = Math.max(min, Math.min(max, readiness));
+  return BOTTOM - ((clamped - min) / (max - min || 1)) * (BOTTOM - TOP);
 }
 
 function xFor(i: number, n: number): number {
@@ -19,25 +29,19 @@ function xFor(i: number, n: number): number {
 }
 
 /**
- * Single accent line over the user's real readiness scores, with a dashed
- * target line and an endpoint dot — the logo shape happening slowly.
+ * Single accent line over the user's real readiness scores, with an
+ * endpoint dot — the logo shape happening slowly.
  */
-export function ReadinessChart({
-  points,
-  target,
-}: {
-  points: ReadinessPoint[];
-  target: number;
-}) {
+export function ReadinessChart({ points }: { points: ReadinessPoint[] }) {
   const n = points.length;
   if (n === 0) return null;
+  const domain = domainFor(points);
 
   const poly = points
-    .map((p, i) => `${xFor(i, n).toFixed(1)},${yFor(p.readiness).toFixed(1)}`)
+    .map((p, i) => `${xFor(i, n).toFixed(1)},${yFor(p.readiness, domain).toFixed(1)}`)
     .join(" ");
-  const targetY = yFor(target);
   const lastX = xFor(n - 1, n);
-  const lastY = yFor(points[n - 1].readiness);
+  const lastY = yFor(points[n - 1].readiness, domain);
 
   return (
     <svg
@@ -50,15 +54,6 @@ export function ReadinessChart({
     >
       <line x1="0" y1="36" x2="300" y2="36" stroke="#1A1A1D" strokeWidth="1" />
       <line x1="0" y1="72" x2="300" y2="72" stroke="#1A1A1D" strokeWidth="1" />
-      <line
-        x1="0"
-        y1={targetY}
-        x2="300"
-        y2={targetY}
-        stroke="#2E2E33"
-        strokeWidth="1"
-        strokeDasharray="3 4"
-      />
       <polyline
         points={poly}
         fill="none"

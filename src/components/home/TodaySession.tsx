@@ -36,12 +36,15 @@ export function TodaySession({
   drills,
   completedToday,
   weekComplete,
+  secondary = false,
 }: {
   drills: Drill[];
   /** Ids of drills already logged today. */
   completedToday: string[];
   /** This week's session target is already met. */
   weekComplete: boolean;
+  /** Something else on the screen is the main action (an open re-test). */
+  secondary?: boolean;
 }) {
   const { done, remaining, todayDone, startedToday, allDone } = todayState(
     drills,
@@ -96,7 +99,11 @@ export function TodaySession({
       ) : (
         <Link
           href="/session"
-          className="flex h-14 w-full items-center justify-center gap-2.5 rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+          className={`flex h-14 w-full items-center justify-center gap-2.5 rounded-lg text-[15px] font-semibold transition-colors active:scale-[0.98] ${
+            secondary
+              ? "border border-line-strong bg-surface-2 text-ink hover:border-line-hover"
+              : "bg-optic text-optic-ink hover:bg-optic-hover"
+          }`}
         >
           {startedToday ? "Finish today's session" : "Start today's session"}
           {minutesLeft > 0 && (

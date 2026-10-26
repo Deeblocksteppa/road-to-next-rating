@@ -3,13 +3,13 @@ import Link from "next/link";
 import { LockedCard } from "@/components/ui/locked-card";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
 import type { SkillDelta } from "@/lib/delta";
-import { retestHref, type Direction, type RetestView } from "@/lib/retest-view";
+import { nextPlanHref, retestHref, type Direction, type RetestView } from "@/lib/retest-view";
 import type { SkillId } from "@/lib/types";
 
 const PRIMARY =
   "flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]";
 const GHOST =
-  "flex h-11 w-full items-center justify-center text-[14px] font-medium text-ink-2 transition-colors hover:text-ink";
+  "flex min-h-11 w-full items-center justify-center px-2 py-2 text-center text-[14px] font-medium text-ink-2 transition-colors hover:text-ink";
 
 /**
  * The headline says which way the score went, and only that. It used to read
@@ -23,21 +23,30 @@ const HEADLINES: Record<Direction, string> = {
   down: "Your readiness came in lower.",
 };
 
-/** What the locked breakdown would answer, phrased for the result it sits under. */
+/**
+ * What the locked rows would answer, phrased for the result they sit under.
+ * The skill the plan trained is shown free above them; these are the rest.
+ */
 const LOCKED_COPY: Record<Direction, { label: string; teaser: string }> = {
-  up: { label: "Which skills moved", teaser: "See which skills moved, and where the points came from." },
-  flat: { label: "What shifted", teaser: "See whether anything shifted underneath the same score." },
-  down: { label: "Which skills changed", teaser: "See which skills slipped and which held." },
+  up: { label: "The other three skills", teaser: "See where the rest of the points came from." },
+  flat: { label: "The other three skills", teaser: "See whether anything shifted underneath the same score." },
+  down: { label: "The other three skills", teaser: "See which of them slipped and which held." },
 };
+
+/** What paying adds, said where the offer is made. */
+const UPGRADE_LINK = "Unlock the other skills, readiness history and streaks";
 
 function nextPlanLine(view: RetestView): string {
   const skill = SKILL_LABELS[view.newBottleneck];
-  const same = view.newBottleneck === view.previousBottleneck;
   // An older re-test opened from history describes a plan already run.
   if (!view.isLatest) {
-    return same ? `The plan after it stayed on ${skill}.` : `The plan after it moved to ${skill}.`;
+    return view.switched ? `The plan after it moved to ${skill}.` : `The plan after it stayed on ${skill}.`;
   }
-  return same ? `Your next plan stays on ${skill}.` : `Your next plan works on ${skill}.`;
+  // Same skill: said in one line, no replay. A new skill gets its reveal
+  // (verdict, insight, absolution) on the way to the plan.
+  return view.switched
+    ? `Your next plan moves to ${skill}. Here's why, before it opens.`
+    : `Your focus stays on ${skill}: same drills, three more weeks to beat your counts.`;
 }
 
 /**
@@ -66,6 +75,8 @@ export function DeltaScreen({ view }: { view: RetestView }) {
   const { direction, change, previous, current } = comparison;
   const paywallHref = `/paywall?from=${encodeURIComponent(retestHref(view.diagnosisId))}`;
   const locked = LOCKED_COPY[direction];
+  const nextHref = view.isLatest ? nextPlanHref(view) : "/progress";
+  const nextLabel = view.isLatest ? "See my next plan" : "Back to Progress";
 
   return (
     <main className="flex min-h-app w-full flex-col bg-reveal px-6 py-8 text-ink">
@@ -100,57 +111,75 @@ export function DeltaScreen({ view }: { view: RetestView }) {
           </span>
         </div>
 
+        <p className="-mt-3 text-[13px] leading-[1.5] text-ink-3">
+          A score from your answers, not a DUPR estimate.
+        </p>
+
         <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
           {summaryLine(view, direction, change, previous)}
         </p>
 
-        {view.isPaid && view.skills ? (
-          <>
-            <BreakdownCard skills={view.skills} />
-            {view.isLatest ? (
-              <Link href="/plan" className={PRIMARY}>
-                See my next plan
-              </Link>
-            ) : (
-              <Link href="/progress" className={PRIMARY}>
-                Back to Progress
-              </Link>
-            )}
-          </>
-        ) : (
-          <>
-            {/* The placeholder is built from skill names only: the levels
-                were never sent to this browser (see loadRetestView). */}
-            <LockedCard label={locked.label} teaser={locked.teaser}>
-              <BreakdownPlaceholder />
-            </LockedCard>
+        {view.trained && <TrainedSkill trained={view.trained} />}
 
-            {/* After a drop the next plan comes first and the breakdown is
-                offered, not pushed. After a rise or a hold, the breakdown is
-                the natural next question. */}
-            {direction === "down" ? (
-              <div className="flex flex-col gap-1">
-                <Link href="/plan" className={PRIMARY}>
-                  See my next plan
-                </Link>
-                <Link href={paywallHref} className={GHOST}>
-                  See which skills changed
-                </Link>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1">
-                <Link href={paywallHref} className={PRIMARY}>
-                  See the full breakdown
-                </Link>
-                <Link href="/plan" className={GHOST}>
-                  Go to my plan
-                </Link>
-              </div>
-            )}
-          </>
+        {view.isPaid && view.skills ? (
+          <BreakdownCard skills={view.skills} />
+        ) : (
+          // The placeholder is built from skill names only: the levels were
+          // never sent to this browser (see loadRetestView).
+          <LockedCard label={locked.label} teaser={locked.teaser}>
+            <BreakdownPlaceholder exclude={view.trained?.skill ?? view.previousBottleneck} />
+          </LockedCard>
         )}
+
+        {/* The way forward is always the main action. The upgrade, for a
+            free player, is offered under it and says what it adds. */}
+        <div className="flex flex-col gap-1">
+          <Link href={nextHref} className={PRIMARY}>
+            {nextLabel}
+          </Link>
+          {!view.isPaid && (
+            <Link href={paywallHref} className={GHOST}>
+              {UPGRADE_LINK}
+            </Link>
+          )}
+        </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * The skill the last plan trained, before and after in the player's own
+ * answers. Free for every tier: whether the practised skill moved is the
+ * question a re-test exists to answer.
+ */
+function TrainedSkill({ trained }: { trained: NonNullable<RetestView["trained"]> }) {
+  const moved =
+    trained.change > 0
+      ? { text: "Moved up", tone: "text-optic" }
+      : trained.change < 0
+        ? { text: "Moved down", tone: "text-danger" }
+        : { text: "Same answer", tone: "text-ink-3" };
+  return (
+    <section className="flex flex-col gap-2 border-y border-line py-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
+          What you trained
+        </p>
+        <p className={`font-mono text-[11px] uppercase tracking-[0.1em] ${moved.tone}`}>
+          {moved.text}
+        </p>
+      </div>
+      <p className="text-[17px] font-semibold leading-[1.3] text-ink">{SKILL_TITLES[trained.skill]}</p>
+      <p className="text-pretty text-[16px] leading-[1.45]">
+        <span className="text-ink-3">{trained.before}</span>
+        <span aria-hidden="true" className="px-2 text-ink-3">
+          →
+        </span>
+        <span className="sr-only"> to </span>
+        <span className="text-ink">{trained.after}</span>
+      </p>
+    </section>
   );
 }
 
@@ -188,10 +217,9 @@ function BaselineScreen({ view }: { view: RetestView }) {
           <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-line">
             <div className="h-full rounded-full bg-optic" style={{ width: `${view.readiness}%` }} />
           </div>
-          <div className="mt-2.5 flex justify-between font-mono text-[10px] tracking-[0.1em] text-ink-3">
-            <span>3.0</span>
-            <span>4.0</span>
-          </div>
+          <p className="mt-2.5 text-[13px] leading-[1.5] text-ink-3">
+            A score from your answers, not a DUPR estimate.
+          </p>
         </div>
 
         <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
@@ -220,9 +248,11 @@ function BackToProgress() {
   );
 }
 
+/** Paid: the skills other than the one trained, each before and after. */
 function BreakdownCard({ skills }: { skills: SkillDelta[] }) {
   return (
-    <div className="flex flex-col rounded-2xl border border-line bg-background px-5">
+    <div className="flex flex-col rounded-2xl border border-line bg-background px-5 pt-4">
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">The other skills</p>
       {skills.map((s, i) => (
         <div key={s.skill}>
           {i > 0 && <div className="h-px bg-line" />}
@@ -245,8 +275,8 @@ function BreakdownCard({ skills }: { skills: SkillDelta[] }) {
 }
 
 /** Same shape as BreakdownCard, with no levels in it — there are none to show. */
-function BreakdownPlaceholder() {
-  const skills = Object.keys(SKILL_TITLES) as SkillId[];
+function BreakdownPlaceholder({ exclude }: { exclude: SkillId }) {
+  const skills = (Object.keys(SKILL_TITLES) as SkillId[]).filter((s) => s !== exclude);
   return (
     <div className="flex flex-col">
       {skills.map((skill, i) => (

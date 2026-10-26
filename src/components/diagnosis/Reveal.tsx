@@ -4,17 +4,37 @@ import { forwardRef, useEffect, useRef, useState } from "react";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
 import { Diagnosis, SkillId } from "@/lib/types";
 
-const BEAT_COUNT = 5;
+export type BeatId = "mirror" | "verdict" | "insight" | "absolution" | "readiness";
+
+const FIRST_RUN: BeatId[] = ["mirror", "verdict", "insight", "absolution", "readiness"];
 
 /**
- * The reveal — five choreographed beats, spec order (DESIGN_SYSTEM.md §5):
- *   0 mirror → 1 verdict → 2 insight → 3 absolution → 4 readiness
+ * The reveal — choreographed beats, spec order (DESIGN_SYSTEM.md §5):
+ *   mirror → verdict → insight → absolution → readiness
  * Darker-than-app background, story-progress ticks up top, one idea per beat,
- * the user controls the pace (tap to continue), readiness ends on the CTA.
+ * the user controls the pace (tap to continue), the last beat ends on the CTA.
+ *
+ * The first run plays all five. A re-test that moves the focus to a new skill
+ * plays only verdict, insight and absolution for the new diagnosis: the
+ * player has just seen their answers and their score on the result screen.
  */
-export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: () => void }) {
+export function Reveal({
+  diagnosis,
+  onNext,
+  beats = FIRST_RUN,
+  finishLabel = "See my 3-week plan",
+  verdictEyebrow = "Your bottleneck",
+}: {
+  diagnosis: Diagnosis;
+  onNext: () => void;
+  beats?: BeatId[];
+  /** The last beat's button. */
+  finishLabel?: string;
+  verdictEyebrow?: string;
+}) {
   const [beat, setBeat] = useState(0);
-  const isLast = beat === BEAT_COUNT - 1;
+  const beatCount = beats.length;
+  const isLast = beat === beatCount - 1;
 
   const advance = () => {
     if (!isLast) setBeat((b) => b + 1);
@@ -91,9 +111,9 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
         <div
           className="flex gap-[5px] pt-6"
           role="img"
-          aria-label={`Part ${beat + 1} of ${BEAT_COUNT}`}
+          aria-label={`Part ${beat + 1} of ${beatCount}`}
         >
-          {Array.from({ length: BEAT_COUNT }).map((_, i) => (
+          {Array.from({ length: beatCount }).map((_, i) => (
             <span
               key={i}
               className={`h-0.5 flex-1 rounded-full ${i <= beat ? "bg-ink" : "bg-line-strong"}`}
@@ -105,11 +125,13 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
             beat as it arrives while focus stays on the control that moved it. */}
         <div aria-live="polite" className="flex flex-1 flex-col">
           <div key={beat} className="beat-in flex flex-1 flex-col justify-center">
-            {beat === 0 && <MirrorBeat diagnosis={diagnosis} />}
-            {beat === 1 && <VerdictBeat diagnosis={diagnosis} />}
-            {beat === 2 && <InsightBeat diagnosis={diagnosis} />}
-            {beat === 3 && <AbsolutionBeat diagnosis={diagnosis} />}
-            {beat === 4 && <ReadinessBeat diagnosis={diagnosis} />}
+            {beats[beat] === "mirror" && <MirrorBeat diagnosis={diagnosis} />}
+            {beats[beat] === "verdict" && (
+              <VerdictBeat diagnosis={diagnosis} eyebrow={verdictEyebrow} />
+            )}
+            {beats[beat] === "insight" && <InsightBeat diagnosis={diagnosis} />}
+            {beats[beat] === "absolution" && <AbsolutionBeat diagnosis={diagnosis} />}
+            {beats[beat] === "readiness" && <ReadinessBeat diagnosis={diagnosis} />}
           </div>
         </div>
 
@@ -135,7 +157,7 @@ export function Reveal({ diagnosis, onNext }: { diagnosis: Diagnosis; onNext: ()
               }}
               className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
             >
-              See my 3-week plan
+              {finishLabel}
             </button>
             <RevealNavButton key="back" onPress={back} label="Back" className="self-center">
               ‹ Back
@@ -221,11 +243,11 @@ function MirrorBeat({ diagnosis }: { diagnosis: Diagnosis }) {
 }
 
 /* ── Beat 2: Verdict — centered, the skill name is the only big thing ── */
-function VerdictBeat({ diagnosis }: { diagnosis: Diagnosis }) {
+function VerdictBeat({ diagnosis, eyebrow }: { diagnosis: Diagnosis; eyebrow: string }) {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
-        Your bottleneck
+        {eyebrow}
       </p>
       <h2 className="text-balance font-display text-[46px] font-extrabold leading-[1.04] tracking-[-0.02em]">
         {SKILL_TITLES[diagnosis.bottleneck]}
@@ -321,10 +343,9 @@ function ReadinessBeat({ diagnosis }: { diagnosis: Diagnosis }) {
 }
 
 /**
- * The readiness screen's content, without the count-up. Shared by the reveal's
- * last beat (which animates `shown` and `fill` from 0) and the marketing page's
- * step 03, which renders it static — so the page shows this screen's current
- * copy instead of a capture of an old version of it.
+ * The readiness screen's content, without the count-up: the number, its bar,
+ * and the line saying what kind of number it is. The reveal's last beat
+ * animates `shown` and `fill` from 0.
  */
 export function ReadinessReading({
   readiness,
@@ -357,10 +378,11 @@ export function ReadinessReading({
             style={{ width: `${fill}%` }}
           />
         </div>
-        <div className="flex justify-between">
-          <span className="font-mono text-[10px] tracking-[0.1em] text-ink-3">3.0</span>
-          <span className="font-mono text-[10px] tracking-[0.1em] text-ink-3">4.0</span>
-        </div>
+        {/* No 3.0 and 4.0 at the ends: the bar is 0–100 from the answers,
+            and labelled with ratings it read as a rating estimate. */}
+        <p className="text-[13px] leading-[1.5] text-ink-3">
+          A score from your answers, not a DUPR estimate.
+        </p>
       </div>
 
       {/* Baseline, what it means, and where the plan starts. Not a verdict on

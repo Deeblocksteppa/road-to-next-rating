@@ -95,7 +95,7 @@ export default async function CheckoutSuccessPage({
         </h1>
         <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
           {confirmed
-            ? "Every re-test's skill-by-skill breakdown, your readiness chart, and your re-test history are open now — including re-tests you've already taken."
+            ? "How every skill moved on each re-test, your readiness chart and your re-test history are open now, including re-tests you've already taken."
             : "Stripe has your payment and we're waiting on final confirmation. This usually takes a few seconds — refresh if it doesn't clear."}
         </p>
       </div>

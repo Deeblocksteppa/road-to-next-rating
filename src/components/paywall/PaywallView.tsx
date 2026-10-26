@@ -14,7 +14,7 @@ type Plan = "annual" | "monthly";
  * plans for the next bottleneck regardless of tier — it was never gated.
  */
 const FEATURES = [
-  "Each re-test's skill-by-skill breakdown, kept for every re-test you take",
+  "How the other skills moved on every re-test (the one you trained is always free)",
   "Your readiness chart across every re-test, with logged sessions beneath it",
   "Re-test history and week-over-week session streaks",
 ];
