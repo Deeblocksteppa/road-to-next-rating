@@ -184,7 +184,7 @@ typography:
     fontWeight: 600
   body:
     fontFamily: "Instrument Sans, sans-serif"
-    fontSize: "15px"
+    fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.6
   body-desktop:
@@ -335,7 +335,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 - **Headline, complete** (800, 28px, LH 1.15, tracking −0.01em): the one-line headline on a screen where a flow has ended — the guided session's "Session logged.", the "done for the week" dead-end, and the session error screen. A step above H1 because it is the whole message on an otherwise empty screen; well below Display because nothing is being revealed.
 - **H1** (700, 24px → 32px, LH ~1.25, tracking −0.01em): screen titles.
 - **H2** (600, 17–18px → 20px): card titles, section headers.
-- **Body** (400, 15px → 16px, LH 1.6, color `ink-2`): explanations, descriptions.
+- **Body** (400, 16px, LH 1.6 → 1.7 desktop, color `ink-2`): explanations, descriptions, every sentence a player reads. 16px at every width, matching the landing page; the spec's original mobile body was 15px.
 - **Small** (400, 13px, LH 1.5, color `ink-2`): secondary copy.
 - **Small UI** (400–500, 14px, LH 1.5): secondary copy inside cards and the ghost/tertiary button label (Components, Buttons). Kept distinct from Small because a 13px card body reads cramped beside 15px titles; it is the same step as `marketing-small`.
 - **Eyebrow / Badge** (400, 10px, uppercase, tracking +0.16em / +0.10em, IBM Plex Mono): the label step *inside* a card or pill, one notch below the standalone Label. Already specified under Components (Cards, Badges) and used in 46 places across the app; recorded here so the ramp is complete rather than split between the token list and the prose.
