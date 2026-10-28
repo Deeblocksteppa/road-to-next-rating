@@ -39,3 +39,6 @@ next-env.d.ts
 
 # Installed per-machine, not project source. The repo's own skills are tracked.
 .claude/skills/impeccable/
+
+# Critique screenshots stay local; the write-ups in audit/ are tracked.
+audit/*-screens/
