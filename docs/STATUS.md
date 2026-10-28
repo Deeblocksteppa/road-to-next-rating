@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-10-27 · `main` at `1434644`
+Updated 2026-10-27 · `main` at `031cc5e`
 
 ## Current state
 
@@ -8,6 +8,7 @@ Updated 2026-10-27 · `main` at `1434644`
 - **Engine and content:** every skill × root cause pair has an authored story, story lines are keyed to the answer they quote, and solo players get two different drills per session (`6257e2b`, `1ca3f7f`, `8e58ba3`, `d100155`, `d4d25bc`). `audit/content-audit.md` predates these fixes and has not been re-run.
 - **App, batch 1 of `audit/app-critique.md`:** done in `1434644` (H1–H5, M11). Sessions without an account are gated honestly, the re-test shows wherever it is open, a new focus gets its reveal, the free re-test result shows the trained skill, readiness runs 0–100 with no rating labels.
 - **Claude Code setup:** `CLAUDE.md`, skills `/verify` `/test-user` `/critique` `/ship`, subagent `reviewer`, this file.
+- **Codex setup:** `AGENTS.md` makes Codex a read-only reviewer that follows `CLAUDE.md` and reports Blockers / Should-fix / Nits.
 
 ## Outstanding
 
