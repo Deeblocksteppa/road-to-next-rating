@@ -10,6 +10,28 @@ export function directionOf(change: number): Direction {
   return "flat";
 }
 
+/** One answer (or level) the trained skill is read from, before and after. */
+export interface TrainedRow {
+  /** Which question this row quotes ("Kitchen line"). `null` when the skill is asked about once. */
+  label: string | null;
+  before: string;
+  after: string;
+  /** Level change on this row alone, so each row's "Moved up" is its own. */
+  change: number;
+}
+
+export interface TrainedSkillView {
+  skill: SkillId;
+  /**
+   * In the player's own answers ("1–3" → "4–6"), one row per question that
+   * measures the skill: the reset is asked about twice and shows both. When
+   * either reading's answers are gone, one row of stored levels ("1/3" → "2/3").
+   */
+  rows: TrainedRow[];
+  /** The rows quote levels, not answers. */
+  numeric: boolean;
+}
+
 /**
  * One re-test result, as the result screen renders it. Built on the server by
  * `loadRetestView`, which is also where the tier decision is made: `skills` is
@@ -48,11 +70,10 @@ export interface RetestView {
   /** The focus skill changed with this re-test. */
   switched: boolean;
   /**
-   * The skill the previous plan trained, before and after, in the words of
-   * the player's own answers ("1–3" → "4–6"), and its level change. Free for
-   * every tier; `null` when there is no comparable baseline.
+   * The skill the previous plan trained, before and after. Free for every
+   * tier; `null` when there is no comparable baseline.
    */
-  trained: { skill: SkillId; before: string; after: string; change: number } | null;
+  trained: TrainedSkillView | null;
   isPaid: boolean;
 }
 

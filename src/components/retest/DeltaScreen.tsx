@@ -3,7 +3,14 @@ import Link from "next/link";
 import { LockedCard } from "@/components/ui/locked-card";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
 import type { SkillDelta } from "@/lib/delta";
-import { nextPlanHref, retestHref, type Direction, type RetestView } from "@/lib/retest-view";
+import {
+  nextPlanHref,
+  retestHref,
+  type Direction,
+  type RetestView,
+  type TrainedRow,
+  type TrainedSkillView,
+} from "@/lib/retest-view";
 import type { SkillId } from "@/lib/types";
 
 const PRIMARY =
@@ -152,34 +159,64 @@ export function DeltaScreen({ view }: { view: RetestView }) {
  * The skill the last plan trained, before and after in the player's own
  * answers. Free for every tier: whether the practised skill moved is the
  * question a re-test exists to answer.
+ *
+ * Each answer carries its own change. A skill asked about once keeps it in
+ * the header; the reset, asked about twice, gets a labelled row per answer so
+ * one moving and the other holding read as exactly that.
  */
-function TrainedSkill({ trained }: { trained: NonNullable<RetestView["trained"]> }) {
-  const moved =
-    trained.change > 0
-      ? { text: "Moved up", tone: "text-optic" }
-      : trained.change < 0
-        ? { text: "Moved down", tone: "text-danger" }
-        : { text: "Same answer", tone: "text-ink-3" };
+function TrainedSkill({ trained }: { trained: TrainedSkillView }) {
+  const single = trained.rows.length === 1 ? trained.rows[0] : null;
   return (
     <section className="flex flex-col gap-2 border-y border-line py-4">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
           What you trained
         </p>
-        <p className={`font-mono text-[11px] uppercase tracking-[0.1em] ${moved.tone}`}>
-          {moved.text}
-        </p>
+        {single && <ChangeBadge change={single.change} numeric={trained.numeric} />}
       </div>
       <p className="text-[17px] font-semibold leading-[1.3] text-ink">{SKILL_TITLES[trained.skill]}</p>
-      <p className="text-pretty text-[16px] leading-[1.45]">
-        <span className="text-ink-3">{trained.before}</span>
-        <span aria-hidden="true" className="px-2 text-ink-3">
-          →
-        </span>
-        <span className="sr-only"> to </span>
-        <span className="text-ink">{trained.after}</span>
-      </p>
+      {single ? (
+        <BeforeAfter row={single} />
+      ) : (
+        trained.rows.map((row) => (
+          <div key={row.label ?? row.before} className="flex flex-col gap-1 pt-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{row.label}</p>
+              <ChangeBadge change={row.change} numeric={trained.numeric} />
+            </div>
+            <BeforeAfter row={row} />
+          </div>
+        ))
+      )}
     </section>
+  );
+}
+
+function ChangeBadge({ change, numeric }: { change: number; numeric: boolean }) {
+  const moved =
+    change > 0
+      ? { text: "Moved up", tone: "text-optic" }
+      : change < 0
+        ? { text: "Moved down", tone: "text-danger" }
+        : // A level readout has no "answer" to be the same.
+          { text: numeric ? "No change" : "Same answer", tone: "text-ink-3" };
+  return (
+    <p className={`shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] ${moved.tone}`}>
+      {moved.text}
+    </p>
+  );
+}
+
+function BeforeAfter({ row }: { row: TrainedRow }) {
+  return (
+    <p className="text-pretty text-[16px] leading-[1.45] tabular-nums">
+      <span className="text-ink-3">{row.before}</span>
+      <span aria-hidden="true" className="px-2 text-ink-3">
+        →
+      </span>
+      <span className="sr-only"> to </span>
+      <span className="text-ink">{row.after}</span>
+    </p>
   );
 }
 

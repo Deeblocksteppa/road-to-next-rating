@@ -36,7 +36,7 @@ export default async function HomePage({
 
   const { data: diagnosis } = await supabase
     .from("diagnoses")
-    .select("bottleneck, root_cause, readiness, skill_scores, assessment_id, created_at")
+    .select("id, bottleneck, root_cause, readiness, skill_scores, assessment_id, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -65,6 +65,10 @@ export default async function HomePage({
       : null;
 
   const bottleneck = diagnosis?.bottleneck as SkillId | undefined;
+  // "Plan saved" needs the plan itself, built from the diagnosis on show: a
+  // diagnosis whose plan was never saved (or failed to claim) has nothing to
+  // announce.
+  const hasPlan = Boolean(diagnosis && plan && plan.diagnosis_id === diagnosis.id);
   const readiness = diagnosis ? readinessOfRow(diagnosis) ?? 0 : 0;
 
   // The insight's one-line summary, kept on Home so the "why" outlives the
@@ -136,7 +140,7 @@ export default async function HomePage({
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-6 py-8">
-      <ClaimOnLoad saved={searchParams.saved === "1"} hasPlan={Boolean(diagnosis)} />
+      <ClaimOnLoad saved={searchParams.saved === "1"} hasPlan={hasPlan} />
 
       <header className="flex items-center justify-between pt-4">
         <Logo />

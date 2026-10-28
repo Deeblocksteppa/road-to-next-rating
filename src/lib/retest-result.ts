@@ -1,11 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { computeDiagnosisDelta, parseStoredSkillScores } from "@/lib/delta";
+import { computeDiagnosisDelta, parseStoredSkillScores, type SkillDelta } from "@/lib/delta";
 import { scoreSkills } from "@/lib/engine";
 import { monthDay } from "@/lib/progress";
 import { QUESTIONS } from "@/lib/questions";
 import { readinessFromScores, readinessOfRow } from "@/lib/readiness";
-import { directionOf, type Direction, type RetestView } from "@/lib/retest-view";
+import {
+  directionOf,
+  type Direction,
+  type RetestView,
+  type TrainedRow,
+  type TrainedSkillView,
+} from "@/lib/retest-view";
 import type { AnswerMap, SkillId, SkillScore } from "@/lib/types";
 
 interface DiagnosisRecord {
@@ -47,36 +53,75 @@ async function resolveReading(
 }
 
 /**
+ * Names for the rows when a skill is asked about more than once. Only the
+ * reset is: once about getting to the kitchen line, once about a ball at your
+ * feet mid-court.
+ */
+const ROW_LABELS: Record<string, string> = {
+  net_hold: "Kitchen line",
+  transition_reset: "Mid-court",
+};
+
+/**
  * The skill the last plan trained, before and after, in the player's own
  * answers ("1–3" → "4–6"). Free for every tier: it answers the one question
  * a player brings to a re-test, whether the thing they practised moved.
  *
- * The reset is asked about twice; the question quoted is the one that was
- * weaker at the baseline (the mid-court one on a tie), and the same question
- * is quoted after, so the two sides always compare like with like. Labels are
- * cut at their dash: "1–3 — most sit up…" reads "1–3".
+ * Every question that measures the skill gets its own row and its own change.
+ * The reset's score averages two questions, so one answer moving can leave
+ * the score between levels; quoting one question under the averaged change
+ * once showed "Same answer" beside an answer that had improved. Labels are
+ * cut at their dash: "1–3 — most sit up…" reads "1–3". `null` when an answer
+ * can't be read back, and the caller falls back to levels.
  */
-function trainedSkill(
+function trainedFromAnswers(
   skill: SkillId,
   before: AnswerMap,
-  after: AnswerMap,
-  change: number
-): RetestView["trained"] {
+  after: AnswerMap
+): TrainedSkillView | null {
   const questions = QUESTIONS.filter((q) => q.measures === skill);
+  if (questions.length === 0) return null;
   const option = (answers: AnswerMap, id: string) =>
     QUESTIONS.find((q) => q.id === id)?.options?.find((o) => o.id === answers[id]);
-  const level = (answers: AnswerMap, id: string) => option(answers, id)?.skillLevel ?? 0;
-  const question = [...questions].sort(
-    (a, b) =>
-      level(before, a.id) - level(before, b.id) ||
-      (a.id === "transition_reset" ? -1 : b.id === "transition_reset" ? 1 : 0)
-  )[0];
-  if (!question) return null;
-  const short = (label: string | undefined) => label?.split(" — ")[0]?.trim() ?? null;
-  const beforeLabel = short(option(before, question.id)?.label);
-  const afterLabel = short(option(after, question.id)?.label);
-  if (!beforeLabel || !afterLabel) return null;
-  return { skill, before: beforeLabel, after: afterLabel, change };
+  const short = (label: string | undefined) => label?.split(" — ")[0]?.trim() || null;
+
+  const rows: TrainedRow[] = [];
+  for (const question of questions) {
+    const was = option(before, question.id);
+    const now = option(after, question.id);
+    const beforeLabel = short(was?.label);
+    const afterLabel = short(now?.label);
+    if (!beforeLabel || !afterLabel) return null;
+    rows.push({
+      label: questions.length > 1 ? ROW_LABELS[question.id] ?? null : null,
+      before: beforeLabel,
+      after: afterLabel,
+      change: (now?.skillLevel ?? 0) - (was?.skillLevel ?? 0),
+    });
+  }
+  return { skill, rows, numeric: false };
+}
+
+/**
+ * The trained skill from its stored levels, for a reading whose answers are
+ * gone (an older row, or an assessment that didn't load). Coarser than the
+ * answers, but it still says whether the practised skill moved, and the
+ * skill is never silently missing from both the free and paid screens.
+ */
+function trainedFromLevels(delta: SkillDelta): TrainedSkillView {
+  const level = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)}/3`;
+  return {
+    skill: delta.skill,
+    rows: [
+      {
+        label: null,
+        before: level(delta.previousLevel),
+        after: level(delta.currentLevel),
+        change: delta.delta,
+      },
+    ],
+    numeric: true,
+  };
 }
 
 async function isPaidUser(supabase: SupabaseClient, userId: string): Promise<boolean> {
@@ -149,12 +194,16 @@ export async function loadRetestView(
         direction: directionOf(delta.readiness.delta),
       };
       const trainedDelta = delta.skills.find((d) => d.skill === previousBottleneck);
-      if (before.answers && after.answers && trainedDelta) {
-        trained = trainedSkill(previousBottleneck, before.answers, after.answers, trainedDelta.delta);
+      if (trainedDelta) {
+        trained =
+          (before.answers && after.answers
+            ? trainedFromAnswers(previousBottleneck, before.answers, after.answers)
+            : null) ?? trainedFromLevels(trainedDelta);
       }
       // The other skills are withheld, not hidden: the free screen renders a
       // placeholder of their names and the levels never reach the browser.
-      if (isPaid) skills = delta.skills.filter((d) => d.skill !== previousBottleneck);
+      // Only a skill shown above as trained is left out of the breakdown.
+      if (isPaid) skills = delta.skills.filter((d) => d.skill !== trained?.skill);
     }
   }
 

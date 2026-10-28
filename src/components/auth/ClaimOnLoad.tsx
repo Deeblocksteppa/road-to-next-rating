@@ -23,9 +23,10 @@ export function ClaimOnLoad({
 }: {
   saved?: boolean;
   /**
-   * The account has a diagnosis to show. "Plan saved" used to appear on every
-   * confirmed sign-up, including one with nothing to save (a sign-up from
-   * /signup, or a claim that failed), right above "No diagnosis yet".
+   * The account has a plan for the diagnosis on show. "Plan saved" used to
+   * appear on every confirmed sign-up, including one with nothing to save (a
+   * sign-up from /signup, or a claim that failed), right above "No diagnosis
+   * yet", and then on any diagnosis whether or not its plan was saved.
    */
   hasPlan?: boolean;
 }) {
