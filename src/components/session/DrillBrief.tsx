@@ -32,7 +32,7 @@ export function DrillBriefContent({
         {drill.name}
       </Heading>
 
-      <p className={`${page ? "text-[16px]" : "text-[15px]"} leading-[1.6] text-ink`}>
+      <p className={`${page ? "text-[16px]" : "text-[16px]"} leading-[1.6] text-ink`}>
         {drill.instructions}
       </p>
 
@@ -46,7 +46,7 @@ export function DrillBriefContent({
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
           When the timer ends
         </p>
-        <p className={`${page ? "text-[16px]" : "text-[14px]"} leading-[1.5] text-ink`}>
+        <p className={`${page ? "text-[16px]" : "text-[16px]"} leading-[1.5] text-ink`}>
           <span className="font-semibold">{drill.logProtocol}</span> {drill.counts}
         </p>
         <div className="flex flex-col gap-1 border-t border-line pt-2.5">
@@ -55,7 +55,7 @@ export function DrillBriefContent({
           </p>
           {/* Sentence case: at this length mono caps wrapped at 375px. */}
           {retestMetric && (
-            <p className="text-[13px] leading-[1.5] text-ink-2">
+            <p className="text-[16px] leading-[1.5] text-ink-2">
               The match re-test target is a separate number, on your plan.
             </p>
           )}

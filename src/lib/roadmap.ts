@@ -26,18 +26,18 @@ export const WEEK_FOCUS_LABELS: Record<SkillId, string> = {
 
 const IN_GAME_RULES: Record<SkillId, string> = {
   reset:
-    "When you're caught mid-court, reset soft instead of attacking — even if you lose the point. You're trading this week's games for next month's level.",
+    "When you're caught mid-court, reset soft instead of attacking, even if you lose the point. You're trading this week's games for next month's level.",
   third_shot_drop:
     "Commit to the drop on every third shot this week, even when it fails. You need the reps more than the wins right now.",
   net_defense:
-    "When someone speeds up at you, your first job is to stay in the point — not counter-attack. Block first, look for offense second.",
+    "When someone speeds up at you, your first job is to stay in the point, not counter-attack. Block first, look for offense second.",
   dink_patience:
     "In every dink rally, wait for a ball that is above net height AND out in front before you speed up. Reset everything else, no exceptions.",
 };
 
 const RETEST_METRICS: Record<Exclude<SkillId, "third_shot_drop">, string> = {
   reset:
-    "Can you reset a hard ball at your feet from mid-court without it floating up? Count 10 attempts — aim for 6+ clean.",
+    "Can you reset a hard ball at your feet from mid-court without it floating up? Count 10 attempts. Aim for 6+ clean.",
   net_defense:
     "When someone speeds up at your body, can you block it back and stay in the point? Aim for 6 of 10.",
   dink_patience:
@@ -66,8 +66,7 @@ function thirdShotRetestMetric(answers: AnswerMap): string {
   const option = QUESTIONS.find((q) => q.id === "third_shot")?.options?.find(
     (o) => o.id === answers["third_shot"]
   );
-  // "1–3 — most sit up or go into the net" → "1–3"
-  const range = option?.label.split(" — ")[0]?.trim();
+  const range = option?.short;
   if (!option || !range) return `${measure} Target: 5+.`;
 
   const level = option.skillLevel ?? 0;

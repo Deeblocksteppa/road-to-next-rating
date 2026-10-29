@@ -140,7 +140,7 @@ export function Assessment({ onComplete }: Props) {
           </h1>
 
           {question.note && (
-            <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">{question.note}</p>
+            <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">{question.note}</p>
           )}
 
           <div className="mt-4">
@@ -211,7 +211,7 @@ function OptionList({
           <label
             key={opt.id}
             className={[
-              "flex min-h-16 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-[18px] py-3.5 text-left text-[15px] leading-[1.4] transition-all duration-150 active:scale-[0.99]",
+              "flex min-h-16 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-[18px] py-3.5 text-left text-[16px] leading-[1.4] transition-all duration-150 active:scale-[0.99]",
               "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-optic",
               isSelected
                 ? "border-optic bg-optic/[0.08] text-ink"
@@ -260,7 +260,7 @@ function TextEntry({
 
   const baseClass = [
     "w-full rounded-md border border-line-strong bg-surface px-4 py-3.5",
-    "text-[15px] leading-relaxed text-ink placeholder-ink-3",
+    "text-[16px] leading-relaxed text-ink placeholder-ink-3",
     "focus:border-line-hover",
     "transition-colors duration-200 resize-none",
   ].join(" ");

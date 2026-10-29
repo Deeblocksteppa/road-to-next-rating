@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = {
-  title: "Privacy — Road to Next Rating",
+  title: "Privacy · Road to Next Rating",
   description: "What Road to Next Rating stores and who processes it.",
 };
 
@@ -26,13 +26,13 @@ export default function Privacy() {
       </h1>
 
       <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-        Summary — full policy pending
+        Summary: full policy pending
       </p>
 
       <div className="mt-10 flex flex-col gap-6 text-[16px] leading-[1.6] text-ink-1 md:text-[18px] md:leading-[1.55]">
         <p>
           This page describes what the product stores today. It is a plain-language
-          summary, not the final legal policy — that document is still being written, and
+          summary, not the final legal policy. That document is still being written, and
           this page will be replaced by it before launch.
         </p>
         <p>
@@ -48,8 +48,8 @@ export default function Privacy() {
         </p>
         <p>
           <strong className="font-semibold text-ink">Who processes it.</strong> Supabase
-          stores the data and handles sign-in. Stripe handles payment if you subscribe —
-          card details go to Stripe, never to us. Resend sends reminder emails.
+          stores the data and handles sign-in. Stripe handles payment if you subscribe.
+          Card details go to Stripe, never to us. Resend sends reminder emails.
         </p>
         <p>
           <strong className="font-semibold text-ink">What is not done with it.</strong>

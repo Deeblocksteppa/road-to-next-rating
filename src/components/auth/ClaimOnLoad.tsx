@@ -61,7 +61,7 @@ export function ClaimOnLoad({
   return (
     <p
       role="status"
-      className="rounded-xl border border-line bg-surface px-4 py-3 text-[14px] leading-[1.5] text-ink-2"
+      className="rounded-xl border border-line bg-surface px-4 py-3 text-[16px] leading-[1.5] text-ink-2"
     >
       <span className="font-semibold text-ink">Plan saved.</span> It&apos;s on your account
       now, on any device you sign in to.

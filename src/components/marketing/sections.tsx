@@ -51,7 +51,7 @@ export function SiteHeader() {
             the row its height back. */}
         <Link
           href="/login"
-          className="-mx-2 -my-3 shrink-0 whitespace-nowrap px-2 py-3 text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink hover:decoration-ink-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
+          className="-mx-2 -my-3 shrink-0 whitespace-nowrap px-2 py-3 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink hover:decoration-ink-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
         >
           Sign in
         </Link>
@@ -115,7 +115,7 @@ export function Hero() {
           className="hero-in mt-14 md:mt-16"
           style={{ "--hero-delay": "400ms" } as React.CSSProperties}
         >
-          <ScoreReadout glow />
+          <ScoreReadout />
         </div>
       </div>
     </section>
@@ -573,7 +573,7 @@ export function Footer() {
             <Link
               key={link.href}
               href={link.href}
-              className="-mx-2 -my-3 px-2 py-3 text-[14px] text-ink-2 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
+              className="-mx-2 -my-3 px-2 py-3 text-[15px] text-ink-2 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
             >
               {link.label}
             </Link>

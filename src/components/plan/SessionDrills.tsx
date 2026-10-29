@@ -42,8 +42,7 @@ export function SessionDrills({
         <p className="text-[14px] leading-[1.5] text-ink-2">
           Today&apos;s session complete.{" "}
           {weekComplete
-            ? "Both sessions done this week — week " +
-              "resets Monday."
+            ? "Both sessions done this week. Next week starts Monday."
             : `Next session: any other day this week (${weekly.total - weekly.completed} to go).`}
         </p>
       )}

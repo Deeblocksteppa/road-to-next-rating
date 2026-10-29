@@ -31,7 +31,7 @@ export default function ForgotPasswordPage({
           <h1 className="font-display text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Reset your password.
           </h1>
-          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
+          <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
             {sent
               ? "If there is an account for that address, a reset link is on its way. It can take a minute, and it may land in spam."
               : "Enter the email you signed up with and we'll send you a link to choose a new password."}
@@ -39,7 +39,7 @@ export default function ForgotPasswordPage({
         </div>
 
         {errorMessage && (
-          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger">
             {errorMessage}
           </p>
         )}
@@ -56,7 +56,7 @@ export default function ForgotPasswordPage({
               autoComplete="email"
               placeholder="Email address"
               required
-              className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
+              className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
             />
             <button
               type="submit"
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage({
         )}
       </div>
 
-      <p className="pb-2 text-center text-[13px] text-ink-2">
+      <p className="pb-2 text-center text-[16px] text-ink-2">
         <Link href="/login" className="underline underline-offset-4">
           Back to sign in
         </Link>

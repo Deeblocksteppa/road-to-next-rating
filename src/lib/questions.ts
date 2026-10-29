@@ -73,10 +73,10 @@ export const QUESTIONS: Question[] = [
     measures: "reset",
     required: true,
     options: [
-      { id: "a", label: "Almost every point — we get up and stay there", skillLevel: 3 },
-      { id: "b", label: "Most of the time, but we get pushed back a lot", skillLevel: 2 },
-      { id: "c", label: "Inconsistent — we're often stuck mid-court or at the baseline", skillLevel: 1 },
-      { id: "d", label: "We mostly play from the back, getting to the net is a struggle", skillLevel: 0 },
+      { id: "a", label: "Almost every point: we get up and stay there", short: "Almost every point", skillLevel: 3 },
+      { id: "b", label: "Most of the time, but we get pushed back a lot", short: "Most of the time, but we get pushed back a lot", skillLevel: 2 },
+      { id: "c", label: "Inconsistent: we're often stuck mid-court or at the baseline", short: "Inconsistent", skillLevel: 1 },
+      { id: "d", label: "We mostly play from the back, getting to the net is a struggle", short: "We mostly play from the back, getting to the net is a struggle", skillLevel: 0 },
     ],
   },
   {
@@ -86,14 +86,14 @@ export const QUESTIONS: Question[] = [
     measures: "third_shot_drop",
     required: true,
     options: [
-      { id: "a", label: "7–10 — soft and unattackable most of the time", skillLevel: 3 },
-      { id: "b", label: "4–6 — about half find the kitchen", skillLevel: 2 },
-      { id: "c", label: "1–3 — most sit up or go into the net", skillLevel: 1 },
+      { id: "a", label: "7–10: soft and unattackable most of the time", short: "7–10", skillLevel: 3 },
+      { id: "b", label: "4–6: about half find the kitchen", short: "4–6", skillLevel: 2 },
+      { id: "c", label: "1–3: most sit up or go into the net", short: "1–3", skillLevel: 1 },
       // Level 0 covers both ways of having no working drop: attempting it and
       // landing none, and not attempting it. Without the first half, a player
       // who goes 0 for 10 had nothing truthful to pick — "1–3" overstated them
       // and "I just drive" described someone else.
-      { id: "d", label: "0 — none land, or I usually just drive because the drop isn't reliable", skillLevel: 0 },
+      { id: "d", label: "0: none land, or I usually just drive because the drop isn't reliable", short: "0", skillLevel: 0 },
     ],
   },
   {
@@ -103,13 +103,13 @@ export const QUESTIONS: Question[] = [
     measures: "reset",
     required: true,
     options: [
-      { id: "a", label: "I reset it softly into the kitchen and keep coming", skillLevel: 3 },
-      { id: "b", label: "I get it back but it floats and sometimes gets attacked", skillLevel: 2 },
-      { id: "c", label: "I pop it up and usually lose the point", skillLevel: 1 },
+      { id: "a", label: "I reset it softly into the kitchen and keep coming", short: "I reset it softly into the kitchen and keep coming", skillLevel: 3 },
+      { id: "b", label: "I get it back but it floats and sometimes gets attacked", short: "I get it back but it floats and sometimes gets attacked", skillLevel: 2 },
+      { id: "c", label: "I pop it up and usually lose the point", short: "I pop it up and usually lose the point", skillLevel: 1 },
       // Every way of not getting it back: jammed, into the net, or long. The
       // old label only named the first, so a player who swings and misses had
       // to choose between "pops it up" (they don't) and being handcuffed.
-      { id: "d", label: "I don't get it back — it handcuffs me, or goes into the net or out", skillLevel: 0 },
+      { id: "d", label: "I don't get it back: it handcuffs me, or goes into the net or out", short: "I don't get it back", skillLevel: 0 },
     ],
   },
   {
@@ -119,10 +119,10 @@ export const QUESTIONS: Question[] = [
     measures: "net_defense",
     required: true,
     options: [
-      { id: "a", label: "I block or counter it back and stay in the point", skillLevel: 3 },
-      { id: "b", label: "I get it back but it sits up for them", skillLevel: 2 },
-      { id: "c", label: "I flinch or mishit — it's a coin flip", skillLevel: 1 },
-      { id: "d", label: "I usually lose the point right there", skillLevel: 0 },
+      { id: "a", label: "I block or counter it back and stay in the point", short: "I block or counter it back and stay in the point", skillLevel: 3 },
+      { id: "b", label: "I get it back but it sits up for them", short: "I get it back but it sits up for them", skillLevel: 2 },
+      { id: "c", label: "I flinch or mishit: it's a coin flip", short: "I flinch or mishit", skillLevel: 1 },
+      { id: "d", label: "I usually lose the point right there", short: "I usually lose the point right there", skillLevel: 0 },
     ],
   },
   {
@@ -132,13 +132,13 @@ export const QUESTIONS: Question[] = [
     measures: "dink_patience",
     required: true,
     options: [
-      { id: "a", label: "I stay patient and speed up only when they give me a ball that's actually attackable", skillLevel: 3 },
-      { id: "b", label: "I just keep it going and wait for them to miss", skillLevel: 2 },
-      { id: "c", label: "I get impatient and force a speed-up too early", skillLevel: 1 },
+      { id: "a", label: "I stay patient and speed up only when they give me a ball that's actually attackable", short: "I stay patient and speed up only when they give me a ball that's actually attackable", skillLevel: 3 },
+      { id: "b", label: "I just keep it going and wait for them to miss", short: "I just keep it going and wait for them to miss", skillLevel: 2 },
+      { id: "c", label: "I get impatient and force a speed-up too early", short: "I get impatient and force a speed-up too early", skillLevel: 1 },
       // The rally can also end on the player's dink without being a miss: it
       // sits up and gets put away. Same level as an outright error — both are
       // the soft game breaking down before patience is even tested.
-      { id: "d", label: "My dink breaks down first — into the net, out, or it sits up and gets attacked", skillLevel: 1 },
+      { id: "d", label: "My dink breaks down first: into the net, out, or it sits up and gets attacked", short: "My dink breaks down first", skillLevel: 1 },
     ],
   },
   {

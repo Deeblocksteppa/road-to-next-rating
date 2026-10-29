@@ -93,10 +93,10 @@ export default async function CheckoutSuccessPage({
         <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
           {confirmed ? "You're in. Progress is unlocked." : "Finishing up…"}
         </h1>
-        <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
+        <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
           {confirmed
             ? "How every skill moved on each re-test, your readiness chart and your re-test history are open now, including re-tests you've already taken."
-            : "Stripe has your payment and we're waiting on final confirmation. This usually takes a few seconds — refresh if it doesn't clear."}
+            : "Stripe has your payment and we're waiting on final confirmation. This usually takes a few seconds. Refresh if it doesn't clear."}
         </p>
       </div>
 
@@ -110,7 +110,7 @@ export default async function CheckoutSuccessPage({
         {!confirmed && (
           <Link
             href="/home"
-            className="flex h-[48px] w-full items-center justify-center text-center text-[14px] text-ink-2 underline underline-offset-4"
+            className="flex h-[48px] w-full items-center justify-center text-center text-[15px] text-ink-2 underline underline-offset-4"
           >
             Back to home
           </Link>

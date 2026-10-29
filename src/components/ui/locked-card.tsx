@@ -41,7 +41,7 @@ export function LockedCard({
         ) : (
           <LockIcon />
         )}
-        <p className="max-w-[240px] text-pretty text-[13px] leading-[1.4] text-ink-2">
+        <p className="max-w-[240px] text-pretty text-[16px] leading-[1.4] text-ink-2">
           {teaser}
         </p>
       </div>

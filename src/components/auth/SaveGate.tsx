@@ -150,7 +150,7 @@ export function SaveGate({
           <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Check your inbox
           </h1>
-          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
+          <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
             We sent a confirmation link to{" "}
             <span className="break-words font-medium text-ink">{pendingEmail}</span>. Open it to
             finish setting up your account.
@@ -158,7 +158,7 @@ export function SaveGate({
         </div>
 
         {/* One line naming what is being saved. Ruled, not boxed. */}
-        <p className="border-y border-line py-3.5 text-[15px] font-semibold text-ink">
+        <p className="border-y border-line py-3.5 text-[16px] font-semibold text-ink">
           {planLine}
         </p>
 
@@ -181,14 +181,14 @@ export function SaveGate({
                 setEmail("");
                 setError(null);
               }}
-              className="-my-2 py-2 text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+              className="-my-2 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
             >
               Use a different email
             </button>
           </div>
         </div>
 
-        <p className="text-center text-[13px] leading-[1.5] text-ink-3">
+        <p className="text-center text-[16px] leading-[1.5] text-ink-3">
           Your plan stays on this device while you confirm.
         </p>
       </main>
@@ -208,7 +208,7 @@ export function SaveGate({
         {/* What each choice gets, plainly: the account is what runs sessions
             and keeps the counts. Skipping keeps the plan on this device and
             nothing more; it used to read as though sessions came with it. */}
-        <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
+        <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
           A free account runs your guided sessions and keeps what you log, on any device.
           Skip it and your plan stays on this device, but sessions and logging need the
           account. No card, nothing to pay.
@@ -216,7 +216,7 @@ export function SaveGate({
       </div>
 
       {reason === "session" && (
-        <p className="border-y border-line py-3 text-pretty text-[15px] font-medium leading-[1.5] text-ink">
+        <p className="border-y border-line py-3 text-pretty text-[16px] font-medium leading-[1.5] text-ink">
           Sessions need a free account so your progress is saved.
         </p>
       )}
@@ -226,15 +226,15 @@ export function SaveGate({
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">Your plan</p>
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <span className="h-2 w-2 shrink-0 rounded-full bg-optic" />
-          <span className="text-[15px] font-semibold">{bottleneckTitle}</span>
-          <span className="text-[13px] text-ink-3">· {weeksTarget}-week plan</span>
+          <span className="text-[16px] font-semibold">{bottleneckTitle}</span>
+          <span className="text-[15px] text-ink-3">· {weeksTarget}-week plan</span>
         </div>
       </div>
 
       {error && (
         <p
           role="alert"
-          className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+          className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
         >
           {error}
         </p>
@@ -267,7 +267,7 @@ export function SaveGate({
               a placeholder-only label disappears exactly when the player
               goes back to check what they typed. */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-[13px] font-medium text-ink-2">
+            <label htmlFor="email" className="text-[15px] font-medium text-ink-2">
               Email
             </label>
             <input
@@ -278,12 +278,12 @@ export function SaveGate({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
+              className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[13px] font-medium text-ink-2">
+            <label htmlFor="password" className="text-[15px] font-medium text-ink-2">
               Password
             </label>
             {/* The ring goes on the row so it wraps the field and its toggle. */}
@@ -297,7 +297,7 @@ export function SaveGate({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder-ink-3 focus-visible:outline-none"
+                className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
               />
               <button
                 type="button"
@@ -309,7 +309,7 @@ export function SaveGate({
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
-            <p id="password-hint" className="text-[13px] leading-[1.5] text-ink-3">
+            <p id="password-hint" className="text-[16px] leading-[1.5] text-ink-3">
               At least {MIN_PASSWORD_LENGTH} characters.
             </p>
           </div>
@@ -327,12 +327,12 @@ export function SaveGate({
       <button
         type="button"
         onClick={onSkip}
-        className="-my-2 py-2 text-center text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
+        className="-my-2 py-2 text-center text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
       >
-        Not now — keep it on this device
+        Not now, keep it on this device
       </button>
 
-      <p className="text-center text-[13px] text-ink-2">
+      <p className="text-center text-[16px] text-ink-2">
         Already have an account?{" "}
         <Link href="/login" className="underline underline-offset-4">
           Sign in

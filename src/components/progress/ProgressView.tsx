@@ -146,7 +146,7 @@ function DayOneState({
           One point so far: your baseline.{" "}
           {retestOpen
             ? "Your re-test, open now, adds the second reading."
-            : data.retestDateLabel === "—"
+            : data.retestDateLabel === "Not scheduled"
               ? "Your first re-test adds the second reading."
               : `Your first re-test on ${data.retestDateLabel} adds the second reading.`}
         </p>
@@ -262,7 +262,7 @@ function ChartContent({ data }: { data: ChartData }) {
       </p>
       <div className="mt-2.5 flex items-baseline justify-between">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-          Readiness — {data.weeksSpan} week{data.weeksSpan === 1 ? "" : "s"}
+          Readiness · {data.weeksSpan} week{data.weeksSpan === 1 ? "" : "s"}
         </p>
         <p className={`font-mono text-[11px] ${up ? "text-optic" : "text-danger"}`}>
           {up ? "+" : ""}
@@ -303,8 +303,9 @@ function SessionSeriesBlock({ sessions }: { sessions: SessionSeries }) {
   return (
     <div className="mt-4 border-t border-line pt-3.5">
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-        Your logged sessions — <span className="text-ink-2">{drillName}</span>
+        Logged sessions
       </p>
+      <p className="mt-1 text-[16px] leading-[1.4] text-ink-2">{drillName}</p>
       <div className="mt-2.5">
         <SessionSparkline values={values} max={max} />
       </div>

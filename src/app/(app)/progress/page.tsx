@@ -94,7 +94,7 @@ export default async function ProgressPage() {
 
     viewData = {
       kind: "day-one",
-      retestDateLabel: plan?.retest_date ? monthDay(plan.retest_date) : "—",
+      retestDateLabel: plan?.retest_date ? monthDay(plan.retest_date) : "Not scheduled",
       daysUntilRetest: timeline?.daysUntilRetest ?? 0,
       weekNumber: timeline?.weekNumber ?? 1,
       weeksTarget: timeline?.weeksTarget ?? 3,

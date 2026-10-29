@@ -102,7 +102,7 @@ export function PaywallView({
           {FEATURES.map((line) => (
             <div key={line} className="flex items-start gap-3">
               <span className="mt-[3px] text-sm leading-none text-optic">▪</span>
-              <span className="text-[15px] leading-[1.45] text-ink">{line}</span>
+              <span className="text-[16px] leading-[1.45] text-ink">{line}</span>
             </div>
           ))}
         </div>
@@ -135,15 +135,15 @@ export function PaywallView({
             {pending
               ? "Taking you to checkout…"
               : plan === "annual"
-                ? "Continue — $79/year"
-                : "Continue — $7.99/month"}
+                ? "Continue · $79/year"
+                : "Continue · $7.99/month"}
           </button>
           {error && (
-            <p role="alert" className="text-center text-[13px] leading-[1.45] text-danger">
+            <p role="alert" className="text-center text-[16px] leading-[1.45] text-danger">
               {error}
             </p>
           )}
-          <p className="text-center text-[13px] leading-[1.5] text-ink-3">
+          <p className="text-center text-[16px] leading-[1.5] text-ink-3">
             Secure checkout by Stripe · Cancel anytime
           </p>
         </div>
@@ -203,7 +203,7 @@ function PlanCard({
           )}
         </span>
         {/* Pricing terms are read, not scanned: body voice, per DESIGN.md. */}
-        <span className={`text-[13px] leading-[1.45] ${selected ? "text-ink-2" : "text-ink-3"}`}>
+        <span className={`text-[16px] leading-[1.45] ${selected ? "text-ink-2" : "text-ink-3"}`}>
           {price}
         </span>
       </div>

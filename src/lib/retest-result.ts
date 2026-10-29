@@ -70,9 +70,9 @@ const ROW_LABELS: Record<string, string> = {
  * Every question that measures the skill gets its own row and its own change.
  * The reset's score averages two questions, so one answer moving can leave
  * the score between levels; quoting one question under the averaged change
- * once showed "Same answer" beside an answer that had improved. Labels are
- * cut at their dash: "1–3 — most sit up…" reads "1–3". `null` when an answer
- * can't be read back, and the caller falls back to levels.
+ * once showed "Same answer" beside an answer that had improved. Each row
+ * quotes the option's `short` ("1–3"), never a cut of its label. `null` when
+ * an answer can't be read back, and the caller falls back to levels.
  */
 function trainedFromAnswers(
   skill: SkillId,
@@ -83,14 +83,13 @@ function trainedFromAnswers(
   if (questions.length === 0) return null;
   const option = (answers: AnswerMap, id: string) =>
     QUESTIONS.find((q) => q.id === id)?.options?.find((o) => o.id === answers[id]);
-  const short = (label: string | undefined) => label?.split(" — ")[0]?.trim() || null;
 
   const rows: TrainedRow[] = [];
   for (const question of questions) {
     const was = option(before, question.id);
     const now = option(after, question.id);
-    const beforeLabel = short(was?.label);
-    const afterLabel = short(now?.label);
+    const beforeLabel = was?.short;
+    const afterLabel = now?.short;
     if (!beforeLabel || !afterLabel) return null;
     rows.push({
       label: questions.length > 1 ? ROW_LABELS[question.id] ?? null : null,

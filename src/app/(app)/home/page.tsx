@@ -7,6 +7,7 @@ import { TodaySession, todayState } from "@/components/home/TodaySession";
 import { RetestOpen } from "@/components/retest/RetestOpen";
 import { monthDay } from "@/lib/date-format";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
+import { SkillTitle } from "@/components/diagnosis/SkillTitle";
 import { diagnose } from "@/lib/engine";
 import { readinessOfRow } from "@/lib/readiness";
 import {
@@ -16,7 +17,6 @@ import {
 } from "@/lib/drill-sessions";
 import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
-import { WEEK_FOCUS_LABELS } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 import type { AnswerMap, SkillId } from "@/lib/types";
 
@@ -104,7 +104,7 @@ export default async function HomePage({
 
   const retestReadyLink = (
     <Link href="/retest" className="text-optic underline underline-offset-4">
-      Re-test ready — take it now
+      Re-test ready. Take it now
     </Link>
   );
   const retestOpensText = (days: number) => (
@@ -120,10 +120,10 @@ export default async function HomePage({
   // something forward-looking to say instead.
   const caption = retestOpen
     ? todayDone && !allDone
-      ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} this week — any other day`
+      ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} this week. Pick any other day.`
       : null
     : todayDone && !allDone
-    ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} this week — any other day`
+    ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} this week. Pick any other day.`
     : allDone
     ? timeline === null
       ? nextUnlockText
@@ -177,15 +177,15 @@ export default async function HomePage({
             </p>
             {/* The screen's one heading (Home had none). */}
             <h1 className="font-display text-[28px] font-extrabold tracking-[-0.01em]">
-              {SKILL_TITLES[bottleneck]}
+              <SkillTitle title={SKILL_TITLES[bottleneck]} />
             </h1>
             {insight && (
               <p className="text-pretty text-[15px] leading-[1.45] text-ink-1">{insight}</p>
             )}
             {timeline && (
               <p className="text-[13px] text-ink-2">
-                Week {timeline.weekNumber} of {timeline.weeksTarget} —{" "}
-                {WEEK_FOCUS_LABELS[bottleneck]}
+                Week {timeline.weekNumber} of {timeline.weeksTarget} · Same drills
+                each week. Beat your last numbers.
               </p>
             )}
           </section>

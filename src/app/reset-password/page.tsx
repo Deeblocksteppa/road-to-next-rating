@@ -42,13 +42,13 @@ export default async function ResetPasswordPage({
           <h1 className="font-display text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Choose a new password.
           </h1>
-          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
+          <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
             For {user.email}. At least 8 characters.
           </p>
         </div>
 
         {errorMessage && (
-          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger">
             {errorMessage}
           </p>
         )}
@@ -65,7 +65,7 @@ export default async function ResetPasswordPage({
             placeholder="New password"
             minLength={8}
             required
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
+            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
           <label htmlFor="confirm" className="sr-only">
             Repeat new password
@@ -78,7 +78,7 @@ export default async function ResetPasswordPage({
             placeholder="Repeat new password"
             minLength={8}
             required
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
+            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
           <button
             type="submit"

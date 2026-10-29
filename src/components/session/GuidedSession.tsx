@@ -148,7 +148,7 @@ export function GuidedSession(props: GuidedSessionProps) {
               // this user's plan). Nothing below may run until the write is
               // confirmed: "logged" is only ever said about a saved number.
               if (!result) {
-                setError("Couldn't save that — you may have been signed out. Sign in and try again.");
+                setError("Couldn't save that. You may have been signed out. Sign in and try again.");
                 return;
               }
               setWeekly(result);
@@ -314,8 +314,8 @@ function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () =>
         <p className="font-display text-[20px] font-bold leading-[1.3] tracking-[-0.01em]">
           {drill.cue}
         </p>
-        <p className="text-pretty text-[13px] leading-[1.55] text-ink-2">
-          {drill.logProtocol} When the clock hits zero, stop where you are and log it — falling
+        <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
+          {drill.logProtocol} When the clock hits zero, stop where you are and log it. Falling
           short of {drill.practiceTarget} still counts.
         </p>
         <button
@@ -327,7 +327,7 @@ function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () =>
           {showInstructions ? "Hide instructions" : "View instructions"}
         </button>
         {showInstructions && (
-          <p className="text-[14px] leading-[1.6] text-ink-2">{drill.instructions}</p>
+          <p className="text-[16px] leading-[1.6] text-ink-2">{drill.instructions}</p>
         )}
       </div>
 
@@ -346,7 +346,7 @@ function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () =>
         <button
           type="button"
           onClick={onFinish}
-          className="flex h-[44px] w-full items-center justify-center rounded-lg text-[14px] font-medium text-ink-2 transition-colors hover:text-ink"
+          className="flex h-[44px] w-full items-center justify-center rounded-lg text-[15px] font-medium text-ink-2 transition-colors hover:text-ink"
         >
           Finish drill
         </button>
@@ -384,7 +384,7 @@ function LogScreen({
       <h1 className="font-display text-2xl font-bold leading-[1.25] tracking-[-0.01em]">
         {drill.logPrompt}
       </h1>
-      <p className="-mt-3 text-[14px] leading-[1.5] text-ink-2">{drill.counts}</p>
+      <p className="-mt-3 text-[16px] leading-[1.5] text-ink-2">{drill.counts}</p>
 
       {/* 0–10 across two rows. Option-select visual language (radius-xl,
           surface/line default, accent border + 8% fill when selected) sized
@@ -412,7 +412,7 @@ function LogScreen({
 
       <div className="flex-1" />
 
-      {error && <p className="text-[13px] text-danger">{error}</p>}
+      {error && <p className="text-[16px] text-danger">{error}</p>}
 
       <button
         onClick={onSubmit}
@@ -446,7 +446,7 @@ export function SessionCompleteScreen({ weekly }: { weekly: WeeklyProgress }) {
         </h1>
         <p className="text-[15px] leading-[1.6] text-ink-2">
           {weekly.completed} of {weekly.total} sessions this week.{" "}
-          {weekDone ? "That's the week — rest counts too." : "The next one is any other day."}
+          {weekDone ? "That's the week. Rest counts too." : "The next one is any other day."}
         </p>
       </div>
 

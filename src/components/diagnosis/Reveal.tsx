@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
+import { SkillTitle } from "./SkillTitle";
 import { Diagnosis, SkillId } from "@/lib/types";
 
 export type BeatId = "mirror" | "verdict" | "insight" | "absolution" | "readiness";
@@ -228,7 +229,7 @@ function MirrorBeat({ diagnosis }: { diagnosis: Diagnosis }) {
           What you told us
         </p>
         <h1 className="font-display text-2xl font-bold leading-[1.2] tracking-[-0.01em]">
-          In your own words —
+          In your own words
         </h1>
       </div>
       <div className="flex flex-col gap-5">
@@ -250,10 +251,10 @@ function VerdictBeat({ diagnosis, eyebrow }: { diagnosis: Diagnosis; eyebrow: st
         {eyebrow}
       </p>
       <h2 className="text-balance font-display text-[46px] font-extrabold leading-[1.04] tracking-[-0.02em]">
-        {SKILL_TITLES[diagnosis.bottleneck]}
+        <SkillTitle title={SKILL_TITLES[diagnosis.bottleneck]} />
       </h2>
       <div className="h-px w-11 bg-line-strong" />
-      <p className="max-w-[280px] text-balance text-[15px] leading-[1.6] text-ink-2">
+      <p className="max-w-[280px] text-balance text-[16px] leading-[1.6] text-ink-2">
         {diagnosis.bottleneckVerdict}
       </p>
     </div>
@@ -270,7 +271,7 @@ function InsightBeat({ diagnosis }: { diagnosis: Diagnosis }) {
       <h2 className="text-pretty font-display text-2xl font-bold leading-[1.32] tracking-[-0.01em]">
         {diagnosis.insightHeadline}
       </h2>
-      <p className="text-pretty text-[15px] leading-[1.68] text-ink-2">
+      <p className="text-pretty text-[16px] leading-[1.68] text-ink-2">
         {diagnosis.insightBody}
       </p>
     </div>
@@ -293,7 +294,7 @@ function AbsolutionBeat({ diagnosis }: { diagnosis: Diagnosis }) {
         {diagnosis.absolution}
       </h2>
       <div className="h-px w-11 bg-line-strong" />
-      <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
+      <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
         {diagnosis.absolutionClose}
       </p>
     </div>
@@ -380,7 +381,7 @@ export function ReadinessReading({
         </div>
         {/* No 3.0 and 4.0 at the ends: the bar is 0–100 from the answers,
             and labelled with ratings it read as a rating estimate. */}
-        <p className="text-[13px] leading-[1.5] text-ink-3">
+        <p className="text-[16px] leading-[1.5] text-ink-3">
           A score from your answers, not a DUPR estimate.
         </p>
       </div>
@@ -388,7 +389,7 @@ export function ReadinessReading({
       {/* Baseline, what it means, and where the plan starts. Not a verdict on
           their game: the number is a reading of their answers, and it is the
           thing the re-test moves against. */}
-      <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
+      <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
         {readiness} is your baseline from these answers. The plan starts on{" "}
         {SKILL_LABELS[bottleneck]}, and the re-test in three weeks shows what moved.
       </p>

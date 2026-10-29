@@ -35,28 +35,13 @@ import { ExampleTag } from "./primitives";
 /** The app's card: radius-2xl, `line` border, `surface` ground, no shadow. */
 function Panel({
   children,
-  glow = false,
   className = "",
 }: {
   children: React.ReactNode;
-  /** Ambient optic field behind the panel. Hero only, one per page. */
-  glow?: boolean;
   className?: string;
 }) {
   return (
-    <div className={`relative ${className}`}>
-      {glow ? (
-        <div
-          aria-hidden="true"
-          // Pushed outward past the panel edge: the panel itself is opaque, so
-          // any energy inside its footprint is invisible.
-          className="pointer-events-none absolute -inset-x-16 -inset-y-14 -z-10"
-          style={{
-            background:
-              "radial-gradient(closest-side at 50% 50%, rgba(216,227,76,0.22), rgba(216,227,76,0.10) 58%, rgba(216,227,76,0.04) 76%, transparent 92%)",
-          }}
-        />
-      ) : null}
+    <div className={className}>
       <div className="overflow-hidden rounded-2xl border border-line bg-surface">{children}</div>
     </div>
   );
@@ -157,17 +142,17 @@ function NotARating({ className = "" }: { className?: string }) {
 /**
  * The whole reading in one object: readiness for 4.0, and the four skills that
  * produced it with the diagnosed one flagged. The page's headline claim (ten
- * things to fix versus one to start with) stated as data. The one marketing
- * object on a card with the hero's ambient field behind it: it stands in for
- * the result screen, so it looks like a product surface.
+ * things to fix versus one to start with) stated as data. Set on the app's
+ * card because it stands in for the result screen, so it looks like a product
+ * surface. Flat, like the app: no glow behind it.
  */
-export function ScoreReadout({ glow = false }: { glow?: boolean }) {
+export function ScoreReadout() {
   const bottleneck = DEMO_DIAGNOSIS.bottleneck;
 
   return (
     <div>
       <ExampleTag className="mb-3" />
-      <Panel glow={glow}>
+      <Panel>
         <div className="grid gap-8 px-5 py-6 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-12 md:px-7 md:py-8">
           <div className="md:self-center">
             <Unit>Readiness for 4.0</Unit>

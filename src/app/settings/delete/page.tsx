@@ -45,7 +45,7 @@ export default async function DeleteAccountPage() {
         <p className="font-mono text-[11px] text-ink-3">
           {user.email}
         </p>
-        <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
+        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
           This permanently deletes your account and everything saved to it. It cannot be
           undone, and we cannot restore it afterwards.
         </p>
@@ -60,7 +60,7 @@ export default async function DeleteAccountPage() {
         ].map((line, i) => (
           <p
             key={line}
-            className={`py-3.5 text-[15px] leading-[1.45] text-ink ${
+            className={`py-3.5 text-[16px] leading-[1.45] text-ink ${
               i === 0 ? "" : "border-t border-line"
             }`}
           >
@@ -70,7 +70,7 @@ export default async function DeleteAccountPage() {
       </section>
 
       {isPaid && (
-        <p className="rounded-xl border border-line-strong bg-surface-2 px-[18px] py-3.5 text-[14px] leading-[1.5] text-ink-2">
+        <p className="rounded-xl border border-line-strong bg-surface-2 px-[18px] py-3.5 text-[16px] leading-[1.5] text-ink-2">
           Your subscription is cancelled immediately as part of this, so you are not
           billed again. The time left on the current period is not refunded.
         </p>

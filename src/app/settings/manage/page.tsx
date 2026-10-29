@@ -43,9 +43,9 @@ export default async function ManageSubscriptionPage() {
           {cancelPending ? "Cancellation scheduled" : "Cancel your subscription?"}
         </h1>
         {!cancelPending && (
-          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
-            You&apos;ll keep Progress access until {untilLabel} — the time
-            you&apos;ve already paid for — then move to the free plan. Nothing
+          <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
+            You&apos;ll keep Progress access until {untilLabel}, the time
+            you&apos;ve already paid for, then move to the free plan. Nothing
             is charged again.
           </p>
         )}
@@ -55,7 +55,7 @@ export default async function ManageSubscriptionPage() {
 
       <Link
         href="/settings"
-        className="flex h-[48px] w-full items-center justify-center text-center text-[14px] text-ink-2 underline underline-offset-4"
+        className="flex h-[48px] w-full items-center justify-center text-center text-[15px] text-ink-2 underline underline-offset-4"
       >
         {cancelPending ? "Back to settings" : "Never mind"}
       </Link>

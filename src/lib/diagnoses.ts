@@ -143,13 +143,13 @@ const drillsWithPlan = (f: StoryFacts): boolean => f.drilling === "d";
 // not the player, so one per skill serves every root cause.
 const DEPTH: Record<SkillId, string> = {
   reset:
-    "The reset — staying calm under pressure in the transition zone and neutralizing attacks at the net — is the single most separating skill between {level} and 4.0. It's not about hitting a pretty shot. It's about absorbing pace, going soft when your instincts scream 'hit back harder,' and refusing to hand the point away. Players who can reset consistently get to the kitchen, stay there, and run the soft game. Players who can't are pinned in no-man's-land, fighting a battle they can't win.",
+    "The reset (staying calm under pressure in the transition zone and neutralizing attacks at the net) is the single most separating skill between {level} and 4.0. It's not about hitting a pretty shot. It's about absorbing pace, going soft when your instincts scream 'hit back harder,' and refusing to hand the point away. Players who can reset consistently get to the kitchen, stay there, and run the soft game. Players who can't are pinned in no-man's-land, fighting a battle they can't win.",
   third_shot_drop:
-    "The third-shot drop is the gateway skill from {level} to 4.0. Without a reliable one, you're choosing between driving into a wall or handing the net to your opponents on a silver platter every single serve. It's the shot that converts a defensive position into an offensive one — and at 4.0, everyone expects you to have it. It requires soft hands, a feel for arc and depth, and the nerve to commit to a slow ball when the instinct is to attack.",
+    "The third-shot drop is the gateway skill from {level} to 4.0. Without a reliable one, you're choosing between driving into a wall or handing the net to your opponents on a silver platter every single serve. It's the shot that converts a defensive position into an offensive one, and at 4.0, everyone expects you to have it. It requires soft hands, a feel for arc and depth, and the nerve to commit to a slow ball when the instinct is to attack.",
   net_defense:
-    "Hands at the net — handling a ball that's sped up at your body, hip, or shoulder at close range — is one of the defining skills of the 4.0 level. Speed-ups happen constantly in competitive play, and if you don't have a reliable answer for them, opponents will find that out within a game or two and target you relentlessly. A good hands game lets you neutralize aggression, reset the point, and stay in control. Without it, every speed-up feels like a coin flip.",
+    "Hands at the net (handling a ball that's sped up at your body, hip, or shoulder at close range) is one of the defining skills of the 4.0 level. Speed-ups happen constantly in competitive play, and if you don't have a reliable answer for them, opponents will find that out within a game or two and target you relentlessly. A good hands game lets you neutralize aggression, reset the point, and stay in control. Without it, every speed-up feels like a coin flip.",
   dink_patience:
-    "Patience in the soft game — staying disciplined in a dinking rally, not manufacturing pace when the ball doesn't deserve it — is what separates players who win points at 4.0 from players who donate them. It's not a flashy skill. Nobody clips it for highlights. But at the kitchen, the player who can wait out a long rally and only speed up on a genuinely attackable ball wins a disproportionate number of exchanges. Impatience is the most reliable way to give the point away for free.",
+    "Patience in the soft game (staying disciplined in a dinking rally, not manufacturing pace when the ball doesn't deserve it) is what separates players who win points at 4.0 from players who donate them. It's not a flashy skill. Nobody clips it for highlights. But at the kitchen, the player who can wait out a long rally and only speed up on a genuinely attackable ball wins a disproportionate number of exchanges. Impatience is the most reliable way to give the point away for free.",
 };
 
 /** One story per skill × root cause the engine can produce. */
@@ -162,9 +162,9 @@ export const STORIES: DiagnosisStory[] = [
     bottleneckText: DEPTH.reset,
     insightHeadline: "Games don't teach the reset.",
     insightBody: (f) =>
-      `${gameTime(f)} Every point there is live, so a reset gets one rushed attempt and no second try — the shot never gets the calm, repeated reps it needs to form.`,
+      `${gameTime(f)} Every point there is live, so a reset gets one rushed attempt and no second try. The shot never gets the calm, repeated reps it needs to form.`,
     absolution:
-      "This isn't a ceiling on your game — it's a shot that never got its reps, and reps are something you can schedule.",
+      "This isn't a ceiling on your game. It's a shot that never got its reps, and reps are something you can schedule.",
     absolutionClose: "Three weeks of low-stakes resets is the plan.",
   },
   {
@@ -188,7 +188,7 @@ export const STORIES: DiagnosisStory[] = [
     match: { bottleneck: "reset", rootCause: "well_coached" },
     verdictClause: SKILL_CLAUSE.reset,
     bottleneckText:
-      "The reset is the skill that separates {level} from 4.0 — absorbing pace in the transition zone, going soft when everything in you wants to hit back hard, and earning your way to the kitchen rather than hoping your opponents miss. It's unglamorous, repetitive, and absolutely decisive. Players who own it control the tempo of nearly every point. Players who haven't cracked it yet are at the mercy of whoever's being aggressive.",
+      "The reset is the skill that separates {level} from 4.0: absorbing pace in the transition zone, going soft when everything in you wants to hit back hard, and earning your way to the kitchen rather than hoping your opponents miss. It's unglamorous, repetitive, and absolutely decisive. Players who own it control the tempo of nearly every point. Players who haven't cracked it yet are at the mercy of whoever's being aggressive.",
     insightHeadline: "The reset holds in practice and slips in games.",
     // Says only that the reset isn't reliable in games, which either reset
     // question can establish; it used to say "fails mid-court" to players
@@ -196,7 +196,7 @@ export const STORIES: DiagnosisStory[] = [
     insightBody: (f) =>
       `${drillsWithPlan(f) ? "You said you drill with a plan" : "Your practice has structure"}, and your answers say the reset still isn't reliable in games. That pattern points to a transfer gap: the shot exists at drill pace, not yet at game pace.`,
     absolution:
-      "This isn't a technique problem to start over on — it's a shot that needs rehearsing under game chaos, and chaos can be rehearsed.",
+      "This isn't a technique problem to start over on. It's a shot that needs rehearsing under game chaos, and chaos can be rehearsed.",
     absolutionClose: "Three weeks of resets at real pace is the plan.",
   },
 
@@ -208,9 +208,9 @@ export const STORIES: DiagnosisStory[] = [
     bottleneckText: DEPTH.third_shot_drop,
     insightHeadline: "Games give the drop almost no clean reps.",
     insightBody: (f) =>
-      `${gameTime(f)} A game moves on whether a drop was good or bad, so there's no feedback and maybe a dozen attempts an hour — far too few for a touch shot to settle.`,
+      `${gameTime(f)} A game moves on whether a drop was good or bad, so there's no feedback and maybe a dozen attempts an hour. That's far too few for a touch shot to settle.`,
     absolution:
-      "This isn't a ceiling — it's a shot that has never had measured reps, and measured reps are the whole plan.",
+      "This isn't a ceiling. It's a shot that has never had measured reps, and measured reps are the whole plan.",
     absolutionClose: "Count the drops, and the drop shows up.",
   },
   {
@@ -256,7 +256,7 @@ export const STORIES: DiagnosisStory[] = [
     insightBody:
       "Hands at the net are reflex, and a reflex only builds from seeing the same ball many times at real pace. Open play hands you a few speed-ups an hour, spread among everything else.",
     absolution:
-      "This isn't about reflexes you weren't born with — it's a ball you've seen too rarely, and you can see it on purpose.",
+      "This isn't about reflexes you weren't born with. It's a ball you've seen too rarely, and you can see it on purpose.",
     absolutionClose: "Three weeks of speed-ups in isolation.",
   },
   {
@@ -356,8 +356,8 @@ export const STORIES: DiagnosisStory[] = [
     },
     absolution: (f) =>
       f.dink === "d"
-        ? "This isn't a discipline flaw — it's a soft game that has never been rehearsed with something on the line, and that can be rehearsed."
-        : "This isn't a discipline flaw — it's a decision that has never been rehearsed with something on the line, and that can be rehearsed.",
+        ? "This isn't a discipline flaw. It's a soft game that has never been rehearsed with something on the line, and that can be rehearsed."
+        : "This isn't a discipline flaw. It's a decision that has never been rehearsed with something on the line, and that can be rehearsed.",
     absolutionClose: "Three weeks of long rallies with a score attached.",
   },
 ];

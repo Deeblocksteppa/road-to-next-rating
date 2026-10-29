@@ -194,12 +194,12 @@ typography:
     lineHeight: 1.7
   small:
     fontFamily: "Instrument Sans, sans-serif"
-    fontSize: "13px"
+    fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.5
   small-ui:
     fontFamily: "Instrument Sans, sans-serif"
-    fontSize: "14px"
+    fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.5
   label:
@@ -247,11 +247,13 @@ components:
   button-ghost:
     textColor: "{colors.ink-2}"
     height: "44px"
+    fontSize: "15px"
   option-select:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.xl}"
     height: "64px"
+    fontSize: "16px"
   option-select-selected:
     backgroundColor: "rgba(216,227,76,0.08)"
     rounded: "{rounded.xl}"
@@ -264,6 +266,7 @@ components:
     rounded: "{rounded.md}"
     height: "48px"
     padding: "0 16px"
+    fontSize: "16px"
 ---
 
 # Design System: Road to Next Rating
@@ -335,9 +338,9 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 - **Headline, complete** (800, 28px, LH 1.15, tracking −0.01em): the one-line headline on a screen where a flow has ended — the guided session's "Session logged.", the "done for the week" dead-end, and the session error screen. A step above H1 because it is the whole message on an otherwise empty screen; well below Display because nothing is being revealed.
 - **H1** (700, 24px → 32px, LH ~1.25, tracking −0.01em): screen titles.
 - **H2** (600, 17–18px → 20px): card titles, section headers.
-- **Body** (400, 16px, LH 1.6 → 1.7 desktop, color `ink-2`): explanations, descriptions, every sentence a player reads. 16px at every width, matching the landing page; the spec's original mobile body was 15px.
-- **Small** (400, 13px, LH 1.5, color `ink-2`): secondary copy.
-- **Small UI** (400–500, 14px, LH 1.5): secondary copy inside cards and the ghost/tertiary button label (Components, Buttons). Kept distinct from Small because a 13px card body reads cramped beside 15px titles; it is the same step as `marketing-small`.
+- **Body** (400, 16px, LH 1.6 → 1.7 desktop, color `ink-2`): explanations, descriptions, every sentence a player reads: paragraphs, helper text, captions, error messages, teasers, caveats. 16px at every width, matching the landing page. This supersedes the 15px mobile body in `Design/DESIGN_SYSTEM.md` §2.
+- **Small** (400, 15px, LH 1.5, color `ink-2`): a secondary single line that is not a sentence: a row date, a "· 3-week plan" fragment, a form label, a price term. A sentence is Body, at 16px.
+- **Small UI** (400–500, 15px, LH 1.5): the ghost/tertiary button and text-link label (Components, Buttons). Was 14px; raised with Small so no sans text in the app runs under 15px. `marketing-small` (14px) is the landing's own step and unchanged.
 - **Eyebrow / Badge** (400, 10px, uppercase, tracking +0.16em / +0.10em, IBM Plex Mono): the label step *inside* a card or pill, one notch below the standalone Label. Already specified under Components (Cards, Badges) and used in 46 places across the app; recorded here so the ramp is complete rather than split between the token list and the prose.
 - **Label** (400/500, 11px, uppercase, tracking +0.14em, IBM Plex Mono): every standalone eyebrow, unit, and countdown that is not inside a card or badge. Tracking widens for emphasis (0.22em on reveal eyebrows, 0.42em on the "RATING" wordmark subtitle) and narrows for density (0.10–0.12em on nav/counters/badges).
 
@@ -346,7 +349,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 
 **The Nothing-Italic Rule.** No italic anywhere in the system; emphasis comes from scale, weight, or the accent color, never from slant.
 
-**The Uppercase-Mono Rule, and its limit.** Every mono label, unit, badge and countdown is uppercase — that is what makes the UI read as calibrated. It applies to *short* labels only: roughly three words, or a unit, a number, a column head. Anything longer — a readout's header, a CTA caption ("12 questions · about 4 minutes · no signup"), a pricing term — is set in sentence case in Instrument Sans at 13–14px, `ink-1`/`ink-2`. Spaced mono caps at that length wrap to two or three lines at 375px and have to be decoded rather than read. `marketing-formula` (the priority equation, now behind the "How your priority is chosen" disclosure on step 01) stays mono in sentence case.
+**The Uppercase-Mono Rule, and its limit.** Every mono label, unit, badge and countdown is uppercase — that is what makes the UI read as calibrated. It applies to *short* labels only: roughly three words, or a unit, a number, a column head. Anything longer — a readout's header, a CTA caption ("12 questions · about 4 minutes · no signup"), a pricing term — is set in sentence case in Instrument Sans, `ink-1`/`ink-2`: 15px in the app (16px when it is a sentence), `marketing-small` 14px on the landing. Spaced mono caps at that length wrap to two or three lines at 375px and have to be decoded rather than read. `marketing-formula` (the priority equation, now behind the "How your priority is chosen" disclosure on step 01) stays mono in sentence case.
 
 ## Layout
 
@@ -382,10 +385,11 @@ No borders appear without a purpose: default dividers use `line`, emphasis borde
 Buttons, cards, and inputs all share the same restraint: flat fills, one radius per role, and the accent reserved for the single primary action per screen.
 
 ### Buttons
-- **Shape:** height 52px, `radius-lg` (14px), 15px font.
+- **Shape:** height 52px, `radius-lg` (14px), 15px font. Button labels sit under 16px by design; `/verify` recognises them by class (`h-[52px]` or `h-14` for primary and secondary, `h-11`, `h-[44px]` or `min-h-11` for ghost, `underline` for text links) and flags them only below 15px.
 - **Primary:** bg `optic`, text `optic-ink`, weight 600. Hover → bg `optic-hover`. Active → `scale(0.98)`. A "primary + meta" variant (h56) adds a mono 11px suffix at 75% opacity (e.g. "18 MIN") — the Home CTA.
 - **Secondary:** bg `surface-2`, border `line-strong`, text `ink`, weight 600. Hover → border `line-hover`.
-- **Ghost/Tertiary:** height 44px, no background, text `ink-2` weight 500 at 14px. Hover → text `ink`.
+- **Ghost/Tertiary:** height 44px, no background, text `ink-2` weight 500 at 15px. Hover → text `ink`.
+- **Text link:** `underline underline-offset-4`, 15px, `ink-2` or the surrounding color. Inline in a sentence it takes the sentence's 16px.
 - **Disabled/Done:** bg `surface`, border `line`, text `ink-3` (e.g. "Session logged today · done").
 
 ### Cards / Containers
@@ -397,11 +401,11 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 - **Accent-tinted variant:** border `optic` + bg tint at `rgba(216,227,76,0.04–0.05)` — used for the in-game-rule card and first-re-test callouts, i.e. moments the product wants to gently point at without a full CTA.
 
 ### Inputs / Fields
-- **Style:** height 48px, `radius-md` (12px), bg `surface`, border `line-strong`, padding 0 16px, placeholder `ink-3`.
+- **Style:** height 48px, `radius-md` (12px), bg `surface`, border `line-strong`, padding 0 16px, 16px font, placeholder `ink-3`. 16px also stops iOS Safari zooming the page when a field is focused.
 - **Focus:** no bespoke focus treatment beyond the ring — `--ring` is the accent, so focus = an optic ring.
 
 ### Option-Select Button (signature control — every assessment question)
-- Min-height 64px, `radius-xl` (16px), 15px font, LH 1.4–1.45.
+- Min-height 64px, `radius-xl` (16px), 16px font (the options are sentences the player reads), LH 1.4–1.45.
 - **Default:** bg `surface`, border `line`, text `ink`.
 - **Hover:** border `line-hover`, bg `#17171A`.
 - **Selected:** bg `rgba(216,227,76,0.08)`, border `optic`, plus a 10×10px accent dot pinned to the right edge (`justify-content: space-between`). This is the clearest expression of the One Accent Rule at the component level.

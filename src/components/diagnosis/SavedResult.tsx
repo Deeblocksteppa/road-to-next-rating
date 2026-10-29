@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
 import { DrillCard } from "@/components/diagnosis/Roadmap";
 import { SKILL_TITLES } from "@/lib/diagnoses";
+import { SkillTitle } from "./SkillTitle";
 import { focusReason, retestStart } from "@/lib/result-copy";
 import type { Roadmap } from "@/lib/roadmap";
 import { SESSIONS_PER_WEEK, sessionMinutes } from "@/lib/session-plan";
@@ -108,7 +109,7 @@ export function SavedResult({
               Your recommended focus
             </p>
             <h1 className="font-display text-[32px] font-extrabold leading-[1.1] tracking-[-0.02em]">
-              {SKILL_TITLES[diagnosis.bottleneck]}
+              <SkillTitle title={SKILL_TITLES[diagnosis.bottleneck]} />
             </h1>
             <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
               {focusReason(diagnosis, answers)}

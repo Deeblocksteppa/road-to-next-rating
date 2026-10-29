@@ -16,7 +16,7 @@ import type { SkillId } from "@/lib/types";
 const PRIMARY =
   "flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]";
 const GHOST =
-  "flex min-h-11 w-full items-center justify-center px-2 py-2 text-center text-[14px] font-medium text-ink-2 transition-colors hover:text-ink";
+  "flex min-h-11 w-full items-center justify-center px-2 py-2 text-center text-[15px] font-medium text-ink-2 transition-colors hover:text-ink";
 
 /**
  * The headline says which way the score went, and only that. It used to read
@@ -118,11 +118,11 @@ export function DeltaScreen({ view }: { view: RetestView }) {
           </span>
         </div>
 
-        <p className="-mt-3 text-[13px] leading-[1.5] text-ink-3">
+        <p className="-mt-3 text-[16px] leading-[1.5] text-ink-3">
           A score from your answers, not a DUPR estimate.
         </p>
 
-        <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
+        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
           {summaryLine(view, direction, change, previous)}
         </p>
 
@@ -254,12 +254,12 @@ function BaselineScreen({ view }: { view: RetestView }) {
           <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-line">
             <div className="h-full rounded-full bg-optic" style={{ width: `${view.readiness}%` }} />
           </div>
-          <p className="mt-2.5 text-[13px] leading-[1.5] text-ink-3">
+          <p className="mt-2.5 text-[16px] leading-[1.5] text-ink-3">
             A score from your answers, not a DUPR estimate.
           </p>
         </div>
 
-        <p className="text-pretty text-[15px] leading-[1.6] text-ink-2">
+        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
           There is no earlier assessment on your account to compare this against, so
           this reading is your starting line. Your next re-test is the one that shows
           what moved. The plan starts on {SKILL_LABELS[view.newBottleneck]}.

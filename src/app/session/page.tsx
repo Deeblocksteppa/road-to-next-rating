@@ -86,7 +86,7 @@ export default async function SessionPage({
           <h1 className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em]">
             You&apos;re done for the week.
           </h1>
-          <p className="text-[15px] leading-[1.6] text-ink-2">
+          <p className="text-[16px] leading-[1.6] text-ink-2">
             All {weekly.total} sessions logged. Rest counts too.
           </p>
         </div>
