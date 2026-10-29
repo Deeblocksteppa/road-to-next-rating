@@ -189,6 +189,8 @@ Codex review recommended after Phase A: it touches the stories (`diagnoses.ts`),
 
 ## Phase B: rebuild Home, merge the plan screens
 
+**DONE 2026-10-28** on `batch-2` (commit "batch 2 phase B: PlanView merge, Home rebuild, names, readiness move"). `PlanView` (`src/components/plan/PlanView.tsx`) renders the plan at `/start` and `/plan`; `Roadmap.tsx`, `SavedResult.tsx` and `SessionDrills.tsx` are deleted, and `WEEK_FOCUS_LABELS` is gone. Departures from the layout below: the member header uses "Your focus" too (not "Week 1 of 3"), and the week number lives in the week line; the anonymous week line reads "3 weeks · …" since the device keeps no start date; the Plan re-test banner carries a compact primary button ("Take your re-test") rather than "Take it ›"; Home's open re-test uses a new flat `block` variant of `RetestOpen`, so Progress keeps the tinted `card` until Phase C. Claim check passed through both entries (signed in by `/test-user` magic link, not the form; see `docs/STATUS.md`).
+
 ### B1. The plan screens today
 
 | Screen | URL | Who sees it | What it shows |

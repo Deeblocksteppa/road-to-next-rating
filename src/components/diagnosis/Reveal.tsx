@@ -24,7 +24,7 @@ export function Reveal({
   onNext,
   beats = FIRST_RUN,
   finishLabel = "See my 3-week plan",
-  verdictEyebrow = "Your bottleneck",
+  verdictEyebrow = "Your focus",
 }: {
   diagnosis: Diagnosis;
   onNext: () => void;
@@ -364,7 +364,7 @@ export function ReadinessReading({
   return (
     <div className="flex flex-col gap-[26px]">
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-3">
-        Readiness for 4.0
+        Readiness
       </p>
 
       <div className="font-display text-[96px] font-extrabold leading-none tabular-nums">

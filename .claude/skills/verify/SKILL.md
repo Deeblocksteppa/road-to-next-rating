@@ -70,6 +70,8 @@ Check script (paste as is):
     if (cs.backgroundImage.includes("gradient")) r.gradient.push(el.tagName + " " + el.className.toString().slice(0, 60));
     const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
     if (!own) continue;
+    // The "ROAD TO NEXT" wordmark is the logo, not text: exempt from every text rule.
+    if (el.closest("[data-wordmark]")) continue;
     if (cs.fontStyle === "italic") r.italic.push(own.slice(0, 50));
     if (own.includes("—")) r.dashes.push(own.slice(0, 80));
     // Mono labels and data readouts (font-mono = IBM Plex Mono, DESIGN.md Typography): exempt.
@@ -94,6 +96,7 @@ What `small` and `smallControls` mean:
 
 - **Exempt from 16px:** text inside an `a`, `button` or `[role=button]` whose classes mark it as a button or text link (`h-[52px]`, `h-14`, `h-11`, `h-[44px]`, `min-h-11`, `underline`). DESIGN.md sets those labels at 15px. They are still reported under `smallControls` when below 15px.
 - **Everything else is running text:** any sentence, or any line of six or more words, under 16px goes in `small`, and so does any other sans line under 15px. A link or button without those classes (a whole tappable row, a drill card, a banner) is not exempt: its sentences are running text.
+- **The wordmark is exempt:** "ROAD TO NEXT" / "RATING" in the header is the logo (`brand/Logo.tsx`, marked `data-wordmark`), not copy.
 - **Mono is exempt throughout:** anything whose computed font is IBM Plex Mono (`font-mono`), meaning labels, units, badges, counters, the countdown and mono data readouts like "6/10" or "1/3 → 2/3".
 
 Gradients are allowed only on the locked/blur scrim and the landing's closing section. Focus rings are filtered out of `shadow`.

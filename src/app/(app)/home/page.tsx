@@ -9,7 +9,6 @@ import { monthDay } from "@/lib/date-format";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
 import { SkillTitle } from "@/components/diagnosis/SkillTitle";
 import { diagnose } from "@/lib/engine";
-import { readinessOfRow } from "@/lib/readiness";
 import {
   getCompletedTodayDrillIds,
   getWeeklyProgress,
@@ -36,7 +35,7 @@ export default async function HomePage({
 
   const { data: diagnosis } = await supabase
     .from("diagnoses")
-    .select("id, bottleneck, root_cause, readiness, skill_scores, assessment_id, created_at")
+    .select("id, bottleneck, assessment_id, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -69,7 +68,6 @@ export default async function HomePage({
   // diagnosis whose plan was never saved (or failed to claim) has nothing to
   // announce.
   const hasPlan = Boolean(diagnosis && plan && plan.diagnosis_id === diagnosis.id);
-  const readiness = diagnosis ? readinessOfRow(diagnosis) ?? 0 : 0;
 
   // The insight's one-line summary, kept on Home so the "why" outlives the
   // reveal. Rebuilt from the answers behind the diagnosis (the engine is
@@ -88,11 +86,8 @@ export default async function HomePage({
 
   // Same derivation the card and button use, so the caption under them can
   // never disagree with what they say.
-  const { todayDone, allDone } = todayState(
-    planDrills,
-    Array.from(completedToday),
-    weekly.total > 0 && weekly.completed >= weekly.total
-  );
+  const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
+  const { todayDone, allDone } = todayState(planDrills, Array.from(completedToday), weekComplete);
   const sessionsLeft = Math.max(0, weekly.total - weekly.completed);
   const nextWeekStart = new Date(startOfWeekUTC().getTime() + 7 * 24 * 60 * 60 * 1000);
   // "Close" means within the week the re-test window opens — past that,
@@ -103,7 +98,7 @@ export default async function HomePage({
   const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
 
   const retestReadyLink = (
-    <Link href="/retest" className="text-optic underline underline-offset-4">
+    <Link href="/retest" className="text-optic underline underline-offset-4 hover:text-optic-hover">
       Re-test ready. Take it now
     </Link>
   );
@@ -139,14 +134,14 @@ export default async function HomePage({
       : null;
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-6 py-8">
+    <main className="flex flex-1 flex-col gap-6 px-6 py-8">
       <ClaimOnLoad saved={searchParams.saved === "1"} hasPlan={hasPlan} />
 
       <header className="flex items-center justify-between pt-4">
         <Logo />
         <div className="flex items-center gap-3.5">
           {timeline && (
-            <span className="font-mono text-[11px] tracking-[0.1em] text-ink-3">
+            <span className="font-mono text-[11px] tabular-nums tracking-[0.1em] text-ink-3">
               DAY {timeline.daysElapsed} / {timeline.totalDays}
             </span>
           )}
@@ -170,90 +165,46 @@ export default async function HomePage({
 
       {diagnosis && bottleneck ? (
         <>
-          {/* Bottleneck card */}
-          <section className="mt-2 flex flex-col gap-2 rounded-2xl border border-line bg-surface p-[22px]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-              Current bottleneck
-            </p>
-            {/* The screen's one heading (Home had none). */}
-            <h1 className="font-display text-[28px] font-extrabold tracking-[-0.01em]">
+          {/* The skill, in one quiet header: today's session below is the page. */}
+          <section className="flex flex-col gap-2">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Your focus</p>
+            <h1 className="font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.01em]">
               <SkillTitle title={SKILL_TITLES[bottleneck]} />
             </h1>
             {insight && (
-              <p className="text-pretty text-[15px] leading-[1.45] text-ink-1">{insight}</p>
+              <p className="text-pretty text-[16px] leading-[1.6] text-ink-1">{insight}</p>
             )}
             {timeline && (
-              <p className="text-[13px] text-ink-2">
-                Week {timeline.weekNumber} of {timeline.weeksTarget} · Same drills
-                each week. Beat your last numbers.
+              <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+                Week {timeline.weekNumber} of {timeline.weeksTarget} · Same drills each week. Beat
+                your last numbers.
               </p>
             )}
           </section>
 
-          {retestOpen && <RetestOpen skillPhrase={SKILL_LABELS[bottleneck]} />}
-
-          {/* Readiness + sessions this week */}
-          <div className="flex gap-4">
-            <section className="flex flex-[1.2] flex-col gap-2.5 rounded-2xl border border-line bg-surface px-[22px] py-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-                Readiness
-              </p>
-              <p className="font-display text-[44px] font-extrabold leading-none tabular-nums">
-                {readiness}
-              </p>
-              <div className="h-1 overflow-hidden rounded-full bg-line">
-                <div className="h-full rounded-full bg-optic" style={{ width: `${readiness}%` }} />
-              </div>
-              <p className="text-[12px] leading-[1.4] text-ink-3">
-                A score from your answers, not a DUPR estimate.
-              </p>
-            </section>
-            <section className="flex flex-1 flex-col justify-between gap-2.5 rounded-2xl border border-line bg-surface px-[22px] py-5">
-              <p className="font-mono text-[10px] uppercase leading-tight tracking-[0.14em] text-ink-3">
-                Sessions
-                <br />
-                this week
-              </p>
-              <p className="font-display text-[26px] font-extrabold leading-none">
-                {weekly.completed}
-                <span className="text-[18px] font-semibold text-ink-3">
-                  /{weekly.total}
-                </span>
-              </p>
-              <div className="flex gap-1.5">
-                {Array.from({ length: weekly.total }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={
-                      i < weekly.completed
-                        ? "h-2.5 w-2.5 rounded-full bg-optic"
-                        : "h-2.5 w-2.5 rounded-full border border-line-strong box-border"
-                    }
-                  />
-                ))}
-              </div>
-            </section>
-          </div>
+          {/* Open re-test: the page's main element and its one accent, whatever
+              else happened today. Today's button goes secondary under it. */}
+          {retestOpen && <RetestOpen variant="block" skillPhrase={SKILL_LABELS[bottleneck]} />}
 
           <TodaySession
             drills={planDrills}
             completedToday={Array.from(completedToday)}
-            weekComplete={weekly.total > 0 && weekly.completed >= weekly.total}
+            weekComplete={weekComplete}
+            weekly={weekly}
             secondary={retestOpen}
           />
 
           {caption && (
             // Sentence case in the body voice: at four to eight words, spaced
             // mono caps had to be decoded (DESIGN.md, Uppercase-Mono limit).
-            <p className="pb-1 text-center text-[13px] leading-[1.5] text-ink-3">
-              {caption}
-            </p>
+            // Left-aligned: nothing is centered except the reveal.
+            <p className="-mt-2 pb-1 text-[16px] leading-[1.5] text-ink-2">{caption}</p>
           )}
         </>
       ) : (
-        <p className="mt-2 rounded-2xl border border-dashed border-line p-4 text-sm text-ink-2">
+        <p className="mt-2 border-y border-line py-5 text-[16px] leading-[1.6] text-ink-2">
           No diagnosis yet.{" "}
-          <Link href="/start" className="underline underline-offset-4">
+          <Link href="/start" className="text-ink underline underline-offset-4">
             Take the assessment
           </Link>
           .

@@ -197,7 +197,7 @@ function BriefScreen({
       <header className="flex items-center justify-between pt-4">
         <Link
           href="/plan"
-          aria-label="Back to plan"
+          aria-label="Back to my plan"
           className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -456,7 +456,7 @@ export function SessionCompleteScreen({ weekly }: { weekly: WeeklyProgress }) {
         href="/plan"
         className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
       >
-        Back to plan
+        Back to my plan
       </Link>
     </>
   );

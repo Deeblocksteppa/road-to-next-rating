@@ -36,6 +36,7 @@ export function Logo() {
     <div className="flex items-center gap-2.5">
       <LogoMark />
       <span
+        data-wordmark
         className="font-display text-xs font-extrabold tracking-[0.08em]"
         style={{ fontStretch: "125%" }}
       >
@@ -52,7 +53,7 @@ export function Logo() {
  */
 export function LogoFull() {
   return (
-    <div className="flex items-center gap-[18px]">
+    <div data-wordmark className="flex items-center gap-[18px]">
       <LogoMark size={56} strokeWidth={3.2} />
       <div className="flex flex-col">
         <span

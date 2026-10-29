@@ -95,7 +95,7 @@ export default async function SessionPage({
           href="/plan"
           className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
         >
-          Back to plan
+          Back to my plan
         </Link>
       </main>
     );

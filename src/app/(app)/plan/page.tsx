@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SessionDrills } from "@/components/plan/SessionDrills";
+import { PlanView } from "@/components/plan/PlanView";
 import { RetestOpen } from "@/components/retest/RetestOpen";
+import { monthDay } from "@/lib/date-format";
 import { getTodayLog, getWeeklyProgress } from "@/lib/drill-sessions";
-import { sessionShape } from "@/lib/session-plan";
 import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
-import { WEEK_FOCUS_LABELS } from "@/lib/roadmap";
+import { readinessOfRow } from "@/lib/readiness";
+import { retestStart } from "@/lib/result-copy";
 import { createClient } from "@/lib/supabase/server";
-import type { SkillId } from "@/lib/types";
+import type { AnswerMap, SkillId } from "@/lib/types";
 
 export default async function PlanPage() {
   const supabase = await createClient();
@@ -23,7 +24,7 @@ export default async function PlanPage() {
 
   const { data: diagnosis } = await supabase
     .from("diagnoses")
-    .select("bottleneck")
+    .select("bottleneck, readiness, skill_scores, assessment_id")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -51,75 +52,62 @@ export default async function PlanPage() {
     plan && plan.retest_date ? getPlanTimeline(plan.created_at, plan.retest_date) : null;
 
   const bottleneck = diagnosis?.bottleneck as SkillId | undefined;
-
   const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
 
+  // The start line under the re-test goal quotes the player's own answer, as
+  // the anonymous plan did before sign-up, so the two screens match.
+  let answers: AnswerMap | null = null;
+  if (diagnosis?.assessment_id) {
+    const { data: assessment } = await supabase
+      .from("assessments")
+      .select("answers")
+      .eq("id", diagnosis.assessment_id)
+      .maybeSingle();
+    if (assessment?.answers && typeof assessment.answers === "object") {
+      answers = assessment.answers as AnswerMap;
+    }
+  }
+
   return (
-    <main className="flex flex-col gap-3.5 px-6 py-8">
-      {/* Open re-test: said first, on every tab, whatever today holds. */}
+    <main className="flex flex-col gap-8 px-6 py-8">
+      {/* Open re-test: said first, on every tab, whatever today holds. It
+          holds the screen's accent; every drill's Start goes secondary. */}
       {retestOpen && (
         <div className="pt-4">
           <RetestOpen variant="banner" />
         </div>
       )}
 
-      {/*
-        Small week marker, the heading, one plain line saying what today is,
-        and a compact status. The status used to be an optic "0/2 SESSIONS"
-        in the header and a long wrapping mono sentence under it.
-      */}
-      <header className="flex flex-col gap-1.5 pt-4">
-        {timeline && (
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-            Week {timeline.weekNumber} of {timeline.weeksTarget}
-          </p>
-        )}
-        <h1 className="font-display text-2xl font-bold tracking-[-0.01em]">
-          {bottleneck ? WEEK_FOCUS_LABELS[bottleneck] : "My Plan"}
-        </h1>
-        {plan && planDrills.length > 0 && (
-          <p className="text-[15px] leading-[1.5] text-ink-2">
-            Today: {sessionShape(planDrills).replace(", ", " · ")}
-          </p>
-        )}
-        {plan && (
-          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-3">
-            {weekly.completed} of {weekly.total} sessions this week
-          </p>
-        )}
-      </header>
-
-      {plan ? (
-        <>
-          <SessionDrills drills={planDrills} todayLog={todayLog} weekly={weekly} />
-
-          {/* Neutral, not the accent-tinted variant: the page's one accent
-              is the next drill's Start button, and this card is context. */}
-          {plan.in_game_rule && (
-            <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface px-5 py-[18px]">
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-                In-game rule
-              </p>
-              <p className="text-pretty text-[15px] leading-[1.55] text-ink">
-                {plan.in_game_rule}
-              </p>
-            </section>
-          )}
-
-          {plan.retest_metric && (
-            <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface px-5 py-[18px]">
-              {/* "Match" so it cannot be read as the drills' practice target. */}
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-                Match re-test target
-              </p>
-              <p className="text-[14px] leading-[1.55] text-ink-2">{plan.retest_metric}</p>
-            </section>
-          )}
-        </>
+      {plan && bottleneck ? (
+        <div className={retestOpen ? "" : "pt-4"}>
+          <PlanView
+            skill={bottleneck}
+            drills={planDrills}
+            inGameRule={plan.in_game_rule}
+            retestMetric={plan.retest_metric}
+            retestStart={answers ? retestStart(bottleneck, answers) : null}
+            retestWhen={
+              retestOpen
+                ? "Open now"
+                : plan.retest_date
+                  ? monthDay(new Date(plan.retest_date))
+                  : ""
+            }
+            readiness={diagnosis ? readinessOfRow(diagnosis) : null}
+            weeksTarget={timeline?.weeksTarget ?? 3}
+            context={{
+              kind: "member",
+              weekNumber: timeline?.weekNumber ?? null,
+              todayLog,
+              weekly,
+              retestOpen,
+            }}
+          />
+        </div>
       ) : (
-        <p className="rounded-2xl border border-dashed border-line p-4 text-sm text-ink-2">
+        <p className="mt-4 border-y border-line py-5 text-[16px] leading-[1.6] text-ink-2">
           No plan yet.{" "}
-          <Link href="/start" className="underline underline-offset-4">
+          <Link href="/start" className="text-ink underline underline-offset-4">
             Take the assessment
           </Link>
           .

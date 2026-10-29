@@ -48,7 +48,7 @@ export default function SessionError({
           href="/plan"
           className="flex h-[52px] w-full items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover"
         >
-          Back to plan
+          Back to my plan
         </Link>
       </div>
     </main>

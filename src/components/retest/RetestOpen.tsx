@@ -7,8 +7,11 @@ import Link from "next/link";
  * this week" as soon as a session was logged, so on re-test day the one
  * entry point could disappear.
  *
- *   - `card`: the main element of a screen (Home, Progress).
- *   - `banner`: a compact line at the top of a screen (Plan).
+ *   - `card`: the main element of a screen (Progress).
+ *   - `block`: the main element of Home. The card's content, flat: hairlines
+ *     instead of a tinted card, and the button is its only accent.
+ *   - `banner`: a compact line at the top of a screen (Plan), between
+ *     hairlines, with the screen's one primary button.
  */
 export function RetestOpen({
   skillPhrase,
@@ -16,21 +19,41 @@ export function RetestOpen({
 }: {
   /** In-sentence skill label for the card: "your third-shot drop". */
   skillPhrase?: string;
-  variant?: "card" | "banner";
+  variant?: "card" | "block" | "banner";
 }) {
   if (variant === "banner") {
     return (
-      <Link
-        href="/retest"
-        className="flex items-center justify-between gap-4 rounded-xl border border-optic bg-optic/[0.05] px-4 py-3.5 transition-colors hover:bg-optic/[0.08]"
-      >
-        <span className="text-[15px] leading-[1.45] text-ink">
+      <section className="flex flex-col items-start gap-3 border-y border-line py-4">
+        <p className="text-[16px] leading-[1.5] text-ink">
           <span className="font-semibold">Your re-test is open.</span> See what moved.
-        </span>
-        <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.12em] text-optic">
-          Take it ›
-        </span>
-      </Link>
+        </p>
+        <Link
+          href="/retest"
+          className="inline-flex h-11 items-center justify-center rounded-lg bg-optic px-5 text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+        >
+          Take your re-test
+        </Link>
+      </section>
+    );
+  }
+  if (variant === "block") {
+    return (
+      <section className="flex flex-col gap-3 border-y border-line py-6">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Re-test open</p>
+        <h2 className="font-display text-[26px] font-extrabold leading-[1.15] tracking-[-0.01em]">
+          {skillPhrase ? `Find out if ${skillPhrase} moved.` : "Find out what moved."}
+        </h2>
+        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+          Answer the same twelve questions. It takes about four minutes, and your next plan
+          starts from the result.
+        </p>
+        <Link
+          href="/retest"
+          className="mt-1 flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+        >
+          Take your re-test
+        </Link>
+      </section>
     );
   }
   return (

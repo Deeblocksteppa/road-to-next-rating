@@ -4,15 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Assessment } from "@/components/assessment/Assessment";
 import { Computing } from "@/components/assessment/Computing";
 import { Reveal } from "@/components/diagnosis/Reveal";
-import { RoadmapScreen } from "@/components/diagnosis/Roadmap";
-import { SavedResult } from "@/components/diagnosis/SavedResult";
 import { SaveGate } from "@/components/auth/SaveGate";
+import { PlanView } from "@/components/plan/PlanView";
 import { SKILL_TITLES } from "@/lib/diagnoses";
 import { diagnose } from "@/lib/engine";
 import { clearLocalResult, loadLocalResult, saveLocalResult } from "@/lib/local-result";
 import { clearSignupPending, loadSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 import { generateRoadmap } from "@/lib/roadmap";
+import { focusReason, retestStart } from "@/lib/result-copy";
 import { AnswerMap } from "@/lib/types";
 import {
   saveAssessment,
@@ -26,29 +26,28 @@ import {
 /**
  * The anonymous funnel.
  *
- * First pass: assessment → computing → reveal → roadmap → save gate. From the
- * gate, "Not now" lands on the saved result, and from then on the saved
- * result is where an anonymous player lives. It is also what /start opens
- * on for anyone with a result on this device, so a returning player sees
- * their diagnosis and plan instead of question one.
+ * First pass: assessment → computing → reveal → the plan (`PlanView`). The
+ * plan is where an anonymous player lives from then on. It is also what
+ * /start opens on for anyone with a result on this device, so a returning
+ * player sees their diagnosis and plan instead of question one.
  *
- * Nothing on the saved result leads back into the gate by itself: the gate
- * is reachable only by tapping "Create a free account", and every way out of
- * it ("Not now", "Back to my result") returns to the saved result. Replaying
- * the diagnosis also returns there. That is what removes the old loop
- * (gate → committed → roadmap → gate).
+ * Nothing opens the save form by itself: only "Start session" and "Save my
+ * plan" do, and every way out of it ("Not now", "Back to my plan") returns
+ * to the plan. Replaying the diagnosis also returns there. The plan is saved
+ * once, when the reveal ends, so a sign-up claims the rows the player saw
+ * rather than writing new ones.
  */
-type Phase = "loading" | "assessment" | "computing" | "reveal" | "roadmap" | "savegate" | "saved";
+type Phase = "loading" | "assessment" | "computing" | "reveal" | "savegate" | "saved";
 
 export default function Start() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [answers, setAnswers] = useState<AnswerMap | null>(null);
-  // True once the player has a stable home on the saved result: set by
-  // leaving the gate, by replaying, or by arriving with a stored result.
+  // True once the plan has been shown: replaying the reveal then returns to
+  // it without saving anything again.
   const [settled, setSettled] = useState(false);
   // The address a sign-up on this device is waiting on (`signup-pending.ts`).
-  // Drives the Save Gate's check-your-inbox screen and the result page's
-  // status banner, so neither pitches an account to someone who just made one.
+  // Drives the Save Gate's check-your-inbox screen and the plan's status
+  // line, so neither pitches an account to someone who just made one.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   // Why the save form is open: "Start session" adds one line saying sessions
   // need an account.
@@ -127,24 +126,30 @@ export default function Start() {
   }
 
   function handleRevealNext() {
-    if (settled) {
-      setPhase("saved");
-      return;
+    if (!settled) {
+      // Persist the plan once, linked to the diagnosis saved earlier.
+      const pending = getPendingIds();
+      if (roadmap && pending.diagnosis && !pending.plan) {
+        savePlan(pending.diagnosis, roadmap).catch((err) =>
+          console.error("Failed to save plan:", err)
+        );
+      }
+      setSettled(true);
     }
-    // Persist the plan once, linked to the diagnosis saved earlier.
-    const pending = getPendingIds();
-    if (roadmap && pending.diagnosis && !pending.plan) {
-      savePlan(pending.diagnosis, roadmap).catch((err) =>
-        console.error("Failed to save plan:", err)
-      );
-    }
-    setPhase("roadmap");
+    setPhase("saved");
+    window.scrollTo(0, 0);
   }
 
   function handleLeaveGate() {
     setGateReason("save");
-    setSettled(true);
     setPhase("saved");
+    window.scrollTo(0, 0);
+  }
+
+  function openGate(reason: "save" | "session") {
+    setGateReason(reason);
+    setPhase("savegate");
+    window.scrollTo(0, 0);
   }
 
   function handleStartOver() {
@@ -170,10 +175,6 @@ export default function Start() {
     return <Reveal diagnosis={diagnosis} onNext={handleRevealNext} />;
   }
 
-  if (phase === "roadmap" && roadmap) {
-    return <RoadmapScreen roadmap={roadmap} onCommit={() => setPhase("savegate")} />;
-  }
-
   if (phase === "savegate" && roadmap && diagnosis) {
     return (
       <SaveGate
@@ -189,30 +190,34 @@ export default function Start() {
 
   if (phase === "saved" && diagnosis && roadmap && answers) {
     return (
-      <SavedResult
-        diagnosis={diagnosis}
-        roadmap={roadmap}
-        answers={answers}
-        pendingEmail={pendingEmail}
-        onCreateAccount={() => {
-          setGateReason("save");
-          setPhase("savegate");
-          window.scrollTo(0, 0);
-        }}
-        onStartSession={() => {
-          setGateReason("session");
-          setPhase("savegate");
-          window.scrollTo(0, 0);
-        }}
-        onChangeEmail={() => {
-          clearSignupPending();
-          setPendingEmail(null);
-          setPhase("savegate");
-          window.scrollTo(0, 0);
-        }}
-        onReplay={() => setPhase("reveal")}
-        onStartOver={handleStartOver}
-      />
+      <main className="min-h-app w-full bg-background text-ink">
+        <div className="mx-auto w-full max-w-[600px] px-6 py-12 md:py-16">
+          <PlanView
+            skill={diagnosis.bottleneck}
+            drills={roadmap.weeklyDrills}
+            inGameRule={roadmap.inGameRule}
+            retestMetric={roadmap.retestMetric}
+            retestStart={retestStart(diagnosis.bottleneck, answers)}
+            retestWhen={`In ${roadmap.weeksTarget} weeks`}
+            readiness={diagnosis.readiness}
+            weeksTarget={roadmap.weeksTarget}
+            context={{
+              kind: "anonymous",
+              focusReason: focusReason(diagnosis, answers),
+              pendingEmail,
+              onStartSession: () => openGate("session"),
+              onSavePlan: () => openGate("save"),
+              onChangeEmail: () => {
+                clearSignupPending();
+                setPendingEmail(null);
+                openGate("save");
+              },
+              onReplay: () => setPhase("reveal"),
+              onStartOver: handleStartOver,
+            }}
+          />
+        </div>
+      </main>
     );
   }
 

@@ -56,7 +56,7 @@ export function DrillBriefContent({
           {/* Sentence case: at this length mono caps wrapped at 375px. */}
           {retestMetric && (
             <p className="text-[16px] leading-[1.5] text-ink-2">
-              The match re-test target is a separate number, on your plan.
+              The re-test goal is a separate number, on your plan.
             </p>
           )}
         </div>
