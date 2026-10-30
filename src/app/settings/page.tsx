@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Fragment } from "react";
 
 import { signOut } from "@/app/auth/actions";
 import { DrillReminderToggle } from "@/components/settings/DrillReminderToggle";
 import { RetestReminderToggle } from "@/components/settings/RetestReminderToggle";
 import { SUPPORT_MAILTO } from "@/lib/contact";
 import { monthYear } from "@/lib/date-format";
+import { LEGAL_LINKS } from "@/lib/legal";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
@@ -162,6 +164,25 @@ export default async function SettingsPage() {
             <span className="text-[15px] text-ink">Contact support</span>
             <span className="text-ink-3">›</span>
           </a>
+        </div>
+      </section>
+
+      {/* LEGAL */}
+      <section className="flex flex-col gap-2.5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">Legal</p>
+        <div className="flex flex-col rounded-2xl border border-line bg-surface">
+          {LEGAL_LINKS.map((link, i) => (
+            <Fragment key={link.href}>
+              {i > 0 && <div className="h-px bg-line" />}
+              <Link
+                href={link.href}
+                className="flex items-center justify-between rounded-2xl px-[18px] py-[15px] transition-colors hover:bg-[#17171A]"
+              >
+                <span className="text-[15px] text-ink">{link.label}</span>
+                <span className="text-ink-3">›</span>
+              </Link>
+            </Fragment>
+          ))}
         </div>
       </section>
 

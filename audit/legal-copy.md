@@ -207,3 +207,22 @@ Footer: You're getting this because re-test reminders are on. Unsubscribe: {link
 
 **Drill reminder footer (add to existing email):**
 You're getting this because session reminders are on. Unsubscribe: {link}
+
+**Settings, Legal section (approved 2026-10-30):**
+Section label: Legal. Rows: Terms, Privacy Policy, Refund Policy.
+
+**Delete account confirmation, no renewal date on file (approved 2026-10-30):**
+Subscribed: Deleting your account cancels Progress right away and ends access today. To stop paying but keep access until the end of your billing period, cancel your subscription instead.
+Cancellation already scheduled: Your plan is already set to end. Deleting your account now ends access today.
+
+**Delete account errors (approved 2026-10-30):**
+Partial failure: We couldn't finish cancelling your billing, so your account wasn't deleted. Email support@roadtonextrating.com and we'll sort it out.
+Stripe unreachable: We couldn't reach billing, so nothing was changed. Try again, or email support@roadtonextrating.com.
+
+**Unsubscribe page (approved 2026-10-30):**
+Confirm: Turn off {session reminders / re-test reminders}? Button: Turn off
+Done: You're unsubscribed. You can turn these back on in Settings.
+Invalid link: This link no longer works. You can turn off reminders in Settings.
+
+**Expired anonymous result, button (approved 2026-10-30):**
+Take the assessment

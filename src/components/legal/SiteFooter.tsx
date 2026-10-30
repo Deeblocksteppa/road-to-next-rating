@@ -1,59 +1,27 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
+import { LEGAL_LINKS } from "@/lib/legal";
 
-const LINKS = [
-  { href: "/terms", label: "Terms" },
-  { href: "/privacy", label: "Privacy Policy" },
-  { href: "/refunds", label: "Refund Policy" },
-];
-
-// Assessment answers and a running session timer aren't persisted, so a
-// same-tab tap on these routes would lose them.
-const NEW_TAB_PREFIXES = ["/start", "/session", "/retest", "/paywall"];
-
-// The tab bar is fixed over the bottom 64px of these.
-const TABBED_PREFIXES = ["/home", "/plan", "/progress"];
-
-const matches = (pathname: string, prefixes: string[]) =>
-  prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-
-/** Every page's legal links. Lines up with the column of the page above it. */
-export function SiteFooter() {
-  const pathname = usePathname();
-  const newTab = matches(pathname, NEW_TAB_PREFIXES);
-
-  // Widths include this column's own padding, as the pages' columns do. The
-  // landing's footer pads outside a 1120px column, hence the larger step there.
-  const column =
-    pathname === "/"
-      ? "max-w-[1200px] md:px-10"
-      : LINKS.some((link) => link.href === pathname)
-        ? "max-w-[680px]"
-        : "max-w-md";
-
+/**
+ * Legal links and the support email, on the pages with no unsaved work: sign
+ * in, sign up, the legal pages and Settings. Never in a flow, where answers or
+ * a timer could be lost and a full-height screen would start to scroll. The
+ * landing's own footer carries the same links.
+ *
+ * `column` matches the max width of the page above, padding included.
+ */
+export function SiteFooter({ column = "max-w-md" }: { column?: string }) {
   const linkClass =
     "-mx-2 -my-3 px-2 py-3 text-[15px] text-ink-2 transition-colors hover:text-ink";
 
   return (
-    <footer
-      className={`border-t border-line pt-8 ${
-        matches(pathname, TABBED_PREFIXES) ? "pb-24" : "pb-8"
-      }`}
-    >
+    <footer className="border-t border-line py-8">
       <nav
         className={`mx-auto flex w-full flex-wrap items-center gap-x-6 gap-y-5 px-6 ${column}`}
       >
-        {LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={linkClass}
-            {...(newTab ? { target: "_blank", rel: "noopener" } : {})}
-          >
+        {LEGAL_LINKS.map((link) => (
+          <Link key={link.href} href={link.href} className={linkClass}>
             {link.label}
           </Link>
         ))}

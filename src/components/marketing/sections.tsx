@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { LogoFull, Logo } from "@/components/brand/Logo";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
+import { LEGAL_LINKS } from "@/lib/legal";
 import { QUESTIONS } from "@/lib/questions";
 import { BreakMark, BreakRule } from "./BreakRule";
 import { RiseIn } from "./RiseIn";
@@ -562,13 +564,21 @@ export function Footer() {
     <footer className="border-t border-line px-6 py-12 md:px-10">
       <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-8 md:flex-row md:items-center md:justify-between">
         <Logo />
-        {/* The legal links and support email are in SiteFooter, right below. */}
-        <Link
-          href="/login"
-          className="-mx-2 -my-3 self-start px-2 py-3 text-[15px] text-ink-2 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic md:self-auto"
-        >
-          Sign in
-        </Link>
+        <nav className="flex flex-wrap items-center gap-x-7 gap-y-3">
+          {[
+            { href: "/login", label: "Sign in" },
+            ...LEGAL_LINKS,
+            { href: SUPPORT_MAILTO, label: SUPPORT_EMAIL },
+          ].map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="-mx-2 -my-3 px-2 py-3 text-[15px] text-ink-2 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
         <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3">
           © {new Date().getFullYear()} Road to Next Rating
         </p>

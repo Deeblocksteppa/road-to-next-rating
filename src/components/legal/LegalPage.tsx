@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/Logo";
+import { SiteFooter } from "@/components/legal/SiteFooter";
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 import { LEGAL_EFFECTIVE_LABEL } from "@/lib/legal";
 
@@ -16,22 +17,25 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <main className="mx-auto min-h-app w-full max-w-[680px] px-6 py-12 md:py-20">
-      <Link href="/" className="inline-block">
-        <Logo />
-      </Link>
+    <>
+      <main className="mx-auto min-h-app w-full max-w-[680px] px-6 py-12 md:py-20">
+        <Link href="/" className="inline-block">
+          <Logo />
+        </Link>
 
-      <h1 className="mt-14 font-display text-[24px] font-bold leading-[1.25] tracking-[-0.01em] text-ink md:text-[32px] md:leading-[1.15]">
-        {title}
-      </h1>
-      <p className="mt-3 text-[15px] leading-[1.5] text-ink-2">
-        Effective {LEGAL_EFFECTIVE_LABEL}
-      </p>
+        <h1 className="mt-14 font-display text-[24px] font-bold leading-[1.25] tracking-[-0.01em] text-ink md:text-[32px] md:leading-[1.15]">
+          {title}
+        </h1>
+        <p className="mt-3 text-[15px] leading-[1.5] text-ink-2">
+          Effective {LEGAL_EFFECTIVE_LABEL}
+        </p>
 
-      <div className="mt-8 flex flex-col gap-4 text-[16px] leading-[1.6] text-ink-1 md:leading-[1.7]">
-        {children}
-      </div>
-    </main>
+        <div className="mt-8 flex flex-col gap-4 text-[16px] leading-[1.6] text-ink-1 md:leading-[1.7]">
+          {children}
+        </div>
+      </main>
+      <SiteFooter column="max-w-[680px]" />
+    </>
   );
 }
 

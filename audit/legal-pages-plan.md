@@ -18,7 +18,9 @@ Each has a default. Say "go" and I build the defaults.
 | 8 | "Everything saved to it" (`settings/delete/page.tsx:49`, `login/page.tsx:37`), while payment records stay in Stripe. | Leave them and flag them here, unless you give replacement lines. |
 | 9 | One real test send to `delivered@resend.dev` (Resend's sink address, no real recipient) to prove Resend accepts the new headers. | Yes. All other email checks render without sending. |
 
-**Answered 2026-10-30.** #1 yes, `.env.local` is production: dry-run locally, test with `/test-user` and clean up. #2 use the variant, with this copy: "Your plan already ends on {date}. Deleting your account now ends access today." #4 yes. Defaults that change no copy, delete nothing and don't touch billing stand (#5, #6, #7, #8, #9). #3 and every default in those three categories wait for an answer, and are held out of the build until then.
+**Answered 2026-10-30.** #1 yes, `.env.local` is production: dry-run locally, test with `/test-user` and clean up. #2 use the variant, with this copy: "Your plan already ends on {date}. Deleting your account now ends access today." #4 yes. Defaults that change no copy, delete nothing and don't touch billing stand (#5, #7, #8, #9). #3 and the 21 held defaults (copy, deletion, billing) were approved the same day; their wording is in `legal-copy.md`.
+
+**Changed after Phase 1:** decision 6 is withdrawn. The site footer is scoped, not in the root layout. It appears on `/login`, `/signup`, `/terms`, `/privacy`, `/refunds` and `/settings` with its sub-routes, and the landing's own footer carries the same links in one row. It is off `/start`, `/session`, `/retest`, `/home`, `/plan`, `/progress` and `/paywall`. Footer links open in the same tab. Legal links inside a flow (save form, paywall) open a new tab.
 
 **Migration order rule:** now in `docs/STATUS.md` under Conventions. Phase 4's order follows it.
 
@@ -44,9 +46,9 @@ These are places where following the brief literally would break something.
 ## Phase 1: Legal pages and links
 
 **Files**
-- New: `src/lib/legal.ts` (effective date, terms version), `src/components/legal/LegalPage.tsx`, `src/components/legal/SiteFooter.tsx`, `src/app/refunds/page.tsx`
+- New: `src/lib/legal.ts` (effective date, terms version, link names), `src/components/legal/LegalPage.tsx`, `src/components/legal/SiteFooter.tsx`, `src/app/refunds/page.tsx`, and layouts for `/settings`, `/login` and `/signup`
 - Replace: `src/app/terms/page.tsx`, `src/app/privacy/page.tsx`
-- Edit: `src/app/layout.tsx` (footer), `src/components/marketing/sections.tsx` (landing footer keeps logo, Sign in and ©; legal links move to the shared footer), `src/app/settings/page.tsx` (Legal row, held: its label is decision 3)
+- Edit: `src/components/marketing/sections.tsx` (one landing footer row: logo, Sign in, legal links, email, ©), `src/app/settings/page.tsx` (Legal section)
 - Also committed here: `audit/legal-copy.md`, `audit/legal-inventory.md`, this plan
 
 **Design:** `max-w-[680px]`, Archivo headings, body 16px in `ink-1` as the current legal pages use, hairline rule between sections, left-aligned, no accent. Text is written into the page verbatim except that `[MERGE DATE]` becomes the date. A scratch script compares each page's rendered text with the markdown, line by line.
@@ -56,14 +58,12 @@ These are places where following the brief literally would break something.
 - Refunds: `[TRUE ONCE STRIPE'S RENEWAL EMAILS ARE ON IN THE LIVE ACCOUNT]`
 
 **Risks**
-- **Full-height screens start scrolling.** `globals.css` says `min-h-app` exists so those screens don't scroll. With a footer in the root layout, the session, assessment, computing and reveal screens gain about 90px of scroll. You asked for every page, so I'll do it and show those screens in the screenshots.
-- **Tab bar overlap.** The bar is `fixed` at 64px, so the footer needs bottom padding on `/home`, `/plan` and `/progress`. That makes the footer a client component using `usePathname`, as decision 6 also needs.
-- **Reveal background.** `reveal-bg` is reserved for those screens, so the footer sits on `background` below the reveal. That's a visible tone change at the fold.
+- **Pages with the footer scroll a little.** `/login`, `/signup` and `/settings/manage` are full-height, so the footer sits below the fold.
 - **Width at 375.** The four links don't fit on one 15px line, so the email wraps to its own line.
 
 **Still false after this phase:** everything in the table at the end. The pages go up before Phases 2 to 5 make them true, which is fine on an unmerged branch.
 
-**Verify:** tsc, lint, text diff against the markdown, footer present on signed-out and signed-in routes, nothing hidden by the tab bar.
+**Verify:** tsc, lint, text diff against the markdown, footer present where it belongs and absent from every flow, full-height flow screens don't scroll.
 
 ---
 
