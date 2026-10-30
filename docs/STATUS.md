@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-10-30 · `batch-2` merged into `main`; both batch-2 migrations run on production · `rls-profiles` merged into `main`; its migration not run
+Updated 2026-10-30 · `batch-2` merged into `main`; both batch-2 migrations run on production · `rls-profiles` merged into `main`; its `profiles` grants confirmed live on the database in `.env.local`
 
 ## Current state
 
@@ -30,7 +30,7 @@ Updated 2026-10-30 · `batch-2` merged into `main`; both batch-2 migrations run 
 - [x] Run `supabase/migrations/20261028120000_plan_text_em_dashes.sql` on production (2026-10-29; before and after checks passed)
 - [x] Run `supabase/migrations/20261029120000_retest_source_plan.sql` on production (2026-10-29; before and after checks passed). The pre-check returned 2 rows, both false positives: test accounts `73f35f36…` and `7bede4e3…` whose baseline plan's `created_at` was moved back by hand, so the plan counts as its own source. Nothing to clean up
 - [ ] RLS: `plans: update own` lets a player change any column of their own plans, including `retest_date` and `created_at`, so the re-test gate can be opened early through the API. Restrict the updatable columns
-- [ ] Run `supabase/migrations/20261029180000_profiles_column_grants.sql` on production with its pre- and after-checks
+- [ ] Confirm `supabase/migrations/20261029180000_profiles_column_grants.sql` is fully applied on production with its after-checks. The `profiles` half is live: on 2026-10-30 a test user's own JWT got HTTP 403 (42501) from the REST API setting `subscription_status` and `stripe_customer_id`, nothing changed, and both reminder toggles saved through Settings (local app at `b1c7d70`). The `drill_sessions` policies were not checked there
 - [ ] Confirm no live subscription lacks `metadata.supabase_user_id` (one made by hand in the Stripe dashboard would be refused by cancel, resume and delete)
 - [x] RLS: `drill_sessions: update own` has the same plan-ownership check (same migration, not run)
 - [ ] Read the delete-refusal line added in `rls-profiles`
