@@ -47,4 +47,5 @@ Next.js 14 App Router, TypeScript, Tailwind 3 + shadcn, Supabase (auth + Postgre
 - **Never commit temp files.** Scratch scripts, test routes (`src/app/dev-*`, `*-tmp`), stray screenshots and `.env*` stay out. Put them in the scratchpad.
 - **End every task by listing files changed** and updating `docs/STATUS.md`.
 - **Flag high-risk changes for Codex.** When a change touches sign-up/claim/auth, Stripe/paywall/free vs. paid, the engine/scoring/stories/readiness, or rebuilds a main screen, end your report with: "Codex review recommended: [branch or commit]."
+- **End each report with "What this means":** 1–3 plain sentences explaining the main technical concept involved, for a non-expert. Skip it for trivial changes.
 - Skills: `/verify`, `/test-user`, `/critique`, `/ship`. Subagent: `reviewer` (read-only, checks a diff or screens against these rules).
