@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
+import { SiteFooter } from "@/components/legal/SiteFooter";
 import "./globals.css";
 
 // Display — Archivo (variable). Include the wdth axis for the expanded wordmark.
@@ -59,7 +60,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

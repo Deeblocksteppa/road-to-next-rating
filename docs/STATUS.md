@@ -18,6 +18,10 @@ Updated 2026-10-30 · `batch-2` merged into `main`; both batch-2 migrations run 
 - **Claude Code setup:** `CLAUDE.md`, skills `/verify` `/test-user` `/critique` `/ship`, subagent `reviewer`, this file. Reports end with "What this means", a plain explanation of the main technical concept, skipped for trivial changes.
 - **Codex setup:** `AGENTS.md` makes Codex a read-only reviewer that follows `CLAUDE.md` and reports Blockers / Should-fix / Nits. `CLAUDE.md` tells Claude to end its report with "Codex review recommended: [branch or commit]" for auth, billing, engine or main-screen changes.
 
+## Conventions
+
+- **Migration order.** If the code needs the migration to work, run the migration before merge. If the migration is what makes the code safe, run it first too. If the code must work with and without the migration, merge first. Always run before/after check queries.
+
 ## Outstanding
 
 **Batch 1 leftover**
