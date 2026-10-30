@@ -38,16 +38,19 @@ const NET_TOP = 88;
 
 export function ShotDemo({
   drillId,
+  setup,
   forceStatic = false,
 }: {
   drillId: string;
+  /** The prescribed version's setup. A wall drill isn't played over a net, so it gets no court. */
+  setup?: string;
   /** Render the reduced-motion state regardless of the OS setting (previews, fixtures). */
   forceStatic?: boolean;
 }) {
   const reduced = usePrefersReducedMotion() || forceStatic;
 
   const type = shotTypeForDrill(drillId);
-  if (!type) return null;
+  if (!type || setup === "Wall") return null;
   const demo = DEMOS[type];
 
   return (

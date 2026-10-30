@@ -250,7 +250,7 @@ function BriefScreen({
       {/* Shot demo sits centered in the empty space. It renders nothing for
           drills whose animation isn't built yet, in which case the two
           spacers simply collapse into one. */}
-      <ShotDemo drillId={drill.id} />
+      <ShotDemo drillId={drill.id} setup={drill.setup} />
 
       <div className="flex-1" />
 

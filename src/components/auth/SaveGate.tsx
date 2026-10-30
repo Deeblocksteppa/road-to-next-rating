@@ -202,31 +202,36 @@ export function SaveGate({
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
           Save your plan
         </p>
-        <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
+        <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
           Keep what you just found.
         </h1>
         {/* What each choice gets, plainly: the account is what runs sessions
             and keeps the counts. Skipping keeps the plan on this device and
             nothing more; it used to read as though sessions came with it. */}
-        {/* "Save my plan" opens this form, so its first words say saving makes an account. */}
+        {/* The first words answer the button that opened the form: "Save my
+            plan" hears that saving makes an account, "Start session" that
+            sessions need one. Each says it once. */}
         <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-          Saving creates a free account. It runs your guided sessions and keeps what you log, on any device.
-          Skip it and your plan stays on this device, but sessions and logging need the
-          account. No card, nothing to pay.
+          {reason === "session" ? (
+            <>
+              Sessions need a free account. It keeps what you log, on any device. Skip it and
+              your plan stays on this device. No card, nothing to pay.
+            </>
+          ) : (
+            <>
+              Saving creates a free account. It runs your guided sessions and keeps what you log,
+              on any device. Skip it and your plan stays on this device, but sessions and logging
+              need the account. No card, nothing to pay.
+            </>
+          )}
         </p>
       </div>
-
-      {reason === "session" && (
-        <p className="border-y border-line py-3 text-pretty text-[16px] font-medium leading-[1.5] text-ink">
-          Sessions need a free account so your progress is saved.
-        </p>
-      )}
 
       {/* The real bottleneck and plan being saved. */}
       <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-[18px] py-4">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">Your plan</p>
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-optic" />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-ink-2" />
           <span className="text-[16px] font-semibold">{bottleneckTitle}</span>
           <span className="text-[15px] text-ink-3">· {weeksTarget}-week plan</span>
         </div>

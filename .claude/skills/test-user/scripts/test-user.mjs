@@ -14,6 +14,7 @@ const ORIGIN = process.env.TEST_USER_ORIGIN ?? "http://localhost:3000";
 // Anonymous rows a test run created, by id. Gitignored; emptied by anon-cleanup.
 const LEDGER = new URL("../anon-ledger.json", import.meta.url);
 const ANON_TABLES = ["plans", "diagnoses", "assessments"];
+const UUID = /^[0-9a-f-]{36}$/i;
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -47,7 +48,7 @@ async function resolve(target) {
   if (!target) fail("Pass the test user's email or id.");
   const user = (await allTestUsers()).find((u) => u.email === target || u.id === target);
   // A deleted test user can still be checked by email or id; anything else is refused.
-  const isId = /^[0-9a-f-]{36}$/i.test(target);
+  const isId = UUID.test(target);
   if (!user && !target.startsWith(PREFIX) && !isId) fail(`${target} is not a ${PREFIX} test user.`);
   return user ?? null;
 }
@@ -157,8 +158,21 @@ switch (command) {
   }
   case "status": {
     const user = await resolve(target);
-    const id = user?.id ?? target;
-    await report(id, user?.email, await stripeIds(id));
+    let id = user?.id ?? (UUID.test(target) ? target : null);
+    if (!id) {
+      // Deleted and known only by email: auth no longer maps it to an id. A
+      // profile still under that email would be a leftover, so look for one.
+      const { data: profile, error } = await db.from("profiles").select("id").eq("email", target).maybeSingle();
+      if (error) fail(error.message);
+      id = profile?.id ?? null;
+    }
+    if (id) {
+      await report(id, user?.email ?? target, await stripeIds(id));
+    } else {
+      console.log(`user:     ${target}`);
+      console.log("auth:     not found");
+      console.log("rows:     no profile under this email (pass the user id to count rows by user_id)");
+    }
     if (existsSync(LEDGER)) await anonReport(readLedger());
     break;
   }

@@ -392,7 +392,7 @@ const PAID = [
   "How the other skills moved on each re-test",
   "Your readiness chart across every re-test",
   "Full re-test history",
-  "Weekly session streaks",
+  "Weeks with both sessions",
 ];
 
 function TierList({ items, tone }: { items: string[]; tone: "ink-1" | "ink-2" }) {

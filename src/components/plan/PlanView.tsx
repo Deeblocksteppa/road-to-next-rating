@@ -312,7 +312,7 @@ function DrillRow({
         {open && (
           <div id={panelId} className="mt-3 flex flex-col gap-4">
             <p className="text-pretty text-[16px] leading-[1.6] text-ink">{drill.description}</p>
-            <ShotDemo drillId={drill.id} />
+            <ShotDemo drillId={drill.id} setup={drill.setup} />
             <div className="flex flex-col gap-1.5 border-t border-line pt-4">
               <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
                 When the timer ends

@@ -49,7 +49,7 @@ export default function Terms() {
           assessment, your diagnosis, every three-week plan, guided sessions, re-tests with
           the headline score change, and your current readiness are free, with no card
           required. A subscription ($79 per year or $7.99 per month) adds per-skill
-          re-test deltas, your readiness chart and re-test history, and session streaks.
+          re-test deltas, your readiness chart and re-test history, and a count of weeks with both sessions.
           Cancel any time; cancelling stops future billing and leaves the free product
           intact.
         </p>

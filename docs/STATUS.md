@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-10-29 · `main` at `fad4f6b` · `batch-2` done (Phases A, B and C committed and pushed, not merged)
+Updated 2026-10-29 · `main` at `fad4f6b` · `batch-2` done (Phases A, B, C and the fix round committed and pushed, not merged)
 
 ## Current state
 
@@ -12,6 +12,7 @@ Updated 2026-10-29 · `main` at `fad4f6b` · `batch-2` done (Phases A, B and C c
 - **Batch 2, Phase A** (branch `batch-2`, not merged): em-dash sweep of app copy and assessment options (every row of `audit/batch-2-plan.md` except row 11, the plan preview Phase B removes), an explicit `short` on every skill-question option (the re-test rows and the third-shot goal no longer parse labels), 16px body text outside the screens Phases B and C rebuild, hyphenated skill titles kept whole, the hero glow removed, `/verify`'s button and link rules. **Migration `20261028120000_plan_text_em_dashes.sql` is written but not run** on production.
 - **Batch 2, Phase B** (branch `batch-2`, not merged): one `PlanView` at `/start` (after the reveal, no forced save form) and `/plan`; the plan preview (`Roadmap.tsx`), `SavedResult.tsx` and `SessionDrills.tsx` are gone, as is `WEEK_FOCUS_LABELS`. Home is today's session plus a quiet skill header; readiness moved to the plan screen. Names on these screens and the ones they link to: "Your focus", "Readiness", "In your games", "Re-test goal", "Back to my plan". One accent per screen; an open re-test takes it and every Start goes secondary. New copy is **unreviewed** (listed in the Phase B report). Claim check passed via both entries, but sign-in was by `/test-user` magic link, so the form's own `signUp` call was not exercised. Codex review recommended.
 - **Batch 2, Phase C** (branch `batch-2`, not merged): Progress rebuilt in hairlines, one dominant element per state (the re-test date on Day One; readiness now on locked and full, with the chart under it for paid); free + re-test open makes the re-test primary and "Unlock Progress" secondary. The session recap shows each drill's logged count against its target and "Last time" (omitted on a drill's first logged session; free), and its main element is what comes next (another day, Monday, or the open re-test). Equal before/after reads a neutral mono NO CHANGE with both values on the re-test headline, every trained and paid row, Progress history and since-start (no "+0", no accent; "Same answer" retired). Paid streak renamed "Weeks with both sessions". Locked cards use a flat `rgba(19,19,21,0.6)` cover over placeholders; DESIGN.md, `Design/DESIGN_SYSTEM.md` and `/verify` no longer allow a scrim gradient. The save form's first line now says "Saving creates a free account." New copy is **unreviewed** (Phase C report). Leak check passed: a free user with paid data on the server had none of it in `/progress` or `/retest/[id]` HTML or RSC payload. Recap data was exercised through the real guided session; re-test readings were seeded with a scratch script that mirrors `submitRetest`. Codex review recommended.
+- **Batch 2 fix round** (branch `batch-2`, not merged): the re-test is gated on the server. Before, `/retest` was a client page with no date check and `submitRetest` checked only sign-in, so any signed-in player could take a re-test early by typing the URL or calling the action. Now `isRetestOpen` (`src/lib/retest-gate.ts`, latest plan by `created_at`, `daysUntilRetest <= 0`, closed when `retest_date` is null) makes `/retest` redirect to `/plan` and makes `submitRetest` throw. Checked by calling the action directly: rejected with a future date and with a null date, accepted on the date; the real UI re-test still lands on `/retest/[id]`. Also: Progress Day One with no date shows only "Not scheduled" (no week, day or "find out" line); paid streak at 0 reads "Your first full week starts it."; remaining "streaks" now "weeks with both sessions"; Settings links neutral, email stacked; save form's dot neutral and, from "Start session", one line that sessions need an account; wall drills show no court diagram; `test-user.mjs status <email>` works after deletion. Codex review recommended.
 - **Claude Code setup:** `CLAUDE.md`, skills `/verify` `/test-user` `/critique` `/ship`, subagent `reviewer`, this file.
 - **Codex setup:** `AGENTS.md` makes Codex a read-only reviewer that follows `CLAUDE.md` and reports Blockers / Should-fix / Nits. `CLAUDE.md` tells Claude to end its report with "Codex review recommended: [branch or commit]" for auth, billing, engine or main-screen changes.
 
@@ -30,7 +31,7 @@ Updated 2026-10-29 · `main` at `fad4f6b` · `batch-2` done (Phases A, B and C c
 - [x] Remove the landing hero's decorative gradient glow (Phase A)
 - [ ] M7, M9: simplify targets on brief and plan. M9 done (week-theme label retired, Phase B)
 - [x] M8: session-complete recap with numbers against targets (Phase C)
-- [ ] M12–M14: retire or restyle `/signup`; paid Progress empty states (streak label done in Phase C); "Manage subscription" scope
+- [ ] M12–M14: retire or restyle `/signup`; paid Progress empty states (streak label done in Phase C, zero-week line in the fix round); "Manage subscription" scope
 - [x] Paywall says "weeks with both sessions", matching Progress (Phase C)
 
 **Batch 3: polish**
@@ -38,7 +39,7 @@ Updated 2026-10-29 · `main` at `fad4f6b` · `batch-2` done (Phases A, B and C c
 - [ ] M15 branded 404 (`src/app/not-found.tsx` missing), M16 mirror rewrite, M17 auto-advance
 - [ ] The nine low-impact items
 
-- [ ] Read the Phase B and Phase C copy marked UNREVIEWED in their reports
+- [ ] Read the Phase B and Phase C copy marked UNREVIEWED in their reports, and the fix round's new lines (save form from "Start session", zero-week streak, Terms "a count of weeks with both sessions")
 - [x] `DESIGN.md` Metric, card no longer cites the Home readiness card (Phase C)
 - [ ] `Design/DESIGN_SYSTEM.md` §5 still lists a "Home readiness mini-bar", which no longer exists
 

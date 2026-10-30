@@ -41,7 +41,7 @@ const LOCKED_COPY: Record<Direction, { label: string; teaser: string }> = {
 };
 
 /** What paying adds, said where the offer is made. */
-const UPGRADE_LINK = "Unlock the other skills, readiness history and streaks";
+const UPGRADE_LINK = "Unlock the other skills, readiness history and weeks with both sessions";
 
 function nextPlanLine(view: RetestView): string {
   const skill = SKILL_LABELS[view.newBottleneck];

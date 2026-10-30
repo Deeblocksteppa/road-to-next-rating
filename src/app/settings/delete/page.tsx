@@ -56,7 +56,7 @@ export default async function DeleteAccountPage() {
           "Your assessments and every diagnosis",
           "Your plans, in-game rules and re-test dates",
           "Every session and score you logged",
-          "Your readiness history and streaks",
+          "Your readiness history and weeks with both sessions",
         ].map((line, i) => (
           <p
             key={line}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { diagnose, scoreSkills } from "@/lib/engine";
+import { isRetestOpen } from "@/lib/retest-gate";
 import { generateRoadmap } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 import type { AnswerMap } from "@/lib/types";
@@ -28,6 +29,13 @@ export async function submitRetest(answers: AnswerMap): Promise<{ diagnosisId: s
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+
+  // 0. The re-test opens on the plan's retest_date, never before, and never
+  // without one. The /retest page redirects on the same check; this is the
+  // one that holds when the action is called directly.
+  if (!(await isRetestOpen(supabase, user.id))) {
+    throw new Error("Your re-test isn't open yet.");
+  }
 
   // 1. Run the engine on the new answers.
   const newDiagnosis = diagnose(answers);

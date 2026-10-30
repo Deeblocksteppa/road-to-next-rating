@@ -25,13 +25,16 @@ export type ProgressViewData =
   | { kind: "empty" }
   | {
       kind: "day-one";
-      retestDateLabel: string;
-      daysUntilRetest: number;
-      weekNumber: number;
-      weeksTarget: number;
+      /** Null when the plan has no retest_date: the screen says "Not scheduled" and nothing more. */
+      retest: {
+        dateLabel: string;
+        daysUntilRetest: number;
+        weekNumber: number;
+        weeksTarget: number;
+        daysElapsed: number;
+      } | null;
       bottleneckPhrase: string;
       sessionsDone: number;
-      daysElapsed: number;
     }
   | ({ kind: "full"; history: HistoryRow[]; streak: StreakData } & ChartData)
   | {
@@ -91,36 +94,38 @@ function DayOneState({
   /** The re-test block above already says it is open and how to take it. */
   retestOpen: boolean;
 }) {
-  const scheduled = data.retestDateLabel !== "Not scheduled";
+  const { retest } = data;
   return (
     <>
       {!retestOpen && (
         <section className="flex flex-col gap-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">First re-test</p>
-          <p
-            className={`font-display font-extrabold leading-none tabular-nums ${
-              scheduled ? "text-[56px]" : "text-[32px]"
-            }`}
-          >
-            {data.retestDateLabel}
-          </p>
-          <p className="font-mono text-[11px] uppercase tabular-nums tracking-[0.1em] text-ink-2">
-            {/* No date, no countdown: "Open now" would claim a re-test that isn't scheduled. */}
-            {scheduled &&
-              (data.daysUntilRetest > 0
-                ? `In ${data.daysUntilRetest} day${data.daysUntilRetest === 1 ? "" : "s"} · `
-                : "Open now · ")}
-            Week {data.weekNumber} of {data.weeksTarget}
-          </p>
-          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-            This is the day you find out if {data.bottleneckPhrase} moved.
-          </p>
+          {retest ? (
+            <>
+              <p className="font-display text-[56px] font-extrabold leading-none tabular-nums">
+                {retest.dateLabel}
+              </p>
+              <p className="font-mono text-[11px] uppercase tabular-nums tracking-[0.1em] text-ink-2">
+                {retest.daysUntilRetest > 0
+                  ? `In ${retest.daysUntilRetest} day${retest.daysUntilRetest === 1 ? "" : "s"} · `
+                  : "Open now · "}
+                Week {retest.weekNumber} of {retest.weeksTarget}
+              </p>
+              <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+                This is the day you find out if {data.bottleneckPhrase} moved.
+              </p>
+            </>
+          ) : (
+            // No date, no countdown, no week: any of them would describe a
+            // re-test that isn't scheduled.
+            <p className="font-display text-[32px] font-extrabold leading-none">Not scheduled</p>
+          )}
         </section>
       )}
 
-      <dl className="grid grid-cols-2 border-y border-line">
+      <dl className={`grid border-y border-line ${retest ? "grid-cols-2" : "grid-cols-1"}`}>
         <Reading label="Sessions done" value={String(data.sessionsDone)} />
-        <Reading label="Into the plan" value={`Day ${data.daysElapsed}`} divided />
+        {retest && <Reading label="Into the plan" value={`Day ${retest.daysElapsed}`} divided />}
       </dl>
 
       {/*
@@ -136,8 +141,8 @@ function DayOneState({
           One point so far: your baseline.{" "}
           {retestOpen
             ? "Your re-test, open now, adds the second reading."
-            : scheduled
-              ? `Your first re-test on ${data.retestDateLabel} adds the second reading.`
+            : retest
+              ? `Your first re-test on ${retest.dateLabel} adds the second reading.`
               : "Your first re-test adds the second reading."}
         </p>
       </div>
@@ -441,12 +446,17 @@ function StreakContent({ streak }: { streak: StreakData }) {
     <section className="flex items-end justify-between gap-4 border-y border-line py-6">
       <div className="flex flex-col gap-2">
         <p className="text-[16px] font-semibold leading-[1.3] text-ink">Weeks with both sessions</p>
-        <p className="flex items-baseline gap-2.5">
-          <span className="font-display text-[32px] font-extrabold leading-none tabular-nums">
-            {streak.streakCount}
-          </span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">In a row</span>
-        </p>
+        {/* A count of zero reads as a failure on a run not started yet. */}
+        {streak.streakCount > 0 ? (
+          <p className="flex items-baseline gap-2.5">
+            <span className="font-display text-[32px] font-extrabold leading-none tabular-nums">
+              {streak.streakCount}
+            </span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">In a row</span>
+          </p>
+        ) : (
+          <p className="text-[16px] leading-[1.6] text-ink-2">Your first full week starts it.</p>
+        )}
       </div>
       <span className="flex shrink-0 gap-1.5 pb-1.5" aria-hidden="true">
         {streak.weeks.map((hit, i) => (

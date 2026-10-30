@@ -545,7 +545,7 @@ export function SessionBriefReadout() {
           </Unit>
           <div className="flex flex-col gap-5">
             <DrillBriefContent drill={drill} retestMetric={null} as="h3" textSize="page" />
-            <ShotDemo drillId={drill.id} />
+            <ShotDemo drillId={drill.id} setup={drill.setup} />
           </div>
         </div>
       </Panel>
