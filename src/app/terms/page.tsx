@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = {
-  title: "Terms — Road to Next Rating",
+  title: "Terms · Road to Next Rating",
   description: "What Road to Next Rating is, what it costs, and what it does not claim.",
 };
 
@@ -24,19 +24,19 @@ export default function Terms() {
       </h1>
 
       <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-        Summary — full terms pending
+        Summary: full terms pending
       </p>
 
       <div className="mt-10 flex flex-col gap-6 text-[16px] leading-[1.6] text-ink-1 md:text-[18px] md:leading-[1.55]">
         <p>
-          A plain-language summary of how the product works, not the final legal terms —
-          that document is still being written and will replace this page before launch.
+          A plain-language summary of how the product works, not the final legal terms.
+          That document is still being written and will replace this page before launch.
         </p>
         <p>
           <strong className="font-semibold text-ink">What this is.</strong> A coaching
           tool that scores your own answers against a fixed model of four skills and
           produces a diagnosis and a three-week plan. It is not a rating body. Your DUPR
-          or self-rating is whatever you tell it — nothing here is verified against, or
+          or self-rating is whatever you tell it. Nothing here is verified against, or
           reported to, any official rating system.
         </p>
         <p>
@@ -48,8 +48,8 @@ export default function Terms() {
           <strong className="font-semibold text-ink">What it costs.</strong> The
           assessment, your diagnosis, every three-week plan, guided sessions, re-tests with
           the headline score change, and your current readiness are free, with no card
-          required. A subscription — $79 per year or $7.99 per month — adds per-skill
-          re-test deltas, your readiness chart and re-test history, and session streaks.
+          required. A subscription ($79 per year or $7.99 per month) adds per-skill
+          re-test deltas, your readiness chart and re-test history, and a count of weeks with both sessions.
           Cancel any time; cancelling stops future billing and leaves the free product
           intact.
         </p>

@@ -24,6 +24,11 @@ export function Assessment({ onComplete }: Props) {
   // question id makes carry-over impossible by construction, and the named,
   // autocomplete-off fields below stop the browser offering it.
   const [drafts, setDrafts] = useState<AnswerMap>({});
+  // Set once the answers are handed over. The ref stops a second tap in the
+  // same frame; the state keeps the last button disabled while the result
+  // is saved (the re-test's save runs on the server and can take a moment).
+  const submittedRef = useRef(false);
+  const [submitted, setSubmitted] = useState(false);
 
   // Each new question takes focus at its heading: a screen reader announces
   // it, and the next Tab lands on its first answer. Without this, advancing
@@ -45,10 +50,13 @@ export function Assessment({ onComplete }: Props) {
   const counter = `${String(index + 1).padStart(2, "0")}/${String(total).padStart(2, "0")}`;
 
   function advance(nextAnswers: AnswerMap) {
+    if (submittedRef.current) return;
     if (index < total - 1) {
       setIndex((i) => i + 1);
       setSelected(null);
     } else {
+      submittedRef.current = true;
+      setSubmitted(true);
       onComplete(nextAnswers);
     }
   }
@@ -140,7 +148,7 @@ export function Assessment({ onComplete }: Props) {
           </h1>
 
           {question.note && (
-            <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">{question.note}</p>
+            <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">{question.note}</p>
           )}
 
           <div className="mt-4">
@@ -158,6 +166,7 @@ export function Assessment({ onComplete }: Props) {
                 onChange={(text) => setDrafts((d) => ({ ...d, [question.id]: text }))}
                 onContinue={handleTextContinue}
                 isLast={index === total - 1}
+                submitted={submitted}
               />
             )}
           </div>
@@ -169,7 +178,7 @@ export function Assessment({ onComplete }: Props) {
         <div className="px-6 pb-8">
           <button
             onClick={() => currentChoice && advance(answers)}
-            disabled={!currentChoice}
+            disabled={!currentChoice || submitted}
             className="flex h-[52px] w-full items-center justify-center rounded-lg border border-transparent bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:border-line disabled:bg-surface disabled:text-ink-3"
           >
             Next
@@ -211,7 +220,7 @@ function OptionList({
           <label
             key={opt.id}
             className={[
-              "flex min-h-16 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-[18px] py-3.5 text-left text-[15px] leading-[1.4] transition-all duration-150 active:scale-[0.99]",
+              "flex min-h-16 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-[18px] py-3.5 text-left text-[16px] leading-[1.4] transition-all duration-150 active:scale-[0.99]",
               "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-optic",
               isSelected
                 ? "border-optic bg-optic/[0.08] text-ink"
@@ -247,12 +256,15 @@ function TextEntry({
   onChange,
   onContinue,
   isLast,
+  submitted = false,
 }: {
   question: Question;
   value: string;
   onChange: (text: string) => void;
   onContinue: () => void;
   isLast?: boolean;
+  /** The answers have been handed over: the button stays disabled. */
+  submitted?: boolean;
 }) {
   const isLong = question.id === "lose_reason";
   const empty = value.trim() === "";
@@ -260,7 +272,7 @@ function TextEntry({
 
   const baseClass = [
     "w-full rounded-md border border-line-strong bg-surface px-4 py-3.5",
-    "text-[15px] leading-relaxed text-ink placeholder-ink-3",
+    "text-[16px] leading-relaxed text-ink placeholder-ink-3",
     "focus:border-line-hover",
     "transition-colors duration-200 resize-none",
   ].join(" ");
@@ -295,7 +307,7 @@ function TextEntry({
       )}
       <button
         onClick={onContinue}
-        disabled={blocked}
+        disabled={blocked || submitted}
         className="flex h-[52px] w-full items-center justify-center rounded-lg border border-transparent bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:border-line disabled:bg-surface disabled:text-ink-3"
       >
         {/* An optional question left blank is a skip, and the button says so. */}

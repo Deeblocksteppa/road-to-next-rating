@@ -25,13 +25,16 @@ export type ProgressViewData =
   | { kind: "empty" }
   | {
       kind: "day-one";
-      retestDateLabel: string;
-      daysUntilRetest: number;
-      weekNumber: number;
-      weeksTarget: number;
+      /** Null when the plan has no retest_date: the screen says "Not scheduled" and nothing more. */
+      retest: {
+        dateLabel: string;
+        daysUntilRetest: number;
+        weekNumber: number;
+        weeksTarget: number;
+        daysElapsed: number;
+      } | null;
       bottleneckPhrase: string;
       sessionsDone: number;
-      daysElapsed: number;
     }
   | ({ kind: "full"; history: HistoryRow[]; streak: StreakData } & ChartData)
   | {
@@ -58,137 +61,136 @@ export function ProgressView({
    */
   retestOpenFor?: string | null;
 }) {
+  const retestOpen = Boolean(retestOpenFor) && data.kind !== "empty";
   return (
-    <main className="flex min-h-app-tabbed flex-col gap-3.5 px-6 py-8">
+    <main className="flex min-h-app-tabbed flex-col gap-8 px-6 py-8">
       <header className="pt-4">
         <h1 className="font-display text-2xl font-bold tracking-[-0.01em]">Progress</h1>
       </header>
 
-      {retestOpenFor && data.kind !== "empty" && <RetestOpen skillPhrase={retestOpenFor} />}
+      {/* Open re-test: the screen's main element and its one accent, in every
+          state. Anything else that would be optic goes quiet under it. */}
+      {retestOpen && <RetestOpen variant="block" skillPhrase={retestOpenFor ?? undefined} />}
 
       {data.kind === "empty" && <EmptyPrompt />}
-      {data.kind === "day-one" && <DayOneState data={data} retestOpen={Boolean(retestOpenFor)} />}
-      {data.kind === "full" && <FullState data={data} />}
-      {data.kind === "locked" && <LockedState data={data} />}
+      {data.kind === "day-one" && <DayOneState data={data} retestOpen={retestOpen} />}
+      {data.kind === "full" && <FullState data={data} retestOpen={retestOpen} />}
+      {data.kind === "locked" && <LockedState data={data} retestOpen={retestOpen} />}
     </main>
   );
 }
 
 /* ── State 1: Day One ─────────────────────────────────────────── */
+/**
+ * The re-test date is the page: set straight on the page, not in a tinted
+ * card. Under it, two readings split by hairlines and the one-point chart
+ * line, as a sentence rather than a dashed box.
+ */
 function DayOneState({
   data,
   retestOpen,
 }: {
   data: Extract<ProgressViewData, { kind: "day-one" }>;
-  /** The re-test card above already says it is open and how to take it. */
+  /** The re-test block above already says it is open and how to take it. */
   retestOpen: boolean;
 }) {
+  const { retest } = data;
   return (
     <>
       {!retestOpen && (
-        <section className="flex flex-col gap-3 rounded-2xl border border-optic bg-optic/[0.05] p-6">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-optic">
-            Your first re-test
-          </p>
-          <p className="font-display text-[40px] font-extrabold leading-none tracking-[-0.01em]">
-            {data.retestDateLabel}
-          </p>
-          <p className="font-mono text-[11px] tracking-[0.1em] text-ink-2">
-            {data.daysUntilRetest > 0
-              ? `IN ${data.daysUntilRetest} DAY${data.daysUntilRetest === 1 ? "" : "S"}`
-              : "OPEN NOW"}{" "}
-            · WEEK {data.weekNumber} OF {data.weeksTarget}
-          </p>
-          <p className="mt-0.5 text-pretty text-[14px] leading-[1.55] text-ink-2">
-            This is the day you find out if {data.bottleneckPhrase} moved.
-            Everything until then is building toward it.
-          </p>
+        <section className="flex flex-col gap-3">
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">First re-test</p>
+          {retest ? (
+            <>
+              <p className="font-display text-[56px] font-extrabold leading-none tabular-nums">
+                {retest.dateLabel}
+              </p>
+              <p className="font-mono text-[11px] uppercase tabular-nums tracking-[0.1em] text-ink-2">
+                {retest.daysUntilRetest > 0
+                  ? `In ${retest.daysUntilRetest} day${retest.daysUntilRetest === 1 ? "" : "s"} · `
+                  : "Open now · "}
+                Week {retest.weekNumber} of {retest.weeksTarget}
+              </p>
+              <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+                This is the day you find out if {data.bottleneckPhrase} moved.
+              </p>
+            </>
+          ) : (
+            // No date, no countdown, no week: any of them would describe a
+            // re-test that isn't scheduled.
+            <p className="font-display text-[32px] font-extrabold leading-none">Not scheduled</p>
+          )}
         </section>
       )}
 
-      <div className="flex gap-4">
-        <StatCard line1="Sessions" line2="done" value={String(data.sessionsDone)} />
-        <StatCard line1="Into the" line2="plan" value={`Day ${data.daysElapsed}`} />
-      </div>
+      <dl className={`grid border-y border-line ${retest ? "grid-cols-2" : "grid-cols-1"}`}>
+        <Reading label="Sessions done" value={String(data.sessionsDone)} />
+        {retest && <Reading label="Into the plan" value={`Day ${retest.daysElapsed}`} divided />}
+      </dl>
 
       {/*
-        A modest placeholder, not the page's subject. It used to be `flex-1`,
-        so it stretched to fill everything under the stat cards — a very large
-        dashed box around one sentence, on a screen a new player looks at for
-        three weeks. It now takes only the height its content needs, laid out
-        as a row, so the re-test callout and the stat cards carry the screen.
-
-        The copy says what is true and only that: one reading exists (the
-        baseline), and a line needs a second one. It used to say the line
-        "starts on" the re-test date and, in the next breath, that there was
-        "one point today" — two different answers to when the chart begins.
+        One reading exists (the baseline), and a line needs a second one. The
+        copy says that and only that; the small mark is the chart's first point.
       */}
-      <section className="flex items-center gap-4 rounded-2xl border border-dashed border-line-strong px-5 py-4">
-        <svg
-          width="56"
-          height="24"
-          viewBox="0 0 56 24"
-          aria-hidden="true"
-          className="shrink-0"
-        >
-          <line
-            x1="4"
-            y1="16"
-            x2="52"
-            y2="16"
-            stroke="#232327"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-          <circle cx="4" cy="16" r="3.5" fill="#80807B" />
+      <div className="flex items-start gap-4">
+        <svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true" className="shrink-0">
+          <line x1="4" y1="12" x2="36" y2="12" stroke="#2E2E33" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="4" cy="12" r="3.5" fill="#80807B" />
         </svg>
-        <p className="text-pretty text-[13px] leading-[1.5] text-ink-3">
+        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
           One point so far: your baseline.{" "}
           {retestOpen
             ? "Your re-test, open now, adds the second reading."
-            : data.retestDateLabel === "—"
-              ? "Your first re-test adds the second reading."
-              : `Your first re-test on ${data.retestDateLabel} adds the second reading.`}
+            : retest
+              ? `Your first re-test on ${retest.dateLabel} adds the second reading.`
+              : "Your first re-test adds the second reading."}
         </p>
-      </section>
+      </div>
     </>
   );
 }
 
-function StatCard({
-  line1,
-  line2,
-  value,
-}: {
-  line1: string;
-  line2: string;
-  value: string;
-}) {
+/** One cell of a strip of readings, split from its neighbour by a hairline. */
+function Reading({ label, value, divided = false }: { label: string; value: string; divided?: boolean }) {
   return (
-    <section className="flex flex-1 flex-col gap-2 rounded-2xl border border-line bg-surface p-5">
-      <p className="font-mono text-[10px] uppercase leading-tight tracking-[0.14em] text-ink-3">
-        {line1}
-        <br />
-        {line2}
-      </p>
-      <p className="font-display text-[32px] font-extrabold leading-none">{value}</p>
-    </section>
+    <div className={`flex flex-col gap-3 py-5 ${divided ? "border-l border-line pl-5" : "pr-5"}`}>
+      <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{label}</dt>
+      <dd className="font-display text-[32px] font-extrabold leading-none tabular-nums">{value}</dd>
+    </div>
   );
 }
 
 /* ── State 2: Full (paid) ─────────────────────────────────────── */
-function FullState({ data }: { data: Extract<ProgressViewData, { kind: "full" }> }) {
+function FullState({
+  data,
+  retestOpen,
+}: {
+  data: Extract<ProgressViewData, { kind: "full" }>;
+  retestOpen: boolean;
+}) {
+  const now = data.series.at(-1)?.readiness ?? 0;
   return (
     <>
-      <Card>
-        <ChartContent data={data} />
-      </Card>
-      <Card>
+      <section className="flex flex-col">
+        <ReadinessNow now={now} totalChange={data.totalChange} />
+        <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
+          Readiness · {data.weeksSpan} week{data.weeksSpan === 1 ? "" : "s"}
+        </p>
+        <div className="mt-4">
+          {/* The rising line is the screen's accent, unless the re-test holds it. */}
+          <ReadinessChart points={data.series} muted={retestOpen} />
+        </div>
+        <div className="mt-3 flex justify-between font-mono text-[11px] uppercase tabular-nums tracking-[0.1em] text-ink-3">
+          <span>{data.startLabel}</span>
+          <span>{data.endLabel}</span>
+        </div>
+      </section>
+
+      <div className="flex flex-col">
+        {data.sessions && <SessionSeriesBlock sessions={data.sessions} />}
         <HistoryContent rows={data.history} />
-      </Card>
-      <Card>
         <StreakContent streak={data.streak} />
-      </Card>
+      </div>
     </>
   );
 }
@@ -196,37 +198,25 @@ function FullState({ data }: { data: Extract<ProgressViewData, { kind: "full" }>
 /* ── State 3: Locked (free) ───────────────────────────────────── */
 function LockedState({
   data,
+  retestOpen,
 }: {
   data: Extract<ProgressViewData, { kind: "locked" }>;
+  /** The re-test button above is the screen's one primary; Unlock goes secondary. */
+  retestOpen: boolean;
 }) {
-  const up = data.totalChange >= 0;
   return (
     <>
-      <section className="flex items-baseline justify-between rounded-2xl border border-line bg-surface p-5">
-        <div className="flex flex-col gap-1.5">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-            Readiness now
-          </p>
-          <p className="font-display text-[40px] font-extrabold leading-none tabular-nums">
-            {data.currentReadiness}
-          </p>
-          <p className="text-[13px] leading-[1.5] text-ink-3">
-            A score from your answers, not a DUPR estimate.
-          </p>
-        </div>
-        <p className={`font-mono text-[11px] ${up ? "text-optic" : "text-danger"}`}>
-          {up ? "+" : ""}
-          {data.totalChange} SINCE START
-        </p>
-      </section>
+      <ReadinessNow now={data.currentReadiness} totalChange={data.totalChange} />
 
-      <LockedCard teaser="Your readiness line across every re-test, whichever way it went.">
-        <ChartPlaceholder readings={data.readingCount} />
-      </LockedCard>
+      <div className="flex flex-col gap-3.5">
+        <LockedCard teaser="Your readiness line across every re-test, whichever way it went.">
+          <ChartPlaceholder readings={data.readingCount} />
+        </LockedCard>
 
-      <LockedCard teaser="Re-test history, with how every skill moved each time">
-        <HistoryPlaceholder readings={data.readingCount} />
-      </LockedCard>
+        <LockedCard teaser="Re-test history, with how every skill moved each time.">
+          <HistoryPlaceholder readings={data.readingCount} />
+        </LockedCard>
+      </div>
 
       <div className="flex-1" />
 
@@ -237,7 +227,11 @@ function LockedState({
           button names a price, because it confirms the plan just chosen. */}
       <Link
         href="/paywall?from=/progress"
-        className="flex h-14 w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+        className={
+          retestOpen
+            ? "flex h-[52px] w-full items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover active:scale-[0.98]"
+            : "flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+        }
       >
         Unlock Progress
       </Link>
@@ -245,40 +239,66 @@ function LockedState({
   );
 }
 
-/* ── Shared card content ──────────────────────────────────────── */
-function Card({ children }: { children: React.ReactNode }) {
+/**
+ * The current readiness, set on the page: free and paid see the same number,
+ * the same change since the first reading, and the same caveat.
+ */
+function ReadinessNow({ now, totalChange }: { now: number; totalChange: number }) {
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5">{children}</section>
+    <section className="flex flex-col gap-3">
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Readiness now</p>
+      <p className="font-display text-[72px] font-extrabold leading-none tabular-nums">
+        {now}
+        <span className="font-mono text-[15px] font-normal tracking-[0.1em] text-ink-3"> /100</span>
+      </p>
+      <SinceStart start={now - totalChange} now={now} />
+      <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+        A score from your answers, not a DUPR estimate.
+      </p>
+    </section>
   );
 }
 
-function ChartContent({ data }: { data: ChartData }) {
-  const up = data.totalChange >= 0;
+/**
+ * Both readings and what changed between them. An equal pair says NO CHANGE
+ * in a neutral tone: "+0" in the accent read as a gain.
+ */
+function SinceStart({ start, now }: { start: number; now: number }) {
+  const change = now - start;
   return (
-    <>
-      <p className="text-pretty text-[13px] leading-[1.45] text-ink-3">
-        A score from your answers, not a DUPR estimate. Each re-test shows how
-        much it moved.
-      </p>
-      <div className="mt-2.5 flex items-baseline justify-between">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-          Readiness — {data.weeksSpan} week{data.weeksSpan === 1 ? "" : "s"}
-        </p>
-        <p className={`font-mono text-[11px] ${up ? "text-optic" : "text-danger"}`}>
-          {up ? "+" : ""}
-          {data.totalChange} SINCE START
-        </p>
-      </div>
-      <div className="mt-3.5">
-        <ReadinessChart points={data.series} />
-      </div>
-      <div className="mt-3.5 flex justify-between">
-        <span className="font-mono text-[10px] text-ink-3">{data.startLabel}</span>
-        <span className="font-mono text-[10px] text-ink-3">{data.endLabel}</span>
-      </div>
+    <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-[13px] uppercase tabular-nums tracking-[0.1em]">
+      <span className="text-ink-3">Since start</span>
+      <span>
+        <span className="text-ink-3">{start}</span>
+        <span aria-hidden="true" className="px-1.5 text-ink-3">
+          →
+        </span>
+        <span className="sr-only"> to </span>
+        <span className="text-ink">{now}</span>
+      </span>
+      <ChangeText change={change} />
+    </p>
+  );
+}
 
-      {data.sessions && <SessionSeriesBlock sessions={data.sessions} />}
-    </>
+/** "+6", "−4" or NO CHANGE. Gains in ink: the accent belongs to the line or the button. */
+function ChangeText({ change }: { change: number }) {
+  if (change === 0) return <span className="text-ink-3">No change</span>;
+  return (
+    <span className={change > 0 ? "text-ink" : "text-danger"}>
+      {change > 0 ? `+${change}` : `−${Math.abs(change)}`}
+    </span>
+  );
+}
+
+/* ── Full-state sections ──────────────────────────────────────── */
+/** A section under the readiness block: a hairline, a mono label, its content. */
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col border-t border-line py-6">
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{label}</p>
+      {children}
+    </section>
   );
 }
 
@@ -287,8 +307,7 @@ function ChartContent({ data }: { data: ChartData }) {
  * player logged in drill sessions over the same span. Context beside the
  * climb, not an input to it — readiness is computed from assessment answers
  * alone, and nothing logged here feeds the engine or the re-test delta.
- * Smaller and more muted than the readiness line, but the same optic accent
- * so the two read as one period of work.
+ * Neutral, so the readiness line keeps the screen's one accent.
  */
 function SessionSeriesBlock({ sessions }: { sessions: SessionSeries }) {
   const { drillName, values, max } = sessions;
@@ -301,20 +320,16 @@ function SessionSeriesBlock({ sessions }: { sessions: SessionSeries }) {
       : `${values[0]} → … → ${values[values.length - 1]}`;
 
   return (
-    <div className="mt-4 border-t border-line pt-3.5">
-      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-        Your logged sessions — <span className="text-ink-2">{drillName}</span>
-      </p>
-      <div className="mt-2.5">
+    <Section label="Logged sessions">
+      <p className="mt-2 text-[16px] font-semibold leading-[1.4] text-ink">{drillName}</p>
+      <div className="mt-4">
         <SessionSparkline values={values} max={max} />
       </div>
-      <div className="mt-2 flex items-baseline justify-between">
-        <span className="font-mono text-[11px] tabular-nums text-ink-2">
-          {progression}
-        </span>
-        <span className="font-mono text-[10px] text-ink-3">OF {max}</span>
+      <div className="mt-3 flex items-baseline justify-between gap-4">
+        <span className="font-mono text-[13px] tabular-nums text-ink-2">{progression}</span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-3">Of {max}</span>
       </div>
-    </div>
+    </Section>
   );
 }
 
@@ -347,8 +362,7 @@ function SessionSparkline({ values, max }: { values: number[]; max: number }) {
       <polyline
         points={poly}
         fill="none"
-        stroke="#D8E34C"
-        strokeOpacity="0.5"
+        stroke="#80807B"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -361,8 +375,7 @@ function SessionSparkline({ values, max }: { values: number[]; max: number }) {
             cx={xFor(i)}
             cy={yFor(v)}
             r={last ? 3 : 2.2}
-            fill="#D8E34C"
-            fillOpacity={last ? 1 : 0.65}
+            fill={last ? "#F4F4F2" : "#B0B0AB"}
           />
         );
       })}
@@ -377,65 +390,93 @@ function SessionSparkline({ values, max }: { values: number[]; max: number }) {
  */
 function HistoryContent({ rows }: { rows: HistoryRow[] }) {
   return (
-    <>
-      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-        Re-test history
-      </p>
-      <div className="mt-2 flex flex-col">
+    <Section label="Re-test history">
+      <ul className="mt-2 flex flex-col">
         {rows.map((row, i) => {
           const body = (
             <>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[14px] font-semibold">{row.label}</span>
-                <span className="font-mono text-[10px] text-ink-3">{row.dateLabel}</span>
-              </div>
-              <span className="flex items-center gap-3">
-                <span className="font-display text-[17px] font-bold tabular-nums">
-                  {row.score}
-                  {row.delta !== null && row.delta !== 0 && (
-                    <span
-                      className={`ml-1.5 font-mono text-[11px] font-medium ${
-                        row.delta > 0 ? "text-optic" : "text-danger"
-                      }`}
-                    >
-                      {row.delta > 0 ? "+" : "−"}
-                      {Math.abs(row.delta)}
-                    </span>
-                  )}
+              <div className="flex flex-col gap-1">
+                <span className="text-[16px] font-semibold leading-[1.3]">{row.label}</span>
+                <span className="font-mono text-[11px] uppercase tabular-nums tracking-[0.1em] text-ink-3">
+                  {row.dateLabel}
                 </span>
-                {row.id && i > 0 && (
-                  <span aria-hidden="true" className="text-ink-3">
-                    ›
+              </div>
+              <span className="flex items-baseline gap-3">
+                {row.delta !== null && (
+                  <span className="font-mono text-[13px] uppercase tabular-nums tracking-[0.1em]">
+                    <ChangeText change={row.delta} />
                   </span>
                 )}
+                <span className="font-display text-[20px] font-bold tabular-nums">{row.score}</span>
+                {/* The baseline opens nothing; a hidden chevron keeps its score in the column. */}
+                <span aria-hidden="true" className={row.id && i > 0 ? "text-ink-3" : "invisible"}>
+                  ›
+                </span>
               </span>
             </>
           );
           return (
-            <div key={row.id ?? `${row.label}-${i}`}>
-              {i > 0 && <div className="h-px bg-line" />}
+            <li key={row.id ?? `${row.label}-${i}`} className={i > 0 ? "border-t border-line" : ""}>
               {row.id && i > 0 ? (
                 <Link
                   href={retestHref(row.id)}
                   aria-label={`${row.label}, ${row.dateLabel}: readiness ${row.score}. See the breakdown`}
-                  className="-mx-2 flex items-center justify-between rounded-lg px-2 py-3.5 transition-colors hover:bg-[#17171A]"
+                  className="-mx-2 flex items-center justify-between gap-4 rounded-lg px-2 py-4 transition-colors hover:bg-[#17171A]"
                 >
                   {body}
                 </Link>
               ) : (
-                <div className="flex items-center justify-between py-3.5">{body}</div>
+                <div className="flex items-center justify-between gap-4 py-4">{body}</div>
               )}
-            </div>
+            </li>
           );
         })}
+      </ul>
+    </Section>
+  );
+}
+
+/**
+ * A run of consecutive weeks in which both sessions were logged (see
+ * `getWeeklyStreak`): a week counts when it holds `SESSIONS_PER_WEEK`
+ * complete sessions, and an unfinished current week doesn't break the run.
+ */
+function StreakContent({ streak }: { streak: StreakData }) {
+  return (
+    <section className="flex items-end justify-between gap-4 border-y border-line py-6">
+      <div className="flex flex-col gap-2">
+        <p className="text-[16px] font-semibold leading-[1.3] text-ink">Weeks with both sessions</p>
+        {/* A count of zero reads as a failure on a run not started yet. */}
+        {streak.streakCount > 0 ? (
+          <p className="flex items-baseline gap-2.5">
+            <span className="font-display text-[32px] font-extrabold leading-none tabular-nums">
+              {streak.streakCount}
+            </span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">In a row</span>
+          </p>
+        ) : (
+          <p className="text-[16px] leading-[1.6] text-ink-2">Your first full week starts it.</p>
+        )}
       </div>
-    </>
+      <span className="flex shrink-0 gap-1.5 pb-1.5" aria-hidden="true">
+        {streak.weeks.map((hit, i) => (
+          <span
+            key={i}
+            className={
+              hit
+                ? "h-2.5 w-2.5 rounded-full bg-ink-2"
+                : "box-border h-2.5 w-2.5 rounded-full border border-line-strong"
+            }
+          />
+        ))}
+      </span>
+    </section>
   );
 }
 
 /* ── Locked placeholders ──────────────────────────────────────── */
 /**
- * Decoys for the blurred cards: the right shape, no values. A flat run of
+ * Decoys for the locked cards: the right shape, no values. A flat run of
  * readings rather than a rising line — the placeholder shouldn't promise a
  * climb the player's own chart may not show.
  */
@@ -444,7 +485,7 @@ function ChartPlaceholder({ readings }: { readings: number }) {
   const xs = Array.from({ length: n }, (_, i) => 12 + (i / (n - 1)) * 276);
   return (
     <>
-      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">Readiness</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Readiness</p>
       <svg width="100%" height="120" viewBox="0 0 300 120" preserveAspectRatio="none" className="mt-3.5 block">
         <line x1="12" y1="24" x2="288" y2="24" stroke="#2E2E33" strokeDasharray="3 4" />
         <polyline points={xs.map((x) => `${x},70`).join(" ")} fill="none" stroke="#80807B" strokeWidth="2" />
@@ -460,17 +501,12 @@ function HistoryPlaceholder({ readings }: { readings: number }) {
   const rows = Math.max(2, Math.min(readings, 4));
   return (
     <>
-      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-        Re-test history
-      </p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Re-test history</p>
       <div className="mt-2 flex flex-col">
         {Array.from({ length: rows }, (_, i) => (
-          <div key={i}>
-            {i > 0 && <div className="h-px bg-line" />}
-            <div className="flex items-center justify-between py-3.5">
-              <span className="text-[14px] font-semibold">{i === 0 ? "Baseline" : "Re-test"}</span>
-              <span className="font-display text-[17px] font-bold text-ink-3">––</span>
-            </div>
+          <div key={i} className={`flex items-center justify-between py-4 ${i > 0 ? "border-t border-line" : ""}`}>
+            <span className="text-[16px] font-semibold">{i === 0 ? "Baseline" : "Re-test"}</span>
+            <span className="font-display text-[20px] font-bold text-ink-3">––</span>
           </div>
         ))}
       </div>
@@ -478,41 +514,11 @@ function HistoryPlaceholder({ readings }: { readings: number }) {
   );
 }
 
-function StreakContent({ streak }: { streak: StreakData }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex flex-col gap-1">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-          Streak
-        </p>
-        <p className="text-[14px] text-ink-2">
-          <span className="font-display text-[17px] font-bold text-ink">
-            {streak.streakCount} week{streak.streakCount === 1 ? "" : "s"}
-          </span>{" "}
-          hitting target
-        </p>
-      </div>
-      <div className="flex shrink-0 gap-1.5">
-        {streak.weeks.map((hit, i) => (
-          <span
-            key={i}
-            className={
-              hit
-                ? "h-3 w-3 rounded-[4px] bg-optic"
-                : "box-border h-3 w-3 rounded-[4px] border border-line-strong"
-            }
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function EmptyPrompt() {
   return (
-    <p className="mt-2 rounded-2xl border border-dashed border-line p-4 text-sm text-ink-2">
+    <p className="border-y border-line py-5 text-[16px] leading-[1.6] text-ink-2">
       No diagnosis yet.{" "}
-      <Link href="/start" className="underline underline-offset-4">
+      <Link href="/start" className="text-ink underline underline-offset-4">
         Take the assessment
       </Link>
       .

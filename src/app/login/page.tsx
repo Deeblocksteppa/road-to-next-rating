@@ -26,14 +26,14 @@ export default function LoginPage({
         </h1>
 
         {errorMessage && (
-          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger">
             {errorMessage}
           </p>
         )}
 
         {/* A fixed set of notices, keyed — never free text from the URL. */}
         {searchParams.notice === "deleted" && (
-          <p className="rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink-2">
+          <p className="rounded-md border border-line bg-surface px-3 py-2 text-[16px] text-ink-2">
             Your account and everything saved to it have been deleted.
           </p>
         )}
@@ -51,7 +51,7 @@ export default function LoginPage({
             autoComplete="email"
             placeholder="Email address"
             required
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
+            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
 
           {/* Password row with the inline FORGOT? link to the reset flow. */}
@@ -68,7 +68,7 @@ export default function LoginPage({
               autoComplete="current-password"
               placeholder="Password"
               required
-              className="flex-1 bg-transparent text-[15px] text-ink placeholder-ink-3 focus-visible:outline-none"
+              className="flex-1 bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
             />
             {/* `-my-4 py-4` buys a 47px tap target without growing the row. */}
             <Link
@@ -110,7 +110,7 @@ export default function LoginPage({
         )}
       </div>
 
-      <p className="pb-2 text-center text-[13px] text-ink-2">
+      <p className="pb-2 text-center text-[16px] text-ink-2">
         New here?{" "}
         <Link href="/start" className="underline underline-offset-4">
           Take the assessment

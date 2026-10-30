@@ -1,7 +1,8 @@
 // Temporary test users for checking signed-in and paid screens.
 // Run from the repo root:
-//   node --env-file=.env.local .claude/skills/test-user/scripts/test-user.mjs <create|link|status|cleanup|list> [email|id]
+//   node --env-file=.env.local .claude/skills/test-user/scripts/test-user.mjs <create|link|status|cleanup|list|anon|anon-cleanup> [email|id]
 import { createRequire } from "node:module";
+import { existsSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 
 const require = createRequire(`${process.cwd()}/`);
 const { createClient } = require("@supabase/supabase-js");
@@ -10,6 +11,10 @@ const Stripe = require("stripe");
 const PREFIX = "rtnr-test+";
 const TABLES = ["assessments", "diagnoses", "plans", "drill_sessions"];
 const ORIGIN = process.env.TEST_USER_ORIGIN ?? "http://localhost:3000";
+// Anonymous rows a test run created, by id. Gitignored; emptied by anon-cleanup.
+const LEDGER = new URL("../anon-ledger.json", import.meta.url);
+const ANON_TABLES = ["plans", "diagnoses", "assessments"];
+const UUID = /^[0-9a-f-]{36}$/i;
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -43,7 +48,7 @@ async function resolve(target) {
   if (!target) fail("Pass the test user's email or id.");
   const user = (await allTestUsers()).find((u) => u.email === target || u.id === target);
   // A deleted test user can still be checked by email or id; anything else is refused.
-  const isId = /^[0-9a-f-]{36}$/i.test(target);
+  const isId = UUID.test(target);
   if (!user && !target.startsWith(PREFIX) && !isId) fail(`${target} is not a ${PREFIX} test user.`);
   return user ?? null;
 }
@@ -86,7 +91,54 @@ async function report(userId, email, ids) {
   console.log(`stripe:   ${await subscriptionStatuses(ids)}`);
 }
 
-const [command, target] = process.argv.slice(2);
+function readLedger() {
+  if (!existsSync(LEDGER)) return { assessments: [], diagnoses: [], plans: [] };
+  return JSON.parse(readFileSync(LEDGER, "utf8"));
+}
+
+/** Each recorded anonymous row as it stands now: owner, created_at, and the plan's re-test date. */
+async function anonReport(ledger) {
+  const counts = {};
+  for (const table of ANON_TABLES) {
+    const ids = ledger[table];
+    if (!ids.length) {
+      counts[table] = 0;
+      continue;
+    }
+    const cols = table === "plans" ? "id, user_id, created_at, retest_date" : "id, user_id, created_at";
+    const { data, error } = await db.from(table).select(cols).in("id", ids);
+    if (error) fail(error.message);
+    counts[table] = data.length;
+    for (const row of data) {
+      const owner = row.user_id ? `claimed by ${row.user_id}` : "unclaimed";
+      console.log(`${table.padEnd(11)} ${row.id} ${owner} created ${row.created_at}${row.retest_date ? ` retest ${row.retest_date}` : ""}`);
+    }
+  }
+  console.log(`anon rows still present: ${JSON.stringify(counts)}`);
+  return counts;
+}
+
+/** Deletes recorded rows that are still unclaimed. Rows claimed by a test user go with that user; anything else is refused. */
+async function anonCleanup() {
+  const ledger = readLedger();
+  const testIds = new Set((await allTestUsers()).map((u) => u.id));
+  for (const table of ANON_TABLES) {
+    if (!ledger[table].length) continue;
+    const { data, error } = await db.from(table).select("id, user_id").in("id", ledger[table]);
+    if (error) fail(error.message);
+    const foreign = data.filter((r) => r.user_id && !testIds.has(r.user_id));
+    if (foreign.length) fail(`${table} ${foreign.map((r) => r.id).join(", ")} belong to a real account. Not deleting.`);
+    const unclaimed = data.filter((r) => !r.user_id).map((r) => r.id);
+    if (!unclaimed.length) continue;
+    const { error: delError } = await db.from(table).delete().in("id", unclaimed).is("user_id", null);
+    if (delError) fail(delError.message);
+    console.log(`✓ deleted ${unclaimed.length} unclaimed ${table}: ${unclaimed.join(", ")}`);
+  }
+  const counts = await anonReport(ledger);
+  if (Object.values(counts).every((n) => n === 0)) rmSync(LEDGER, { force: true });
+}
+
+const [command, target, ...rest] = process.argv.slice(2);
 
 switch (command) {
   case "create": {
@@ -106,8 +158,22 @@ switch (command) {
   }
   case "status": {
     const user = await resolve(target);
-    const id = user?.id ?? target;
-    await report(id, user?.email, await stripeIds(id));
+    let id = user?.id ?? (UUID.test(target) ? target : null);
+    if (!id) {
+      // Deleted and known only by email: auth no longer maps it to an id. A
+      // profile still under that email would be a leftover, so look for one.
+      const { data: profile, error } = await db.from("profiles").select("id").eq("email", target).maybeSingle();
+      if (error) fail(error.message);
+      id = profile?.id ?? null;
+    }
+    if (id) {
+      await report(id, user?.email ?? target, await stripeIds(id));
+    } else {
+      console.log(`user:     ${target}`);
+      console.log("auth:     not found");
+      console.log("rows:     no profile under this email (pass the user id to count rows by user_id)");
+    }
+    if (existsSync(LEDGER)) await anonReport(readLedger());
     break;
   }
   case "cleanup": {
@@ -129,6 +195,28 @@ switch (command) {
     if (error) fail(error.message);
     console.log(`✓ deleted ${user.email}\n`);
     await report(user.id, user.email, ids);
+    if (existsSync(LEDGER)) await anonCleanup();
+    break;
+  }
+  case "anon": {
+    // The ids the browser saved: rtnr:assessment_id, rtnr:diagnosis_id, rtnr:plan_id.
+    const ids = [target, ...rest].filter(Boolean);
+    if (ids.length !== 3 || !ids.every((id) => /^[0-9a-f-]{36}$/i.test(id))) fail("Pass the assessment, diagnosis and plan ids, in that order.");
+    const ledger = readLedger();
+    ANON_TABLES.slice().reverse().forEach((table, i) => {
+      if (!ledger[table].includes(ids[i])) ledger[table].push(ids[i]);
+    });
+    writeFileSync(LEDGER, JSON.stringify(ledger, null, 2));
+    console.log("✓ recorded");
+    await anonReport(ledger);
+    break;
+  }
+  case "anon-cleanup": {
+    if (!existsSync(LEDGER)) {
+      console.log("No anonymous rows recorded.");
+      break;
+    }
+    await anonCleanup();
     break;
   }
   case "list": {
@@ -137,5 +225,5 @@ switch (command) {
     break;
   }
   default:
-    fail("Usage: test-user.mjs <create|link|status|cleanup|list> [email|id]");
+    fail("Usage: test-user.mjs <create|link|status|cleanup|list|anon|anon-cleanup> [email|id]");
 }

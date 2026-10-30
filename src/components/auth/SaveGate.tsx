@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
 import { AUTH_ERRORS, authErrorCode } from "@/lib/auth-errors";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
-import { claimPendingRecords, getPendingIds } from "@/lib/persistence";
+import { claimAnonymousResult, type SavedIds } from "@/lib/persistence";
 import { clearSignupPending, saveSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,12 +27,17 @@ const MIN_PASSWORD_LENGTH = 8;
  *     just signed up was looking at the sign-up pitch and could reasonably
  *     think nothing had happened.
  *
+ * Nothing is sent until the result's save (`saveResult`) has finished with
+ * all three rows: the sign-up carries their ids, and a partial set is never
+ * claimed. If the save still fails, the form shows an error and stays put.
+ *
  * - Confirmation OFF → a session is live immediately: claim here, go to Home.
  * - Confirmation ON → no session yet. The plan stays on this device (nothing
  *   is cleared), the device remembers the pending sign-up, and the rows are
  *   claimed when the emailed link is opened, on any device (/auth/confirm).
  */
 export function SaveGate({
+  saveResult,
   onSkip,
   bottleneckTitle,
   weeksTarget,
@@ -40,6 +45,8 @@ export function SaveGate({
   onPendingChange,
   reason = "save",
 }: {
+  /** The anonymous result's save (`saveAnonymousResult`): the complete set of ids, or a rejection. */
+  saveResult: () => Promise<SavedIds>;
   /** Back to the result page. */
   onSkip: () => void;
   /** Title-case skill name ("The reset"). */
@@ -64,11 +71,21 @@ export function SaveGate({
     setLoading(true);
     setError(null);
 
+    // The ids of the result just made, sent with the sign-up so /auth/confirm
+    // can attach them wherever the confirmation link is opened. They
+    // otherwise live only in this browser's storage. Already saved when the
+    // form opened, so this normally resolves at once.
+    let ids: SavedIds;
+    try {
+      ids = await saveResult();
+    } catch (err) {
+      console.error("Failed to save the result:", err);
+      setError(AUTH_ERRORS.generic);
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
-    // The ids of the diagnosis and plan just made, sent with the sign-up so
-    // /auth/confirm can attach them wherever the confirmation link is
-    // opened. They otherwise live only in this browser's storage.
-    const pending = getPendingIds();
     const address = email.trim();
     const { data, error } = await supabase.auth.signUp({
       email: address,
@@ -76,9 +93,9 @@ export function SaveGate({
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/home`,
         data: {
-          pending_assessment_id: pending.assessment ?? null,
-          pending_diagnosis_id: pending.diagnosis ?? null,
-          pending_plan_id: pending.plan ?? null,
+          pending_assessment_id: ids.assessment,
+          pending_diagnosis_id: ids.diagnosis,
+          pending_plan_id: ids.plan,
         },
       },
     });
@@ -100,9 +117,10 @@ export function SaveGate({
     }
 
     if (data.session) {
-      // Signed in immediately — claim the anonymous rows, then go.
+      // Signed in immediately — claim the anonymous rows, then go. On a
+      // failure the device keeps its result and Home's claim tries again.
       try {
-        await claimPendingRecords();
+        await claimAnonymousResult(ids);
       } catch (err) {
         console.error("Failed to claim records:", err);
       }
@@ -123,6 +141,17 @@ export function SaveGate({
   async function handleGoogle() {
     setLoading(true);
     setError(null);
+
+    // The rows must all be saved before leaving: Home claims them by the ids
+    // on this device when Google sends the player back.
+    try {
+      await saveResult();
+    } catch (err) {
+      console.error("Failed to save the result:", err);
+      setError(AUTH_ERRORS.generic);
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
@@ -150,7 +179,7 @@ export function SaveGate({
           <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Check your inbox
           </h1>
-          <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
+          <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
             We sent a confirmation link to{" "}
             <span className="break-words font-medium text-ink">{pendingEmail}</span>. Open it to
             finish setting up your account.
@@ -158,7 +187,7 @@ export function SaveGate({
         </div>
 
         {/* One line naming what is being saved. Ruled, not boxed. */}
-        <p className="border-y border-line py-3.5 text-[15px] font-semibold text-ink">
+        <p className="border-y border-line py-3.5 text-[16px] font-semibold text-ink">
           {planLine}
         </p>
 
@@ -181,14 +210,14 @@ export function SaveGate({
                 setEmail("");
                 setError(null);
               }}
-              className="-my-2 py-2 text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+              className="-my-2 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
             >
               Use a different email
             </button>
           </div>
         </div>
 
-        <p className="text-center text-[13px] leading-[1.5] text-ink-3">
+        <p className="text-center text-[16px] leading-[1.5] text-ink-3">
           Your plan stays on this device while you confirm.
         </p>
       </main>
@@ -202,39 +231,45 @@ export function SaveGate({
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
           Save your plan
         </p>
-        <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
+        <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
           Keep what you just found.
         </h1>
         {/* What each choice gets, plainly: the account is what runs sessions
             and keeps the counts. Skipping keeps the plan on this device and
             nothing more; it used to read as though sessions came with it. */}
-        <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
-          A free account runs your guided sessions and keeps what you log, on any device.
-          Skip it and your plan stays on this device, but sessions and logging need the
-          account. No card, nothing to pay.
+        {/* The first words answer the button that opened the form: "Save my
+            plan" hears that saving makes an account, "Start session" that
+            sessions need one. Each says it once. */}
+        <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
+          {reason === "session" ? (
+            <>
+              Sessions need a free account. It keeps what you log, on any device. Skip it and
+              your plan stays on this device. No card, nothing to pay.
+            </>
+          ) : (
+            <>
+              Saving creates a free account. It runs your guided sessions and keeps what you log,
+              on any device. Skip it and your plan stays on this device, but sessions and logging
+              need the account. No card, nothing to pay.
+            </>
+          )}
         </p>
       </div>
-
-      {reason === "session" && (
-        <p className="border-y border-line py-3 text-pretty text-[15px] font-medium leading-[1.5] text-ink">
-          Sessions need a free account so your progress is saved.
-        </p>
-      )}
 
       {/* The real bottleneck and plan being saved. */}
       <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-[18px] py-4">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">Your plan</p>
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-optic" />
-          <span className="text-[15px] font-semibold">{bottleneckTitle}</span>
-          <span className="text-[13px] text-ink-3">· {weeksTarget}-week plan</span>
+          <span className="h-2 w-2 shrink-0 rounded-full bg-ink-2" />
+          <span className="text-[16px] font-semibold">{bottleneckTitle}</span>
+          <span className="text-[15px] text-ink-3">· {weeksTarget}-week plan</span>
         </div>
       </div>
 
       {error && (
         <p
           role="alert"
-          className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+          className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
         >
           {error}
         </p>
@@ -267,7 +302,7 @@ export function SaveGate({
               a placeholder-only label disappears exactly when the player
               goes back to check what they typed. */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-[13px] font-medium text-ink-2">
+            <label htmlFor="email" className="text-[15px] font-medium text-ink-2">
               Email
             </label>
             <input
@@ -278,12 +313,12 @@ export function SaveGate({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[15px] text-ink placeholder-ink-3 focus:border-line-hover"
+              className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[13px] font-medium text-ink-2">
+            <label htmlFor="password" className="text-[15px] font-medium text-ink-2">
               Password
             </label>
             {/* The ring goes on the row so it wraps the field and its toggle. */}
@@ -297,7 +332,7 @@ export function SaveGate({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder-ink-3 focus-visible:outline-none"
+                className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
               />
               <button
                 type="button"
@@ -309,7 +344,7 @@ export function SaveGate({
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
-            <p id="password-hint" className="text-[13px] leading-[1.5] text-ink-3">
+            <p id="password-hint" className="text-[16px] leading-[1.5] text-ink-3">
               At least {MIN_PASSWORD_LENGTH} characters.
             </p>
           </div>
@@ -327,12 +362,12 @@ export function SaveGate({
       <button
         type="button"
         onClick={onSkip}
-        className="-my-2 py-2 text-center text-[14px] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
+        className="-my-2 py-2 text-center text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
       >
-        Not now — keep it on this device
+        Not now, keep it on this device
       </button>
 
-      <p className="text-center text-[13px] text-ink-2">
+      <p className="text-center text-[16px] text-ink-2">
         Already have an account?{" "}
         <Link href="/login" className="underline underline-offset-4">
           Sign in

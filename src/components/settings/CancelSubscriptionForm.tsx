@@ -41,7 +41,7 @@ export function CancelSubscriptionForm({
   if (cancelPending) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="rounded-xl border border-line bg-surface px-[18px] py-4 text-[14px] leading-[1.5] text-ink-2">
+        <p className="rounded-xl border border-line bg-surface px-[18px] py-4 text-[16px] leading-[1.5] text-ink-2">
           Your subscription is set to cancel. You keep Progress access until{" "}
           <span className="text-ink">{untilLabel}</span>, then you move to the
           free plan.
@@ -79,7 +79,7 @@ export function CancelSubscriptionForm({
 
 function SupportError() {
   return (
-    <p role="alert" className="text-center text-[13px] leading-[1.45] text-danger">
+    <p role="alert" className="text-center text-[16px] leading-[1.45] text-danger">
       Something went wrong. Email{" "}
       <a href={SUPPORT_MAILTO} className="underline underline-offset-4">
         {SUPPORT_EMAIL}

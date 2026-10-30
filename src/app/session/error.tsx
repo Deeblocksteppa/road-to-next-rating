@@ -30,7 +30,7 @@ export default function SessionError({
         <h1 className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em]">
           The session screen hit an error.
         </h1>
-        <p className="text-[15px] leading-[1.6] text-ink-2">
+        <p className="text-[16px] leading-[1.6] text-ink-2">
           Anything you already logged is saved. Retry picks up at the first drill that
           isn&apos;t logged yet.
         </p>
@@ -48,7 +48,7 @@ export default function SessionError({
           href="/plan"
           className="flex h-[52px] w-full items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover"
         >
-          Back to plan
+          Back to my plan
         </Link>
       </div>
     </main>

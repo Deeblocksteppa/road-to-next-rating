@@ -33,8 +33,8 @@ export function DeleteAccountForm() {
 
   return (
     <div className="flex flex-col gap-3">
-      <label htmlFor="confirm-delete" className="text-[14px] leading-[1.5] text-ink-2">
-        Type <span className="font-mono text-[13px] text-ink">{CONFIRM_WORD}</span> to confirm.
+      <label htmlFor="confirm-delete" className="text-[16px] leading-[1.5] text-ink-2">
+        Type <span className="font-mono text-[15px] text-ink">{CONFIRM_WORD}</span> to confirm.
       </label>
       <input
         id="confirm-delete"
@@ -46,11 +46,11 @@ export function DeleteAccountForm() {
         autoCapitalize="characters"
         spellCheck={false}
         placeholder={CONFIRM_WORD}
-        className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 font-mono text-[15px] tracking-[0.08em] text-ink placeholder-ink-3 focus:border-line-hover"
+        className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 font-mono text-[16px] tracking-[0.08em] text-ink placeholder-ink-3 focus:border-line-hover"
       />
 
       {error && (
-        <p role="alert" className="text-[13px] leading-[1.45] text-danger">
+        <p role="alert" className="text-[16px] leading-[1.45] text-danger">
           {error}
         </p>
       )}
@@ -66,7 +66,7 @@ export function DeleteAccountForm() {
 
       <Link
         href="/settings"
-        className="flex h-11 items-center justify-center text-[14px] font-medium text-ink-2 transition-colors hover:text-ink"
+        className="flex h-11 items-center justify-center text-[15px] font-medium text-ink-2 transition-colors hover:text-ink"
       >
         Keep my account
       </Link>

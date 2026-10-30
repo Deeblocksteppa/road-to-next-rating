@@ -21,19 +21,19 @@ export default function SignupPage({
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[16px] text-muted-foreground">
             Save your diagnosis and track your plan.
           </p>
         </div>
 
         {errorMessage && (
-          <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[16px] text-destructive">
             {errorMessage}
           </p>
         )}
 
         {searchParams.check_email && (
-          <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+          <p className="rounded-md border border-border bg-muted px-3 py-2 text-[16px] text-muted-foreground">
             Check your email for a confirmation link to finish signing up.
           </p>
         )}
@@ -62,7 +62,7 @@ export default function SignupPage({
               required
             />
           </div>
-          <Button type="submit" size="lg" className="w-full">
+          <Button type="submit" size="lg" className="w-full text-[15px]">
             Create account
           </Button>
         </form>
@@ -72,20 +72,20 @@ export default function SignupPage({
           <>
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or</span>
+              <span className="text-[15px] text-muted-foreground">or</span>
               <div className="h-px flex-1 bg-border" />
             </div>
 
             <form action={signInWithGoogle}>
               <input type="hidden" name="next" value={next} />
-              <Button type="submit" variant="outline" size="lg" className="w-full">
+              <Button type="submit" variant="outline" size="lg" className="w-full text-[15px]">
                 Continue with Google
               </Button>
             </form>
           </>
         )}
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-[16px] text-muted-foreground">
           Already have an account?{" "}
           <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
             Sign in

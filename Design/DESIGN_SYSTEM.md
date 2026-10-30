@@ -217,7 +217,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 - **Checkbox (plan task):** 26×26px, `radius-sm` (8, snapped from 9). Done = `optic` fill + `optic-ink` check. Todo = 1.5px `line-hover` border, transparent.
 - **Back / icon button:** 36×36px, `radius-md` (12), border `line-strong`, glyph `ink-2`; hover border `line-hover`.
 - **Story-progress ticks (reveal):** 5 equal bars, height 2px, `radius-full`. Filled = `ink`, empty = `line-strong`.
-- **Locked / blur treatment:** real content `filter: blur(6–7px); opacity: 0.45–0.5`, overlaid with a scrim (`linear-gradient(rgba(6,6,7,0.35), rgba(6,6,7,0.6))` or surface-tinted `rgba(19,19,21,0.4→0.7)`), a lock icon, and a one-line teaser naming what's underneath. **The current number always stays visible** — desire, not resentment. Never a hard empty box.
+- **Locked / blur treatment:** a placeholder of the real structure (never the paid values) at `filter: blur(6–7px); opacity: 0.45–0.5`, under a flat cover `rgba(19,19,21,0.6)` (no gradient), a lock icon, and a one-line teaser naming what's underneath. **The current number always stays visible** — desire, not resentment. Never a hard empty box.
 
 ### Animation
 

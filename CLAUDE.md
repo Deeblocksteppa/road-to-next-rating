@@ -24,7 +24,7 @@ Next.js 14 App Router, TypeScript, Tailwind 3 + shadcn, Supabase (auth + Postgre
 - `src/lib/`: the engine and app logic. `engine.ts` scores answers, routes root cause, picks the story. `questions.ts` (options and values), `diagnoses.ts` (authored stories), `readiness.ts` (0 to 100 score), `session-plan.ts` (the one definition of a session), `drills.ts`, `roadmap.ts`, `plan-*.ts`, `retest-*.ts`, `delta.ts`, `billing.ts`, `stripe.ts`. `supabase/admin.ts` is the service-role client: server only.
 - `src/app/`: `page.tsx` landing, `start/` assessment and reveal, `(app)/home|plan|progress` tabs, `session/` guided session, `retest/` (+ `[id]/next` new-focus reveal), `paywall/`, `settings/` (`manage`, `delete`), `auth/confirm` (all emailed links), `api/stripe/webhook`, `api/cron/drill-reminders`.
 - `src/components/marketing/`: landing sections. `sections.tsx` layout, `readouts.tsx` live product readouts, `demo-run.ts` example data, `primitives.tsx` `ExampleTag`.
-- `src/components/`: `diagnosis/` (Reveal, Roadmap, SavedResult), `retest/`, `progress/`, `session/`, `ui/` (shadcn).
+- `src/components/`: `plan/PlanView` (the plan, at `/start` anonymous and `/plan` signed in), `diagnosis/` (Reveal, SkillTitle), `home/TodaySession`, `retest/`, `progress/`, `session/`, `ui/` (shadcn).
 - `supabase/migrations/`: schema. Every table cascades from `profiles`.
 
 ## Hard rules

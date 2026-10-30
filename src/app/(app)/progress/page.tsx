@@ -94,13 +94,18 @@ export default async function ProgressPage() {
 
     viewData = {
       kind: "day-one",
-      retestDateLabel: plan?.retest_date ? monthDay(plan.retest_date) : "—",
-      daysUntilRetest: timeline?.daysUntilRetest ?? 0,
-      weekNumber: timeline?.weekNumber ?? 1,
-      weeksTarget: timeline?.weeksTarget ?? 3,
+      retest:
+        plan?.retest_date && timeline
+          ? {
+              dateLabel: monthDay(plan.retest_date),
+              daysUntilRetest: timeline.daysUntilRetest,
+              weekNumber: timeline.weekNumber,
+              weeksTarget: timeline.weeksTarget,
+              daysElapsed: timeline.daysElapsed,
+            }
+          : null,
       bottleneckPhrase: SKILL_LABELS[bottleneck] ?? "your bottleneck",
       sessionsDone,
-      daysElapsed: timeline?.daysElapsed ?? 1,
     };
   } else if (profileRes.data?.subscription_status !== "active") {
     // ── State 2: Locked (free). Only what the free tier shows is read and

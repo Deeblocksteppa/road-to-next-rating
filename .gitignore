@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Critique screenshots stay local; the write-ups in audit/ are tracked.
 audit/*-screens/
+
+# /test-user records the anonymous rows a test run creates here, until cleanup.
+.claude/skills/test-user/anon-ledger.json

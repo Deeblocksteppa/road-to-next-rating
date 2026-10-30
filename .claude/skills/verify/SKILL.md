@@ -57,8 +57,12 @@ Check script (paste as is):
 
 ```js
 (() => {
-  const r = { overflowX: document.documentElement.scrollWidth > innerWidth, small: {}, dashes: [], italic: [], shadow: [], gradient: [] };
+  const r = { overflowX: document.documentElement.scrollWidth > innerWidth, small: {}, smallControls: {}, dashes: [], italic: [], shadow: [], gradient: [] };
   const clear = /^(rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(, )?)+$/;
+  // Buttons and text links (DESIGN.md, Components > Buttons): primary/secondary h-[52px] or h-14,
+  // ghost h-11, h-[44px] or min-h-11, text links `underline`. Their labels are 15px by design.
+  const control = /(^|\s)(h-\[52px\]|h-14|h-11|h-\[44px\]|min-h-11|underline)(\s|$)/;
+  const add = (o, size, t) => (o[size] ??= []).push(t.slice(0, 50));
   for (const el of document.querySelectorAll("body *")) {
     const cs = getComputedStyle(el);
     if (cs.display === "none" || cs.visibility === "hidden") continue;
@@ -66,17 +70,36 @@ Check script (paste as is):
     if (cs.backgroundImage.includes("gradient")) r.gradient.push(el.tagName + " " + el.className.toString().slice(0, 60));
     const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
     if (!own) continue;
+    // The "ROAD TO NEXT" wordmark is the logo, not text: exempt from every text rule.
+    if (el.closest("[data-wordmark]")) continue;
     if (cs.fontStyle === "italic") r.italic.push(own.slice(0, 50));
     if (own.includes("—")) r.dashes.push(own.slice(0, 80));
-    const mono = /mono/i.test(cs.fontFamily);
-    if (!mono && own.split(/\s+/).length >= 6 && parseFloat(cs.fontSize) < 16) (r.small[cs.fontSize] ??= []).push(own.slice(0, 50));
+    // Mono labels and data readouts (font-mono = IBM Plex Mono, DESIGN.md Typography): exempt.
+    if (/IBM[ _]Plex[ _]Mono|monospace/i.test(cs.fontFamily)) continue;
+    const size = parseFloat(cs.fontSize);
+    const host = el.closest("a, button, [role=button]");
+    const words = own.split(/\s+/).length;
+    if (host && control.test(host.className.toString())) {
+      if (size < 15) add(r.smallControls, cs.fontSize, own);
+      continue;
+    }
+    // Running text: a sentence (ends . ? !) or 6+ words must be 16px; any other line at least 15px.
+    const sentence = /[.?!]["'’”)]?$/.test(own) || words >= 6;
+    if ((sentence && size < 16) || (words >= 2 && size < 15)) add(r.small, cs.fontSize, own);
   }
-  for (const k in r.small) r.small[k] = { count: r.small[k].length, e: r.small[k].slice(0, 3) };
+  for (const o of [r.small, r.smallControls]) for (const k in o) o[k] = { count: o[k].length, e: o[k].slice(0, 3) };
   return r;
 })()
 ```
 
-Gradients are allowed only on the locked/blur scrim and the landing's closing section. Focus rings are filtered out of `shadow`.
+What `small` and `smallControls` mean:
+
+- **Exempt from 16px:** text inside an `a`, `button` or `[role=button]` whose classes mark it as a button or text link (`h-[52px]`, `h-14`, `h-11`, `h-[44px]`, `min-h-11`, `underline`). DESIGN.md sets those labels at 15px. They are still reported under `smallControls` when below 15px.
+- **Everything else is running text:** any sentence, or any line of six or more words, under 16px goes in `small`, and so does any other sans line under 15px. A link or button without those classes (a whole tappable row, a drill card, a banner) is not exempt: its sentences are running text.
+- **The wordmark is exempt:** "ROAD TO NEXT" / "RATING" in the header is the logo (`brand/Logo.tsx`, marked `data-wordmark`), not copy.
+- **Mono is exempt throughout:** anything whose computed font is IBM Plex Mono (`font-mono`), meaning labels, units, badges, counters, the countdown and mono data readouts like "6/10" or "1/3 → 2/3".
+
+Gradients are allowed only on the landing's closing section. Focus rings are filtered out of `shadow`.
 
 ## 4. Look, not just measure
 
@@ -99,4 +122,4 @@ Anything off (most serious first):
 2. …
 ```
 
-Each item names the route, width, what is wrong, and the source `file:line` when you can find it. Mention body text under 16px as one grouped item with counts. If nothing is off, say what was checked. Then list any test user created and confirm its cleanup.
+Each item names the route, width, what is wrong, and the source `file:line` when you can find it. Mention running text under 16px (`small`) as one grouped item with counts, and button or link labels under 15px (`smallControls`) as another. Exempt 15px button and link labels are not an issue. If nothing is off, say what was checked. Then list any test user created and confirm its cleanup.

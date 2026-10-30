@@ -72,7 +72,7 @@ export function ResendConfirmation({ email, className = "" }: { email: string; c
       disabled={waiting}
       aria-live="polite"
       className={[
-        "-my-2 py-2 text-[14px] tabular-nums underline decoration-line-hover underline-offset-4 transition-colors",
+        "-my-2 py-2 text-[15px] tabular-nums underline decoration-line-hover underline-offset-4 transition-colors",
         waiting ? "text-ink-3 no-underline" : "text-ink-2 hover:text-ink",
         className,
       ].join(" ")}

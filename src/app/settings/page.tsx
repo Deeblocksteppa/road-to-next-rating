@@ -65,7 +65,7 @@ export default async function SettingsPage() {
         <div className="flex flex-col rounded-2xl border border-line bg-surface">
           {/* user.email is the live session value; profile.email is a
               signup-time snapshot that can go stale — prefer the live one. */}
-          <Row label="Email" value={user.email ?? profile?.email ?? ""} />
+          <Row label="Email" value={user.email ?? profile?.email ?? ""} stacked />
           <div className="h-px bg-line" />
           <Row
             label="Display name"
@@ -96,8 +96,9 @@ export default async function SettingsPage() {
                 href="/settings/manage"
                 className="flex items-center justify-between px-[18px] py-[15px] transition-colors hover:bg-[#17171A]"
               >
-                <span className="text-[15px] text-optic">Manage subscription</span>
-                <span className="text-optic">›</span>
+                {/* Neutral: the reminder toggles below carry the screen's accent. */}
+                <span className="text-[15px] text-ink">Manage subscription</span>
+                <span className="text-ink-3">›</span>
               </Link>
             </>
           ) : (
@@ -106,7 +107,10 @@ export default async function SettingsPage() {
               className="flex items-center justify-between px-[18px] py-[15px] transition-colors hover:bg-[#17171A]"
             >
               <span className="text-[15px] text-ink-2">Plan</span>
-              <span className="text-[15px] text-optic">Upgrade to unlock Progress</span>
+              <span className="flex items-center gap-2 text-[15px] text-ink">
+                Upgrade to unlock Progress
+                <span className="text-ink-3">›</span>
+              </span>
             </Link>
           )}
         </div>
@@ -115,7 +119,7 @@ export default async function SettingsPage() {
             update billing", and neither exists. Sentence case: at this
             length, spaced mono caps have to be decoded, not read. */}
         {isPaid && (
-          <p className="pl-0.5 text-[13px] leading-[1.5] text-ink-3">
+          <p className="pl-0.5 text-[16px] leading-[1.5] text-ink-3">
             {plan?.cancel_at_period_end
               ? "Scheduled to cancel. You can resume it anytime before then."
               : "Cancel anytime. You keep Progress until the end of the period you've paid for."}
@@ -130,7 +134,7 @@ export default async function SettingsPage() {
         </p>
         <div className="flex flex-col rounded-2xl border border-line bg-surface">
           <div className="flex items-center justify-between gap-4 px-[18px] py-[15px]">
-            <span className="text-[15px] leading-[1.4] text-ink">
+            <span className="text-[16px] leading-[1.4] text-ink">
               Email me when my re-test opens
             </span>
             <RetestReminderToggle
@@ -139,7 +143,7 @@ export default async function SettingsPage() {
           </div>
           <div className="h-px bg-line" />
           <div className="flex items-center justify-between gap-4 px-[18px] py-[15px]">
-            <span className="text-[15px] leading-[1.4] text-ink">
+            <span className="text-[16px] leading-[1.4] text-ink">
               Email me while a session is still due
             </span>
             <DrillReminderToggle initialEnabled={drillReminderEnabled} />
@@ -177,7 +181,7 @@ export default async function SettingsPage() {
             handler — it looked destructive and did nothing at all. */}
         <Link
           href="/settings/delete"
-          className="flex h-11 items-center justify-center text-[14px] text-danger transition-colors hover:text-danger-hover"
+          className="flex h-11 items-center justify-center text-[15px] text-danger transition-colors hover:text-danger-hover"
         >
           Delete account
         </Link>
@@ -190,11 +194,24 @@ function Row({
   label,
   value,
   muted,
+  stacked,
 }: {
   label: string;
   value: string;
   muted?: boolean;
+  /** Label above value, for values too long to share a line (an email). */
+  stacked?: boolean;
 }) {
+  if (stacked) {
+    return (
+      <div className="flex flex-col gap-1 px-[18px] py-[15px]">
+        <span className="text-[15px] text-ink-2">{label}</span>
+        <span className={`min-w-0 break-words text-[15px] ${muted ? "text-ink-3" : "text-ink"}`}>
+          {value}
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="flex items-center justify-between px-[18px] py-[15px]">
       <span className="text-[15px] text-ink-2">{label}</span>

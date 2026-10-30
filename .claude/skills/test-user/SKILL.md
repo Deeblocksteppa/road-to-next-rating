@@ -22,6 +22,8 @@ node --env-file=.env.local .claude/skills/test-user/scripts/test-user.mjs <comma
 | `status <email>` | Auth user, row counts in all five tables, Stripe customer and subscription status. |
 | `cleanup <email>` | Cancels any live Stripe subscription, deletes the auth user (every table cascades from `profiles`), then prints `status`. |
 | `list` | Every leftover `rtnr-test+` user. |
+| `anon <assessment> <diagnosis> <plan>` | Records the ids of anonymous rows this run created (in the gitignored `anon-ledger.json`) and prints each row's owner, `created_at` and `retest_date`. |
+| `anon-cleanup` | Deletes every recorded row that is still unclaimed, refuses any claimed by a real account, prints what is left, and empties the ledger once nothing is. `cleanup` runs it too. |
 
 Any Stripe step aborts unless `STRIPE_SECRET_KEY` starts with `sk_test_`.
 
@@ -31,19 +33,21 @@ Any Stripe step aborts unless `STRIPE_SECRET_KEY` starts with `sk_test_`.
 2. **Create.** `create`, and note the email.
 3. **Sign in.** `preview_start` `dev`, then `link <email>` and navigate the browser to the printed URL. It lands on `/home` signed in. No password is typed anywhere.
 4. **Give it data if needed.** For screens that need a plan, take the assessment at `/start` while signed in, or anonymously before step 3 so the sign-in claims it.
+   - **Every anonymous assessment gets recorded.** Once the plan shows, read the three ids (the save starts when the assessment ends; if one is still null, wait a moment and read again) with `javascript_tool`: `["assessment","diagnosis","plan"].map(k => localStorage.getItem("rtnr:" + k + "_id"))`, and run `anon <assessment> <diagnosis> <plan>`. Do this before any sign-in, because claiming clears them from the device. Record again after every "Start over", since each run writes new rows.
 5. **Paid (only when `$ARGUMENTS` includes `paid`).** From `/paywall`, continue to Stripe Checkout (test mode, `checkout.stripe.com`). Card `4242 4242 4242 4242`, any future expiry, any CVC, any postcode, any name. Confirm `/paywall/success`, then `status <email>` shows an active subscription.
 6. **Do the check** the user asked for.
 7. **Clean up.** Either:
    - through the app when those screens are under test: `/settings/manage` cancel, then `/settings/delete`; or
    - `cleanup <email>`, which prints the final status.
-   After cleaning up through the app, run `status <user id>`. Either way, finish with `list`.
+   After cleaning up through the app, run `status <user id>`, then `anon-cleanup`. Either way, finish with `list` and `anon-cleanup` (which prints "No anonymous rows recorded." once the ledger is empty).
 8. **Report cleanup**, all of these must hold:
    - auth user: not found
    - profiles, assessments, diagnoses, plans, drill_sessions: 0 rows
    - Stripe subscription: `canceled` (or none)
    - `list`: no test users left
+   - anon rows still present: `{"plans":0,"diagnoses":0,"assessments":0}`, with the ids that were deleted
 
-The Stripe test-mode customer record remains after cleanup; say so. Anonymous assessment rows that were never claimed are not tied to the user and are not deleted.
+The Stripe test-mode customer record remains after cleanup; say so. Only recorded ids are ever deleted: never delete unclaimed rows by date or any other filter, since real visitors create them too.
 
 ## Notes
 

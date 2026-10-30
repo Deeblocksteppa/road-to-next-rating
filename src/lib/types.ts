@@ -11,6 +11,12 @@ export type QuestionType = "skill" | "training" | "context" | "text";
 export interface AnswerOption {
   id: string;
   label: string;
+  /**
+   * The answer in a few words, quoted back on the re-test result and in the
+   * third-shot re-test goal ("1–3"). Skill questions only. Read this, never a
+   * cut of `label`: the label's punctuation is display only.
+   */
+  short?: string;
   skillLevel?: number;          // 0–3, skill questions only
   rootCauseFlag?: RootCauseId;  // training questions only
 }
