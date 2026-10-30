@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { DeleteAccountForm } from "@/components/settings/DeleteAccountForm";
+import { fullDate } from "@/lib/date-format";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +23,11 @@ export default async function DeleteAccountPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_status")
+    .select("subscription_status, renews_at, cancel_at_period_end")
     .eq("id", user.id)
     .maybeSingle();
   const isPaid = profile?.subscription_status === "active";
+  const endDate = profile?.renews_at ? fullDate(profile.renews_at) : null;
 
   return (
     <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
@@ -71,8 +73,24 @@ export default async function DeleteAccountPage() {
 
       {isPaid && (
         <p className="rounded-xl border border-line-strong bg-surface-2 px-[18px] py-3.5 text-[16px] leading-[1.5] text-ink-2">
-          Your subscription is cancelled immediately as part of this, so you are not
-          billed again. The time left on the current period is not refunded.
+          {profile?.cancel_at_period_end ? (
+            <>
+              {endDate ? `Your plan already ends on ${endDate}.` : "Your plan is already set to end."}{" "}
+              Deleting your account now ends access today.
+            </>
+          ) : (
+            <>
+              Deleting your account cancels Progress right away and ends access today. To stop
+              paying but keep access until {endDate ?? "the end of your billing period"},{" "}
+              <Link
+                href="/settings/manage"
+                className="text-ink underline decoration-line-hover underline-offset-4 transition-colors hover:decoration-ink-2"
+              >
+                cancel your subscription
+              </Link>{" "}
+              instead.
+            </>
+          )}
         </p>
       )}
 

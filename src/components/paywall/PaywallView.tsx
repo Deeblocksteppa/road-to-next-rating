@@ -4,9 +4,22 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { startCheckout } from "@/app/paywall/actions";
+import { FlowLink } from "@/components/legal/FlowLink";
 import type { Direction } from "@/lib/retest-view";
 
 type Plan = "annual" | "monthly";
+
+/*
+ * The prices shown on the cards, the button and the disclosure. What Stripe
+ * charges comes from STRIPE_PRICE_ANNUAL and STRIPE_PRICE_MONTHLY: a change
+ * there has to change here too.
+ */
+const PRICE: Record<Plan, string> = { annual: "$79", monthly: "$7.99" };
+
+const DISCLOSURE: Record<Plan, string> = {
+  annual: `${PRICE.annual} per year. Renews automatically each year until you cancel. Cancel anytime in Settings and keep Progress until the end of the year you paid for. Full refund within 14 days of each yearly charge.`,
+  monthly: `${PRICE.monthly} per month. Renews automatically each month until you cancel. Cancel anytime in Settings and keep Progress until the end of the month you paid for. No refunds for partial months.`,
+};
 
 /*
  * Only what the subscription actually unlocks. "Your next bottleneck,
@@ -88,7 +101,7 @@ export function PaywallView({
       </header>
 
       {/* Content stays vertically centred in the space the header leaves. */}
-      <div className="flex flex-1 flex-col justify-center gap-[22px] py-6">
+      <div className="flex flex-1 flex-col justify-center gap-[22px] py-3">
         <div className="flex flex-col gap-2.5">
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
             {pitch.eyebrow}
@@ -113,7 +126,7 @@ export function PaywallView({
             onSelect={() => setPlan("annual")}
             value="annual"
             name="Annual"
-            price="$79 / year · equivalent to $6.58 per month"
+            price={`${PRICE.annual} / year · equivalent to $6.58 per month`}
             badge="SAVE 17%"
           />
           <PlanCard
@@ -121,11 +134,14 @@ export function PaywallView({
             onSelect={() => setPlan("monthly")}
             value="monthly"
             name="Monthly"
-            price="$7.99 / month · billed monthly"
+            price={`${PRICE.monthly} / month · billed monthly`}
           />
         </div>
 
         <div className="mt-0.5 flex flex-col gap-2.5">
+          <p aria-live="polite" className="text-[16px] leading-[1.5] text-ink-2">
+            {DISCLOSURE[plan]}
+          </p>
           <button
             type="button"
             onClick={handleContinue}
@@ -135,16 +151,17 @@ export function PaywallView({
             {pending
               ? "Taking you to checkout…"
               : plan === "annual"
-                ? "Continue · $79/year"
-                : "Continue · $7.99/month"}
+                ? `Continue · ${PRICE.annual}/year`
+                : `Continue · ${PRICE.monthly}/month`}
           </button>
           {error && (
             <p role="alert" className="text-center text-[16px] leading-[1.45] text-danger">
               {error}
             </p>
           )}
-          <p className="text-center text-[16px] leading-[1.5] text-ink-3">
-            Secure checkout by Stripe · Cancel anytime
+          <p className="text-[16px] leading-[1.5] text-ink-3">
+            Secure checkout by Stripe · <FlowLink href="/terms">Terms</FlowLink> ·{" "}
+            <FlowLink href="/refunds">Refund Policy</FlowLink>
           </p>
         </div>
       </div>

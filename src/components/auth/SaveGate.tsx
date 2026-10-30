@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
+import { ConsentLine } from "@/components/legal/ConsentLine";
 import { AUTH_ERRORS, authErrorCode } from "@/lib/auth-errors";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
+import { consentMetadata } from "@/lib/legal";
 import { claimAnonymousResult, type SavedIds } from "@/lib/persistence";
 import { clearSignupPending, saveSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
@@ -96,6 +98,7 @@ export function SaveGate({
           pending_assessment_id: ids.assessment,
           pending_diagnosis_id: ids.diagnosis,
           pending_plan_id: ids.plan,
+          ...consentMetadata(),
         },
       },
     });
@@ -356,6 +359,7 @@ export function SaveGate({
           >
             {loading ? "Creating your account…" : "Create account & save plan"}
           </button>
+          <ConsentLine />
         </form>
       </div>
 
@@ -364,7 +368,7 @@ export function SaveGate({
         onClick={onSkip}
         className="-my-2 py-2 text-center text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
       >
-        Not now, keep it on this device
+        Not now
       </button>
 
       <p className="text-center text-[16px] text-ink-2">

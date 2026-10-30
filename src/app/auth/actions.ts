@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 
 import { authErrorCode } from "@/lib/auth-errors";
 import { claimSignupRecords } from "@/lib/claim-signup";
+import { consentMetadata } from "@/lib/legal";
 import { createClient } from "@/lib/supabase/server";
 
 /** Where to send users after a successful login/signup. */
@@ -51,6 +52,7 @@ export async function signup(formData: FormData) {
     password: String(formData.get("password")),
     options: {
       emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      data: consentMetadata(),
     },
   });
 

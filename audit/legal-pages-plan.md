@@ -84,7 +84,7 @@ These are places where following the brief literally would break something.
 - "when you agreed to these terms" (Privacy) is false for every account that already exists: no record, and no notice sent.
 - The consent line names session reminders but not the re-test reminder. Not false, since Privacy covers it, but incomplete.
 
-**Verify:** real sign-up from the save form and `/signup` with the metadata read back through the admin API; paywall in both plans; Stripe Price amounts against the displayed prices; delete page as free, active and cancel-scheduled.
+**Verify:** both forms submitted against a local stand-in for Supabase, with the request body read back; consent fields surviving a real claim on a `/test-user` account; paywall in both plans; Stripe Price amounts against the displayed prices; delete page as free, active and cancel-scheduled, with and without a date. No real form sign-up was run against the hosted project.
 
 ---
 

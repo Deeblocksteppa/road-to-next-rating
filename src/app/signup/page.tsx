@@ -4,6 +4,7 @@ import { signup, signInWithGoogle } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConsentLine } from "@/components/legal/ConsentLine";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 import { authErrorMessage } from "@/lib/auth-errors";
 
@@ -65,6 +66,7 @@ export default function SignupPage({
           <Button type="submit" size="lg" className="w-full text-[15px]">
             Create account
           </Button>
+          <ConsentLine />
         </form>
 
         {/* Hidden until the provider is really on — see `auth-flags.ts`. */}
