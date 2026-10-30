@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
 import { SkillTitle } from "@/components/diagnosis/SkillTitle";
 import { ShotDemo } from "@/components/session/ShotDemo";
+import { AUTH_ERRORS } from "@/lib/auth-errors";
 import { SKILL_TITLES } from "@/lib/diagnoses";
 import type { Drill } from "@/lib/drills";
 import type { TodayLogEntry, WeeklyProgress } from "@/lib/drill-sessions";
@@ -19,6 +20,12 @@ interface AnonymousContext {
   focusReason: string;
   /** The address a sign-up on this device is waiting on, if any. */
   pendingEmail: string | null;
+  /**
+   * The button waiting on the result's save before the form opens (it reads
+   * "Saving…" and both are disabled), and the one whose save failed.
+   */
+  saving: "save" | "session" | null;
+  saveFailed: "save" | "session" | null;
   /** "Start session": sessions need an account, so this opens the save form saying so. */
   onStartSession: () => void;
   /** "Save my plan": the same form, without the session line. */
@@ -90,7 +97,7 @@ export function PlanView({
   const weekComplete = member ? member.weekly.total > 0 && member.weekly.completed >= member.weekly.total : false;
   const nextId = remainingToday[0]?.id ?? null;
 
-  // Anonymous: the plan was saved when the reveal ended, but the device keeps
+  // Anonymous: the plan is saved when the assessment ends, but the device keeps
   // no start date, so it has no week to name.
   const weekLine =
     member?.weekNumber != null
@@ -182,11 +189,13 @@ export function PlanView({
           <button
             type="button"
             onClick={anon.onStartSession}
-            className="mt-2 flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+            disabled={anon.saving !== null}
+            className="mt-2 flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
           >
-            Start session
+            {anon.saving === "session" ? "Saving…" : "Start session"}
           </button>
         )}
+        {anon?.saveFailed === "session" && <SaveError />}
       </section>
 
       {/* ── Three readings, quiet, under hairlines ── */}
@@ -239,15 +248,29 @@ export function PlanView({
           <button
             type="button"
             onClick={anon.onSavePlan}
-            className="flex h-[52px] w-full items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover active:scale-[0.98]"
+            disabled={anon.saving !== null}
+            className="flex h-[52px] w-full items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
           >
-            Save my plan
+            {anon.saving === "save" ? "Saving…" : "Save my plan"}
           </button>
+          {anon.saveFailed === "save" && <SaveError />}
         </section>
       )}
 
       {anon && <StartOver onStartOver={anon.onStartOver} />}
     </div>
+  );
+}
+
+/** The result could not be saved, so the form did not open. The same alert as the form's. */
+function SaveError() {
+  return (
+    <p
+      role="alert"
+      className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
+    >
+      {AUTH_ERRORS.generic}
+    </p>
   );
 }
 

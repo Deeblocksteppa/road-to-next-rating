@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
 import { AUTH_ERRORS, authErrorCode } from "@/lib/auth-errors";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
-import { claimPendingRecords, getPendingIds } from "@/lib/persistence";
+import { claimAnonymousResult, type SavedIds } from "@/lib/persistence";
 import { clearSignupPending, saveSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,12 +27,17 @@ const MIN_PASSWORD_LENGTH = 8;
  *     just signed up was looking at the sign-up pitch and could reasonably
  *     think nothing had happened.
  *
+ * Nothing is sent until the result's save (`saveResult`) has finished with
+ * all three rows: the sign-up carries their ids, and a partial set is never
+ * claimed. If the save still fails, the form shows an error and stays put.
+ *
  * - Confirmation OFF → a session is live immediately: claim here, go to Home.
  * - Confirmation ON → no session yet. The plan stays on this device (nothing
  *   is cleared), the device remembers the pending sign-up, and the rows are
  *   claimed when the emailed link is opened, on any device (/auth/confirm).
  */
 export function SaveGate({
+  saveResult,
   onSkip,
   bottleneckTitle,
   weeksTarget,
@@ -40,6 +45,8 @@ export function SaveGate({
   onPendingChange,
   reason = "save",
 }: {
+  /** The anonymous result's save (`saveAnonymousResult`): the complete set of ids, or a rejection. */
+  saveResult: () => Promise<SavedIds>;
   /** Back to the result page. */
   onSkip: () => void;
   /** Title-case skill name ("The reset"). */
@@ -64,11 +71,21 @@ export function SaveGate({
     setLoading(true);
     setError(null);
 
+    // The ids of the result just made, sent with the sign-up so /auth/confirm
+    // can attach them wherever the confirmation link is opened. They
+    // otherwise live only in this browser's storage. Already saved when the
+    // form opened, so this normally resolves at once.
+    let ids: SavedIds;
+    try {
+      ids = await saveResult();
+    } catch (err) {
+      console.error("Failed to save the result:", err);
+      setError(AUTH_ERRORS.generic);
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
-    // The ids of the diagnosis and plan just made, sent with the sign-up so
-    // /auth/confirm can attach them wherever the confirmation link is
-    // opened. They otherwise live only in this browser's storage.
-    const pending = getPendingIds();
     const address = email.trim();
     const { data, error } = await supabase.auth.signUp({
       email: address,
@@ -76,9 +93,9 @@ export function SaveGate({
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/home`,
         data: {
-          pending_assessment_id: pending.assessment ?? null,
-          pending_diagnosis_id: pending.diagnosis ?? null,
-          pending_plan_id: pending.plan ?? null,
+          pending_assessment_id: ids.assessment,
+          pending_diagnosis_id: ids.diagnosis,
+          pending_plan_id: ids.plan,
         },
       },
     });
@@ -100,9 +117,10 @@ export function SaveGate({
     }
 
     if (data.session) {
-      // Signed in immediately — claim the anonymous rows, then go.
+      // Signed in immediately — claim the anonymous rows, then go. On a
+      // failure the device keeps its result and Home's claim tries again.
       try {
-        await claimPendingRecords();
+        await claimAnonymousResult(ids);
       } catch (err) {
         console.error("Failed to claim records:", err);
       }
@@ -123,6 +141,17 @@ export function SaveGate({
   async function handleGoogle() {
     setLoading(true);
     setError(null);
+
+    // The rows must all be saved before leaving: Home claims them by the ids
+    // on this device when Google sends the player back.
+    try {
+      await saveResult();
+    } catch (err) {
+      console.error("Failed to save the result:", err);
+      setError(AUTH_ERRORS.generic);
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({

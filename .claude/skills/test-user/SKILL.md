@@ -33,7 +33,7 @@ Any Stripe step aborts unless `STRIPE_SECRET_KEY` starts with `sk_test_`.
 2. **Create.** `create`, and note the email.
 3. **Sign in.** `preview_start` `dev`, then `link <email>` and navigate the browser to the printed URL. It lands on `/home` signed in. No password is typed anywhere.
 4. **Give it data if needed.** For screens that need a plan, take the assessment at `/start` while signed in, or anonymously before step 3 so the sign-in claims it.
-   - **Every anonymous assessment gets recorded.** As soon as the reveal finishes (the plan is saved then), read the three ids with `javascript_tool`: `["assessment","diagnosis","plan"].map(k => localStorage.getItem("rtnr:" + k + "_id"))`, and run `anon <assessment> <diagnosis> <plan>`. Do this before any sign-in, because claiming clears them from the device. Record again after every "Start over", since each run writes new rows.
+   - **Every anonymous assessment gets recorded.** Once the plan shows, read the three ids (the save starts when the assessment ends; if one is still null, wait a moment and read again) with `javascript_tool`: `["assessment","diagnosis","plan"].map(k => localStorage.getItem("rtnr:" + k + "_id"))`, and run `anon <assessment> <diagnosis> <plan>`. Do this before any sign-in, because claiming clears them from the device. Record again after every "Start over", since each run writes new rows.
 5. **Paid (only when `$ARGUMENTS` includes `paid`).** From `/paywall`, continue to Stripe Checkout (test mode, `checkout.stripe.com`). Card `4242 4242 4242 4242`, any future expiry, any CVC, any postcode, any name. Confirm `/paywall/success`, then `status <email>` shows an active subscription.
 6. **Do the check** the user asked for.
 7. **Clean up.** Either:

@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { claimPendingRecords } from "@/lib/persistence";
+import { claimDeviceResult } from "@/lib/persistence";
 import { clearSignupPending } from "@/lib/signup-pending";
 
 /**
- * Runs on /home. If the player arrived with anonymous rows still pending in
- * this browser (after an email-confirmation or OAuth round trip, where the
- * Save Gate couldn't claim inline), claim them now and refresh so the
- * freshly claimed diagnosis and plan render.
+ * Runs on /home. If the player arrived with an anonymous result still on this
+ * browser (after an email-confirmation or OAuth round trip, where the Save
+ * Gate couldn't claim inline, or after a claim there failed), save any rows
+ * it is missing, claim all three now and refresh so the freshly claimed
+ * diagnosis and plan render. The device keeps the result until that claim
+ * succeeds.
  *
  * It also says so, once: a brief "Plan saved" when the plan has just been
  * attached to the account, whether that happened here or (`saved`) on the
@@ -41,7 +43,7 @@ export function ClaimOnLoad({
     let cancelled = false;
     (async () => {
       try {
-        const claimed = await claimPendingRecords();
+        const claimed = await claimDeviceResult();
         if (claimed && !cancelled) {
           setJustSaved(true);
           router.refresh();
