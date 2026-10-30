@@ -208,8 +208,9 @@ export function SaveGate({
         {/* What each choice gets, plainly: the account is what runs sessions
             and keeps the counts. Skipping keeps the plan on this device and
             nothing more; it used to read as though sessions came with it. */}
+        {/* "Save my plan" opens this form, so its first words say saving makes an account. */}
         <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-          A free account runs your guided sessions and keeps what you log, on any device.
+          Saving creates a free account. It runs your guided sessions and keeps what you log, on any device.
           Skip it and your plan stays on this device, but sessions and logging need the
           account. No card, nothing to pay.
         </p>

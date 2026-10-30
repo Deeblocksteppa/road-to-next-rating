@@ -33,6 +33,15 @@ export function startOfTodayUTC(now: Date = new Date()): Date {
 }
 
 /**
+ * Where the current sitting's window opens: midnight UTC today, or
+ * `SESSION_WINDOW_MS` back, whichever is earlier. A log at or after this is
+ * part of today's session; anything before it is a previous one.
+ */
+export function startOfSittingUTC(now: Date = new Date()): Date {
+  return new Date(Math.min(startOfTodayUTC(now).getTime(), now.getTime() - SESSION_WINDOW_MS));
+}
+
+/**
  * Insert a drill session for today, deduped per (plan, drill, UTC day).
  *
  * Shared by every logging path (plain "mark done" and guided sessions) so the
@@ -227,9 +236,7 @@ export async function getCompletedTodayDrillIds(
   supabase: SupabaseClient,
   planId: string
 ): Promise<Set<string>> {
-  const since = new Date(
-    Math.min(startOfTodayUTC().getTime(), Date.now() - SESSION_WINDOW_MS)
-  );
+  const since = startOfSittingUTC();
   const { data, error } = await supabase
     .from("drill_sessions")
     .select("drill_id")
@@ -254,9 +261,7 @@ export async function getTodayLog(
   supabase: SupabaseClient,
   planId: string
 ): Promise<TodayLogEntry[]> {
-  const since = new Date(
-    Math.min(startOfTodayUTC().getTime(), Date.now() - SESSION_WINDOW_MS)
-  );
+  const since = startOfSittingUTC();
   const { data, error } = await supabase
     .from("drill_sessions")
     .select("drill_id, result_value")

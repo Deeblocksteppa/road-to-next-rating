@@ -328,14 +328,14 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 ### Hierarchy
 - **Display** (800, 40px → 64px md → 80px desktop, LH 1.03–1.08, tracking −0.02em in-app / −0.03em on the marketing hero): landing/reveal headlines, the one big claim on a screen. The marketing site runs the top of this range so the gap down to a 24px section heading is unmistakable; line-height stays at or above 1.03 because Archivo's ascender overflows a tighter box and the hero sits inside a clipping container.
 - **Metric** (800, 56–72px, up to 96px on the Readiness beat, LH 1.0, tabular-nums): the big number — readiness score, re-test deltas. Suffix (`/100`, `/3`) always drops to `ink-3`. Tokens: `metric` 56, `metric-lg` 72, `metric-xl` 96, and `metric-prior-desktop` 48 for the de-emphasised "before" score beside a 72px "after" on the marketing re-test readout.
-- **Metric, card** (800, 32–44px, LH 1.0, tabular-nums): a number inside a stat card, where a full Metric would overrun a half-width card — Home readiness (44), Progress readiness-now and the Day One re-test date (40), Progress stat values (32). Token `metric-card` (44); 32 and 40 reuse the H1-desktop and Display steps.
+- **Metric, card** (800, 32–44px, LH 1.0, tabular-nums): a number in a half-width reading, where a full Metric would overrun it — Progress's strip readings and the streak count (32), the session recap's logged numbers (32). 32 reuses the H1-desktop step; the `metric-card` token (44) has no current use. Progress's readiness-now (72) and Day One re-test date (56) are full Metrics, set on the page.
 - **Headline, result** (800, 34px, LH 1.05, tracking −0.02em): the headline on a screen that reports a result in the reveal register — Computing's "Found it." and the re-test result headline. Prescribed by DESIGN_SYSTEM.md §6; one step below Display, above Headline, screen.
 - **Headline, screen** (800, 30px, LH 1.1, tracking −0.02em): the one headline on a standalone, single-purpose screen — Save Gate, Sign in, Reset password, Paywall, checkout success. Prescribed by DESIGN_SYSTEM.md §6 and used consistently on all six; a step above Headline, complete because these screens open a flow rather than end one.
 - **Countdown** (IBM Plex Mono 500, 64px, LH 1.0, tabular): the guided-session timer. Mono because every countdown is the instrument reading (Typography, Character); large so it reads at a glance between reps.
 - **Statement** (800, 26px → 36px sm → 46px md → 54px desktop, LH 1.08–1.15, tracking −0.02em): the marketing site's statement sections — one sentence, centred, spanning the container, nothing beside it. Deliberately a step below Display: the hero must stay the loudest thing on the page, and a statement that matched it would read as a second hero. Mobile runs 26px because 30px wrapped the sentence to six centred lines of ~20 characters, which is the hardest wrap the page can produce.
 - **Marketing H2 (group)** (700, 26px → 32px, LH 1.2–1.25, tracking −0.01em): a heading that has to hold a group of numbered steps under it rather than one column of prose. At ordinary section scale a centred heading over a 2,300px group reads as a caption that lost its paragraph.
 - **Marketing formula** (400, 12px, LH 1.5, IBM Plex Mono, sentence case, `ink-2`): the one place mono is not uppercased. The Nothing-But-Caps habit is right for labels, units and countdowns; an equation set in 67 characters of caps is a paragraph wearing a label's clothes, and it is the sentence that makes the weighted-gap readout legible at all.
-- **Headline, complete** (800, 28px, LH 1.15, tracking −0.01em): the one-line headline on a screen where a flow has ended — the guided session's "Session logged.", the "done for the week" dead-end, and the session error screen. A step above H1 because it is the whole message on an otherwise empty screen; well below Display because nothing is being revealed.
+- **Headline, complete** (800, 28px, LH 1.15, tracking −0.01em): the one-line headline on a screen where a flow has ended — the session recap's next step ("Any day but today.", with "Session logged." above it at 20px as the confirmation), the "done for the week" dead-end, and the session error screen. A step above H1 because it is the whole message on an otherwise empty screen; well below Display because nothing is being revealed.
 - **H1** (700, 24px → 32px, LH ~1.25, tracking −0.01em): screen titles.
 - **H2** (600, 17–18px → 20px): card titles, section headers.
 - **Body** (400, 16px, LH 1.6 → 1.7 desktop, color `ink-2`): explanations, descriptions, every sentence a player reads: paragraphs, helper text, captions, error messages, teasers, caveats. 16px at every width, matching the landing page. This supersedes the 15px mobile body in `Design/DESIGN_SYSTEM.md` §2.
@@ -411,9 +411,9 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 - **Selected:** bg `rgba(216,227,76,0.08)`, border `optic`, plus a 10×10px accent dot pinned to the right edge (`justify-content: space-between`). This is the clearest expression of the One Accent Rule at the component level.
 
 ### Locked / Blur Treatment (signature component — every paywalled surface)
-- Real content sits underneath at `blur(6–7px)`, `opacity 0.45–0.5` — **never a hard empty box**, and the current headline number always stays visible (desire, not resentment).
-- A scrim overlays it: `linear-gradient` from `rgba(6,6,7,0.35)` to `rgba(6,6,7,0.6)`, or a surface-tinted `rgba(19,19,21,0.4→0.7)`.
-- A lock icon plus a one-line teaser (mono label optional above it) names exactly what's underneath.
+- A **placeholder** of the real structure sits underneath at `blur(6–7px)`, `opacity 0.45–0.5`: the right shape (rows, a flat line, skill names), never the player's paid values. CSS blur hides nothing from view-source or the RSC payload, so paid data is never sent to a free browser at all. Still **never a hard empty box**, and the current headline number always stays visible above the card (desire, not resentment).
+- A flat cover overlays it: `rgba(19,19,21,0.6)`. No gradient (Kill-the-Gradient Rule).
+- A lock icon plus a one-line teaser at 16px (mono label optional above it), left-aligned, names exactly what's underneath.
 
 ### Progress Bar / Tab Bar / Badges
 - **Progress bar:** track `line`, fill `optic`, fully round. Thin (3px) on assessment header and home mini-bar (4px); thick (6px) on readiness and delta screens.
@@ -426,7 +426,7 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 - **Do** keep the accent to exactly one meaning per screen — one CTA, one data line, or one selected state, never more than one at a time.
 - **Do** use `tabular-nums` on every metric and score so digits align across a transition (old → new, countdowns).
 - **Do** uppercase and letter-space every mono label (0.10–0.22em depending on context) — this is what makes the UI read as calibrated rather than styled.
-- **Do** keep the locked/blur treatment honest: blur real content, keep the current headline number visible, never show a hard empty state on a paywalled card.
+- **Do** keep the locked/blur treatment honest: blur a placeholder of the real shape (never the paid values), keep the current headline number visible, never show a hard empty state on a paywalled card.
 - **Do** reserve `reveal-bg` (`#060607`) for the reveal and delta screens only — it signals "the app just went quiet to tell you something."
 
 ### Don't:

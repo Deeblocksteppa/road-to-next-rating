@@ -69,10 +69,11 @@ function summaryLine(view: RetestView, direction: Direction, change: number, pre
   return `${Math.abs(change)} under last time. A re-test reads how you answered today, and one reading can dip. It isn't a ceiling on your game. ${nextPlanLine(view)}`;
 }
 
+/** "+6", "−4", or "No change" (set in uppercase mono, never "+0"). */
 function signed(change: number): string {
   if (change > 0) return `+${change}`;
   if (change < 0) return `−${Math.abs(change)}`;
-  return "no change";
+  return "No change";
 }
 
 export function DeltaScreen({ view }: { view: RetestView }) {
@@ -99,7 +100,8 @@ export function DeltaScreen({ view }: { view: RetestView }) {
           </h1>
         </div>
 
-        <div className="flex items-baseline gap-3.5">
+        {/* Wraps as a whole: a long "No change" drops under the pair rather than splitting. */}
+        <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
           <span className="font-display text-[72px] font-extrabold leading-none tabular-nums text-ink-3">
             {previous}
           </span>
@@ -110,7 +112,7 @@ export function DeltaScreen({ view }: { view: RetestView }) {
             {current}
           </span>
           <span
-            className={`pb-2 font-mono text-sm tabular-nums ${
+            className={`whitespace-nowrap pb-2 font-mono text-sm uppercase tabular-nums tracking-[0.1em] ${
               direction === "up" ? "text-optic" : direction === "down" ? "text-danger" : "text-ink-3"
             }`}
           >
@@ -172,7 +174,7 @@ function TrainedSkill({ trained }: { trained: TrainedSkillView }) {
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
           What you trained
         </p>
-        {single && <ChangeBadge change={single.change} numeric={trained.numeric} />}
+        {single && <ChangeBadge change={single.change} />}
       </div>
       <p className="text-[17px] font-semibold leading-[1.3] text-ink">{SKILL_TITLES[trained.skill]}</p>
       {single ? (
@@ -182,7 +184,7 @@ function TrainedSkill({ trained }: { trained: TrainedSkillView }) {
           <div key={row.label ?? row.before} className="flex flex-col gap-1 pt-1">
             <div className="flex items-baseline justify-between gap-3">
               <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{row.label}</p>
-              <ChangeBadge change={row.change} numeric={trained.numeric} />
+              <ChangeBadge change={row.change} />
             </div>
             <BeforeAfter row={row} />
           </div>
@@ -192,14 +194,14 @@ function TrainedSkill({ trained }: { trained: TrainedSkillView }) {
   );
 }
 
-function ChangeBadge({ change, numeric }: { change: number; numeric: boolean }) {
+/** An equal pair, levels or answers, reads NO CHANGE in a neutral tone. */
+function ChangeBadge({ change }: { change: number }) {
   const moved =
     change > 0
       ? { text: "Moved up", tone: "text-optic" }
       : change < 0
         ? { text: "Moved down", tone: "text-danger" }
-        : // A level readout has no "answer" to be the same.
-          { text: numeric ? "No change" : "Same answer", tone: "text-ink-3" };
+        : { text: "No change", tone: "text-ink-3" };
   return (
     <p className={`shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] ${moved.tone}`}>
       {moved.text}
@@ -293,12 +295,14 @@ function BreakdownCard({ skills }: { skills: SkillDelta[] }) {
       {skills.map((s, i) => (
         <div key={s.skill}>
           {i > 0 && <div className="h-px bg-line" />}
-          <div className="flex items-center justify-between py-4">
-            <span className="text-[15px] font-semibold">{SKILL_TITLES[s.skill]}</span>
-            <span className="font-mono text-[13px] tabular-nums">
+          <div className="flex items-center justify-between gap-4 py-4">
+            <span className="min-w-0 text-[15px] font-semibold">{SKILL_TITLES[s.skill]}</span>
+            <span className="shrink-0 whitespace-nowrap font-mono text-[13px] tabular-nums">
               <span className="text-ink-3">{s.previousLevel}/3</span>{" "}
               <span className="text-ink-3">→</span> {s.currentLevel}/3{" "}
-              {s.delta !== 0 && (
+              {s.delta === 0 ? (
+                <span className="uppercase tracking-[0.1em] text-ink-3">No change</span>
+              ) : (
                 <span className={s.delta > 0 ? "text-optic" : "text-danger"}>
                   {s.delta > 0 ? `+${s.delta}` : `−${Math.abs(s.delta)}`}
                 </span>

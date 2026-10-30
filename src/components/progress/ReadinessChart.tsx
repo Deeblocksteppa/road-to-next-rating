@@ -30,9 +30,10 @@ function xFor(i: number, n: number): number {
 
 /**
  * Single accent line over the user's real readiness scores, with an
- * endpoint dot — the logo shape happening slowly.
+ * endpoint dot — the logo shape happening slowly. `muted` draws it in ink
+ * when something else on the screen holds the accent (an open re-test).
  */
-export function ReadinessChart({ points }: { points: ReadinessPoint[] }) {
+export function ReadinessChart({ points, muted = false }: { points: ReadinessPoint[]; muted?: boolean }) {
   const n = points.length;
   if (n === 0) return null;
   const domain = domainFor(points);
@@ -42,6 +43,7 @@ export function ReadinessChart({ points }: { points: ReadinessPoint[] }) {
     .join(" ");
   const lastX = xFor(n - 1, n);
   const lastY = yFor(points[n - 1].readiness, domain);
+  const stroke = muted ? "#B0B0AB" : "#D8E34C";
 
   return (
     <svg
@@ -57,12 +59,12 @@ export function ReadinessChart({ points }: { points: ReadinessPoint[] }) {
       <polyline
         points={poly}
         fill="none"
-        stroke="#D8E34C"
+        stroke={stroke}
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={lastX} cy={lastY} r="4" fill="#D8E34C" />
+      <circle cx={lastX} cy={lastY} r="4" fill={stroke} />
     </svg>
   );
 }

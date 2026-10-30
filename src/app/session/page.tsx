@@ -1,11 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { GuidedSession, SessionCompleteScreen } from "@/components/session/GuidedSession";
+import {
+  GuidedSession,
+  SessionCompleteScreen,
+  type NextStep,
+} from "@/components/session/GuidedSession";
+import { monthDay } from "@/lib/date-format";
+import { SKILL_LABELS } from "@/lib/diagnoses";
 import { toGuidedDrill } from "@/lib/drill-lookup";
 import { loadPlanDrills } from "@/lib/plan-drills";
-import { getCompletedTodayDrillIds, getWeeklyProgress } from "@/lib/drill-sessions";
+import {
+  getCompletedTodayDrillIds,
+  getScoredSessionsByDrill,
+  getTodayLog,
+  getWeeklyProgress,
+  startOfSittingUTC,
+  startOfWeekUTC,
+} from "@/lib/drill-sessions";
+import { getPlanTimeline } from "@/lib/plan-timeline";
+import { lastTimeBefore, type RecapRow } from "@/lib/session-recap";
 import { createClient } from "@/lib/supabase/server";
+import type { SkillId } from "@/lib/types";
 
 /**
  * Guided session flow (brief → timer → log → confirmation).
@@ -37,7 +53,7 @@ export default async function SessionPage({
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, drill_ids, diagnosis_id, retest_metric")
+    .select("id, drill_ids, diagnosis_id, retest_metric, retest_date, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -51,10 +67,28 @@ export default async function SessionPage({
   // the timer cue and the log question all come from this.
   const planDrills = await loadPlanDrills(supabase, plan);
 
-  const [completedToday, weekly] = await Promise.all([
+  // The recap's inputs come with the page so the screen is ready the moment
+  // the last drill is logged: today's numbers (a session resumed after
+  // leaving halfway has drill 1 from an earlier visit) and each drill's last
+  // number from before this sitting. Logging is free, and so is this.
+  const sittingStart = startOfSittingUTC();
+  const [completedToday, weekly, todayLog, scored] = await Promise.all([
     getCompletedTodayDrillIds(supabase, plan.id),
     getWeeklyProgress(supabase, plan.id, planDrills.length),
+    getTodayLog(supabase, plan.id),
+    getScoredSessionsByDrill(
+      supabase,
+      planDrills.map((d) => d.id)
+    ),
   ]);
+  const recap: RecapRow[] = planDrills.map((d) => ({
+    id: d.id,
+    name: d.name,
+    result: todayLog.find((e) => e.drillId === d.id)?.result ?? null,
+    target: d.practiceTarget,
+    lastTime: lastTimeBefore(scored.get(d.id) ?? [], sittingStart),
+  }));
+  const next = await nextStep(supabase, plan);
 
   const notDone = planDrills.filter((d) => !completedToday.has(d.id));
   const requested = notDone.findIndex((d) => d.id === searchParams.drill);
@@ -68,7 +102,7 @@ export default async function SessionPage({
   if (remaining.length === 0 && planDrills.length > 0) {
     return (
       <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-6 bg-background px-6 py-8 text-ink">
-        <SessionCompleteScreen weekly={weekly} />
+        <SessionCompleteScreen weekly={weekly} recap={recap} next={next} />
       </main>
     );
   }
@@ -113,6 +147,42 @@ export default async function SessionPage({
       drills={remaining.map(toGuidedDrill)}
       retestMetric={(plan.retest_metric as string | null) ?? null}
       fallbackWeekly={weekly}
+      recap={recap}
+      next={next}
     />
   );
+}
+
+/**
+ * What the recap can point to: the re-test once it is open; otherwise
+ * another session this week, or, once the week is done, Monday or the
+ * re-test if it opens first. The recap chooses with its own weekly count.
+ */
+async function nextStep(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  plan: { diagnosis_id: string | null; retest_date: string | null; created_at: string }
+): Promise<NextStep> {
+  const timeline = plan.retest_date ? getPlanTimeline(plan.created_at, plan.retest_date) : null;
+  const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
+  let skillPhrase: string | undefined;
+  if (retestOpen && plan.diagnosis_id) {
+    const { data: diagnosis } = await supabase
+      .from("diagnoses")
+      .select("bottleneck")
+      .eq("id", plan.diagnosis_id)
+      .maybeSingle();
+    const skill = diagnosis?.bottleneck as SkillId | undefined;
+    skillPhrase = skill ? SKILL_LABELS[skill] : undefined;
+  }
+  const nextWeekStart = new Date(startOfWeekUTC().getTime() + 7 * 24 * 60 * 60 * 1000);
+  const retestBeforeNextWeek =
+    plan.retest_date && new Date(plan.retest_date).getTime() < nextWeekStart.getTime()
+      ? monthDay(new Date(plan.retest_date))
+      : null;
+  return {
+    retestOpen,
+    skillPhrase,
+    nextWeek: `Monday, ${monthDay(nextWeekStart)}`,
+    retestBeforeNextWeek,
+  };
 }

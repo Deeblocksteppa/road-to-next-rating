@@ -7,19 +7,19 @@ import Link from "next/link";
  * this week" as soon as a session was logged, so on re-test day the one
  * entry point could disappear.
  *
- *   - `card`: the main element of a screen (Progress).
- *   - `block`: the main element of Home. The card's content, flat: hairlines
- *     instead of a tinted card, and the button is its only accent.
+ *   - `block`: the main element of a screen (Home, Progress, the session
+ *     recap). Flat: hairlines, no tinted card, and the button is its only
+ *     accent.
  *   - `banner`: a compact line at the top of a screen (Plan), between
  *     hairlines, with the screen's one primary button.
  */
 export function RetestOpen({
   skillPhrase,
-  variant = "card",
+  variant = "block",
 }: {
-  /** In-sentence skill label for the card: "your third-shot drop". */
+  /** In-sentence skill label for the block: "your third-shot drop". */
   skillPhrase?: string;
-  variant?: "card" | "block" | "banner";
+  variant?: "block" | "banner";
 }) {
   if (variant === "banner") {
     return (
@@ -36,33 +36,13 @@ export function RetestOpen({
       </section>
     );
   }
-  if (variant === "block") {
-    return (
-      <section className="flex flex-col gap-3 border-y border-line py-6">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Re-test open</p>
-        <h2 className="font-display text-[26px] font-extrabold leading-[1.15] tracking-[-0.01em]">
-          {skillPhrase ? `Find out if ${skillPhrase} moved.` : "Find out what moved."}
-        </h2>
-        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-          Answer the same twelve questions. It takes about four minutes, and your next plan
-          starts from the result.
-        </p>
-        <Link
-          href="/retest"
-          className="mt-1 flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
-        >
-          Take your re-test
-        </Link>
-      </section>
-    );
-  }
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-optic bg-optic/[0.05] p-[22px]">
-      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-optic">Re-test open</p>
+    <section className="flex flex-col gap-3 border-y border-line py-6">
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Re-test open</p>
       <h2 className="font-display text-[26px] font-extrabold leading-[1.15] tracking-[-0.01em]">
         {skillPhrase ? `Find out if ${skillPhrase} moved.` : "Find out what moved."}
       </h2>
-      <p className="text-pretty text-[15px] leading-[1.55] text-ink-2">
+      <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
         Answer the same twelve questions. It takes about four minutes, and your next plan
         starts from the result.
       </p>

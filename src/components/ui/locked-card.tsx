@@ -1,7 +1,7 @@
 /**
- * The locked/blur treatment used wherever free-tier content is teased:
- * real structure blurred behind a dim scrim, a lock icon, and a one-line
- * teaser naming what's underneath. Never a hard empty box.
+ * The locked/blur treatment used wherever free-tier content is teased: a
+ * placeholder of the real structure, blurred under a flat dim cover, a lock
+ * icon, and a one-line teaser naming what's underneath. Never a hard empty box.
  * See DESIGN_SYSTEM.md §5 "Locked / blur treatment".
  *
  * What goes underneath is a placeholder of the right shape, never the paid
@@ -30,7 +30,8 @@ export function LockedCard({
       >
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-[rgba(19,19,21,0.4)] to-[rgba(19,19,21,0.7)] px-6 text-center">
+      {/* Flat, like every other surface: no gradient (DESIGN.md, Kill-the-Gradient). */}
+      <div className="absolute inset-0 flex flex-col items-start justify-center gap-2 bg-[rgba(19,19,21,0.6)] px-6">
         {label ? (
           <div className="flex items-center gap-1.5">
             <LockIcon size={13} />
@@ -41,8 +42,17 @@ export function LockedCard({
         ) : (
           <LockIcon />
         )}
-        <p className="max-w-[240px] text-pretty text-[16px] leading-[1.4] text-ink-2">
-          {teaser}
+        <p className="max-w-[280px] text-pretty text-[16px] leading-[1.5] text-ink-2">
+          {/* Hyphenated words stay whole: "re-test" split at the hyphen. */}
+          {teaser.split(/(\S+-\S+)/).map((part, i) =>
+            i % 2 === 1 ? (
+              <span key={i} className="whitespace-nowrap">
+                {part}
+              </span>
+            ) : (
+              part
+            )
+          )}
         </p>
       </div>
     </section>

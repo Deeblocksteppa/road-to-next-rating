@@ -99,7 +99,7 @@ What `small` and `smallControls` mean:
 - **The wordmark is exempt:** "ROAD TO NEXT" / "RATING" in the header is the logo (`brand/Logo.tsx`, marked `data-wordmark`), not copy.
 - **Mono is exempt throughout:** anything whose computed font is IBM Plex Mono (`font-mono`), meaning labels, units, badges, counters, the countdown and mono data readouts like "6/10" or "1/3 → 2/3".
 
-Gradients are allowed only on the locked/blur scrim and the landing's closing section. Focus rings are filtered out of `shadow`.
+Gradients are allowed only on the landing's closing section. Focus rings are filtered out of `shadow`.
 
 ## 4. Look, not just measure
 

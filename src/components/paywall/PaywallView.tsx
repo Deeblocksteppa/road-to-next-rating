@@ -16,7 +16,7 @@ type Plan = "annual" | "monthly";
 const FEATURES = [
   "How the other skills moved on every re-test (the one you trained is always free)",
   "Your readiness chart across every re-test, with logged sessions beneath it",
-  "Re-test history and week-over-week session streaks",
+  "Re-test history and weeks with both sessions",
 ];
 
 /**

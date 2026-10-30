@@ -4,6 +4,8 @@ Read-only investigation on branch `batch-2` (off `main` at `fad4f6b`), 2026-10-2
 
 Copy marked **UNREVIEWED** is new or rewritten text you haven't read yet. Nothing marked that way ships until you've read it.
 
+**Batch 2 DONE 2026-10-29** on `batch-2` (Phases A, B and C committed, not merged). What is left from the batch 2 list in `docs/STATUS.md` is outside this plan (see "Not in this plan").
+
 **Decisions settled 2026-10-27.** Every open decision below now has your answer recorded, with any conditions you added. The decision tables keep the reasoning; the phase sections are updated to match.
 
 ---
@@ -322,6 +324,15 @@ Codex review recommended after Phase B: it rebuilds two main screens and changes
 ---
 
 ## Phase C: rebuild Progress, add the session recap, show "No change"
+
+**DONE 2026-10-29** on `batch-2` (commit "batch 2 phase C: Progress rebuild, session recap, no change, flat locks"). Departures from the plan below:
+- **Progress, full (paid)** opens with the same readiness block as the locked state (READINESS NOW, Archivo 72, the since-start line, the caveat), then the chart; free and paid share their top. The logged-sessions sparkline and the streak dots are neutral, so the readiness line keeps the screen's one accent; with the re-test open, the chart line goes neutral too. Streak: "Weeks with both sessions" as a 16px heading, the count with mono IN A ROW (it is a run, not a total), dots `rounded-full` as on Home.
+- **Since start** shows both readings everywhere: `SINCE START 45 → 73 +28`, or `62 → 62 NO CHANGE`. Gains are in ink, not optic.
+- **"Same answer" is gone:** an equal answer row reads NO CHANGE like an equal level (the instruction for Phase C named the Kitchen line and Mid-court rows). History rows show `NO CHANGE` beside an equal score.
+- **The recap's main element is what comes next**, not the button alone: "Session logged." drops to a 20px confirmation, and NEXT SESSION / "Any day but today." (Archivo 28) is the one headline while sessions are left; once the week is done, "Monday, Nov 2." (or RE-TEST OPENS and its date if that comes first); with the re-test open, the `RetestOpen` block with "Back to my plan" secondary. The recap picks this with the weekly count returned by the last log, so the week flips to done without a reload.
+- **`RetestOpen`'s tinted `card` variant is removed**; `block` is the default and Progress uses it.
+- **Paywall** feature line renamed to match: "Re-test history and weeks with both sessions" (was "week-over-week session streaks").
+- **`LockedCard`**: teaser left-aligned (nothing centered except the reveal), hyphenated words kept whole ("re-test" split at its hyphen at 375).
 
 ### C1. Progress: one dominant element per state
 
