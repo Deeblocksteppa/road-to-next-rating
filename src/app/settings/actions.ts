@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { getStripe, periodEndISO } from "@/lib/stripe";
+import { retrieveOwnedSubscription, syncSubscription } from "@/lib/billing";
+import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,10 +51,12 @@ export type CancelResult = { ok: true } | { error: string };
  * access they've already paid for until `renews_at`, then Stripe sends
  * `customer.subscription.deleted` and the webhook drops them to free.
  *
- * This deliberately does NOT write `subscription_status` itself. The only
- * local write is the `cancel_at_period_end` flag Stripe just returned to us,
- * so the UI can say "cancels Apr 2027" without claiming the subscription is
- * already gone. Everything else waits for Stripe to confirm.
+ * This never decides `subscription_status` itself. The local write mirrors the
+ * subscription Stripe just returned (still active, now with
+ * `cancel_at_period_end`), so the UI can say "cancels Apr 2027" without
+ * claiming the subscription is already gone. The id is checked against the
+ * subscription's own metadata first, so a rewritten profile row can't point
+ * this at someone else's billing.
  */
 export async function cancelSubscription(): Promise<CancelResult> {
   const supabase = await createClient();
@@ -78,18 +81,20 @@ export async function cancelSubscription(): Promise<CancelResult> {
       };
     }
 
+    if (!(await retrieveOwnedSubscription(user.id, subscriptionId))) {
+      return {
+        error:
+          "We couldn't match that subscription to your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
+      };
+    }
+
     const subscription = await getStripe().subscriptions.update(subscriptionId, {
       cancel_at_period_end: true,
     });
 
-    // Reflect only what Stripe confirmed in this response.
-    await supabase
-      .from("profiles")
-      .update({
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        renews_at: periodEndISO(subscription),
-      })
-      .eq("id", user.id);
+    // Reflect only what Stripe confirmed in this response (service role:
+    // players can't write billing columns).
+    await syncSubscription(user.id, subscription);
   } catch (err) {
     console.error("cancelSubscription failed", err);
     return {
@@ -130,17 +135,18 @@ export async function resumeSubscription(): Promise<CancelResult> {
       return { error: "No Stripe subscription found on your account." };
     }
 
+    if (!(await retrieveOwnedSubscription(user.id, subscriptionId))) {
+      return {
+        error:
+          "We couldn't match that subscription to your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
+      };
+    }
+
     const subscription = await getStripe().subscriptions.update(subscriptionId, {
       cancel_at_period_end: false,
     });
 
-    await supabase
-      .from("profiles")
-      .update({
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        renews_at: periodEndISO(subscription),
-      })
-      .eq("id", user.id);
+    await syncSubscription(user.id, subscription);
   } catch (err) {
     console.error("resumeSubscription failed", err);
     return {
@@ -202,8 +208,23 @@ export async function deleteAccount(confirmation: string): Promise<DeleteAccount
 
     if (profile?.stripe_subscription_id) {
       try {
-        await getStripe().subscriptions.cancel(profile.stripe_subscription_id);
-        subscriptionCancelled = true;
+        const owned = await retrieveOwnedSubscription(
+          user.id,
+          profile.stripe_subscription_id
+        );
+        // Not theirs: cancel nothing and delete nothing. Their own billing may
+        // still be live under another id, so a deletion here could leave a
+        // deleted user being charged.
+        if (!owned) {
+          return {
+            error:
+              "We couldn't match the subscription on your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
+          };
+        }
+        if (owned.status !== "canceled") {
+          await getStripe().subscriptions.cancel(owned.id);
+          subscriptionCancelled = true;
+        }
       } catch (err) {
         // Already gone in Stripe is fine; anything else stops the deletion.
         const code = (err as { code?: string } | null)?.code;

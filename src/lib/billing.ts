@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  getStripe,
   idOf,
   periodEndISO,
   planFromSubscription,
@@ -11,13 +12,15 @@ import {
 /**
  * The one place Stripe subscription state gets written into `profiles`.
  *
- * Called from the webhook (the source of truth) and from the post-checkout
+ * Called from the webhook (the source of truth), from the post-checkout
  * success page (a verified read-back, so a slow or not-yet-running webhook
- * doesn't leave a paying user staring at a locked screen). Both paths write
- * the same fields from the same Stripe object, so running both is harmless.
+ * doesn't leave a paying user staring at a locked screen), and from Settings'
+ * cancel and resume. Every path writes the same fields from the same Stripe
+ * object, so running more than one is harmless.
  *
  * Uses the service-role client: webhook requests carry no user session, and
- * the `profiles: update own` RLS policy would reject the write.
+ * players may only update their two reminder columns
+ * (20261029180000_profiles_column_grants.sql).
  */
 
 /** Resolve an incoming Stripe object back to a `profiles.id`. */
@@ -89,6 +92,32 @@ export async function syncSubscription(
     .eq("id", profileId);
 
   if (error) throw error;
+}
+
+/**
+ * Fetch a subscription from Stripe only if Stripe says it belongs to `userId`.
+ *
+ * The id comes from the player's own profile row, which they could once
+ * rewrite through the REST API. Checkout stamps `supabase_user_id` onto every
+ * subscription's metadata, so a mismatch (or no metadata) means the id isn't
+ * theirs: refuse and log rather than cancel or resume someone else's billing.
+ * Returns null on a mismatch; Stripe errors (e.g. `resource_missing`) throw.
+ */
+export async function retrieveOwnedSubscription(
+  userId: string,
+  subscriptionId: string
+): Promise<Stripe.Subscription | null> {
+  const sub = await getStripe().subscriptions.retrieve(subscriptionId);
+  const owner = sub.metadata?.supabase_user_id ?? null;
+  if (owner !== userId) {
+    console.error("Subscription owner mismatch, refusing", {
+      userId,
+      subscriptionId,
+      metadataUserId: owner,
+    });
+    return null;
+  }
+  return sub;
 }
 
 /** Subscription ended for good — drop to the free tier. */
