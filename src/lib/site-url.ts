@@ -1,6 +1,14 @@
 import { headers } from "next/headers";
 
 /**
+ * Absolute origin for links in emails. A cron request has no player-facing
+ * host to read, so this never looks at the request.
+ */
+export function emailOrigin(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://roadtonextrating.com").replace(/\/+$/, "");
+}
+
+/**
  * Absolute origin for URLs Stripe has to redirect back to.
  *
  * Prefers NEXT_PUBLIC_SITE_URL (set this in production — it's stable across

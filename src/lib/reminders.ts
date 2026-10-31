@@ -1,7 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { findDrillById } from "@/lib/drill-lookup";
 import { startOfTodayUTC, startOfWeekUTC } from "@/lib/drill-sessions";
-import { sendDrillReminder } from "@/lib/email";
+import { renderDrillReminder, sendReminder } from "@/lib/email";
 import { loadPlanDrills } from "@/lib/plan-drills";
+import { getPlanTimeline } from "@/lib/plan-timeline";
 import {
   SESSIONS_PER_WEEK,
   countSessions,
@@ -9,13 +12,16 @@ import {
   type LoggedDrill,
 } from "@/lib/session-plan";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { unsubscribeLinks } from "@/lib/unsubscribe";
 
 export interface ReminderRunSummary {
   /** Profiles with the drill-reminder toggle on and an email address. */
   candidates: number;
   sent: number;
-  /** Eligible profiles that didn't need a nudge (no plan, done today, or all
-   *  sessions done this week). */
+  /** Dry runs only: how many would have gone. */
+  wouldSend: number;
+  /** Eligible profiles that didn't need a nudge (no plan, done today, all
+   *  sessions done this week, or the re-test date has arrived). */
   skipped: number;
   /** Sends that threw (bad address, Resend error) — logged, never fatal. */
   errors: number;
@@ -26,7 +32,9 @@ export interface ReminderRunSummary {
  *   • has drill_reminder_enabled on,
  *   • has an active (not completed/abandoned) plan with drills,
  *   • has NOT logged anything today, and
- *   • has completed fewer than `SESSIONS_PER_WEEK` sessions this week.
+ *   • has completed fewer than `SESSIONS_PER_WEEK` sessions this week, and
+ *   • hasn't passed the plan's re-test date. On the date itself the re-test
+ *     email goes instead, unless re-test reminders are off.
  *
  * A session is every drill on the plan logged on one day (`session-plan.ts`),
  * so the email describes the whole session — its length and each drill —
@@ -37,11 +45,14 @@ export interface ReminderRunSummary {
  * rather than a query per user; only a user who is actually being emailed
  * costs more, to name their drills as prescribed (partner or solo).
  */
-export async function runDrillReminders(): Promise<ReminderRunSummary> {
-  const admin = createAdminClient();
+export async function runDrillReminders(
+  { dryRun = false }: { dryRun?: boolean } = {},
+  admin: SupabaseClient = createAdminClient()
+): Promise<ReminderRunSummary> {
   const summary: ReminderRunSummary = {
     candidates: 0,
     sent: 0,
+    wouldSend: 0,
     skipped: 0,
     errors: 0,
   };
@@ -49,7 +60,7 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
   // 1. Opted-in users with an address to send to.
   const { data: profiles, error: profilesError } = await admin
     .from("profiles")
-    .select("id, email")
+    .select("id, email, retest_reminder_enabled")
     .eq("drill_reminder_enabled", true)
     .not("email", "is", null);
   if (profilesError) throw profilesError;
@@ -61,7 +72,7 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
   // 2. Their plans, newest first → keep the most recent per user.
   const { data: plans, error: plansError } = await admin
     .from("plans")
-    .select("id, user_id, diagnosis_id, drill_ids, status, created_at")
+    .select("id, user_id, diagnosis_id, drill_ids, status, retest_date, created_at")
     .in(
       "user_id",
       users.map((u) => u.id)
@@ -71,7 +82,13 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
 
   const planByUser = new Map<
     string,
-    { id: string; diagnosisId: unknown; drillIds: string[]; status: string | null }
+    {
+      id: string;
+      diagnosisId: unknown;
+      drillIds: string[];
+      status: string | null;
+      daysUntilRetest: number | null;
+    }
   >();
   for (const p of plans ?? []) {
     const userId = p.user_id as string;
@@ -81,6 +98,9 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
       diagnosisId: p.diagnosis_id,
       drillIds: (p.drill_ids as string[] | null) ?? [],
       status: (p.status as string | null) ?? null,
+      daysUntilRetest: p.retest_date
+        ? getPlanTimeline(p.created_at as string, p.retest_date as string).daysUntilRetest
+        : null,
     });
   }
 
@@ -119,6 +139,15 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
       continue;
     }
 
+    // Session reminders stop after the re-test date. On the date itself, one
+    // email is enough. This reads the toggle, not whether the re-test email went
+    // out, so a rerun of the cron later that day doesn't send this one instead.
+    const days = plan.daysUntilRetest;
+    if (days !== null && (days < 0 || (days === 0 && user.retest_reminder_enabled))) {
+      summary.skipped++;
+      continue;
+    }
+
     const planDrills = plan.drillIds
       .map((id) => findDrillById(id))
       .filter((d): d is NonNullable<typeof d> => Boolean(d));
@@ -144,6 +173,11 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
       continue;
     }
 
+    if (dryRun) {
+      summary.wouldSend++;
+      continue;
+    }
+
     try {
       // A solo version can have its own name, so the email names the drills
       // the player was actually given. Durations are the same either way.
@@ -151,11 +185,16 @@ export async function runDrillReminders(): Promise<ReminderRunSummary> {
         drill_ids: plan.drillIds,
         diagnosis_id: plan.diagnosisId,
       });
-      await sendDrillReminder(
+      const links = unsubscribeLinks(user.id, "drill");
+      await sendReminder(
         user.email as string,
-        sessionsLeft,
-        sessionShape(planDrills),
-        prescribed.map((d) => `${d.name} (${d.duration})`).join(", ")
+        renderDrillReminder({
+          sessionsLeft,
+          shape: sessionShape(planDrills),
+          drillList: prescribed.map((d) => `${d.name} (${d.duration})`).join(", "),
+          unsubscribeUrl: links.page,
+        }),
+        links.oneClick
       );
       summary.sent++;
     } catch (err) {
