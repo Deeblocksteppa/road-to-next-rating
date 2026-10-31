@@ -226,6 +226,10 @@ None of this is fixed by code. Everything here needs you, KC or a dashboard.
 
 **Stripe housekeeping:** H6 in Outstanding (the product description still says plans are included) shows on Checkout next to this new copy.
 
+## Backlog
+
+- Before enabling Google sign-in, send terms_accepted_at/terms_version on that path.
+
 ## Env vars and migrations
 
 | What | Needed by | When |

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { retrieveOwnedSubscription, syncSubscription } from "@/lib/billing";
+import { closeBilling, retrieveOwnedSubscription, syncSubscription } from "@/lib/billing";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -161,10 +161,12 @@ export async function resumeSubscription(): Promise<CancelResult> {
   return { ok: true };
 }
 
-export type DeleteAccountResult = { error: string } | undefined;
+export type DeleteAccountResult = { ok: true } | { error: string };
 
 /**
- * Permanently deletes the caller's account.
+ * Permanently deletes the caller's account. On success the client clears this
+ * device's stored result and goes to /login, because a server action can't
+ * reach browser storage.
  *
  * What goes, and why nothing is orphaned: deleting the `auth.users` row
  * cascades to `profiles` (its primary key references auth.users ON DELETE
@@ -177,10 +179,10 @@ export type DeleteAccountResult = { error: string } | undefined;
  * and were never this user's, so they are untouched.
  *
  * What does not go: the Stripe Customer and its invoices stay in Stripe —
- * billing records have to outlive the account. A live subscription is
- * cancelled outright FIRST, and the deletion is aborted if that fails: a
- * deleted user still being billed is the one outcome worse than a failed
- * delete.
+ * billing records have to outlive the account. Everything that could charge
+ * the player is ended FIRST (`closeBilling`), and the deletion is aborted if
+ * that fails: a deleted user still being billed is the one outcome worse than
+ * a failed delete.
  *
  * The id deleted is always the verified session's own. Nothing from the
  * client chooses it; `confirmation` only re-checks the typed word.
@@ -200,37 +202,39 @@ export async function deleteAccount(confirmation: string): Promise<DeleteAccount
   let subscriptionCancelled = false;
 
   try {
-    const { data: profile } = await supabase
+    // Read failures stop here: an empty read would skip the ids on the profile.
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("stripe_subscription_id, subscription_status")
+      .select("email, stripe_subscription_id, stripe_customer_id")
       .eq("id", user.id)
       .maybeSingle();
+    if (profileError) throw profileError;
 
-    if (profile?.stripe_subscription_id) {
-      try {
-        const owned = await retrieveOwnedSubscription(
-          user.id,
-          profile.stripe_subscription_id
-        );
-        // Not theirs: cancel nothing and delete nothing. Their own billing may
-        // still be live under another id, so a deletion here could leave a
-        // deleted user being charged.
-        if (!owned) {
-          return {
-            error:
-              "We couldn't match the subscription on your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
-          };
-        }
-        if (owned.status !== "canceled") {
-          await getStripe().subscriptions.cancel(owned.id);
-          subscriptionCancelled = true;
-        }
-      } catch (err) {
-        // Already gone in Stripe is fine; anything else stops the deletion.
-        const code = (err as { code?: string } | null)?.code;
-        if (code !== "resource_missing") throw err;
-      }
+    const billing = await closeBilling(user.id, {
+      email: user.email ?? profile?.email ?? null,
+      subscriptionId: profile?.stripe_subscription_id ?? null,
+      customerId: profile?.stripe_customer_id ?? null,
+    });
+
+    if (billing.outcome === "not_owned") {
+      return {
+        error:
+          "We couldn't match the subscription on your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
+      };
     }
+    if (billing.outcome === "unreachable") {
+      return {
+        error:
+          "We couldn't reach billing, so nothing was changed. Try again, or email support@roadtonextrating.com.",
+      };
+    }
+    if (billing.outcome === "partial") {
+      return {
+        error:
+          "We couldn't finish cancelling your billing, so your account wasn't deleted. Email support@roadtonextrating.com and we'll sort it out.",
+      };
+    }
+    subscriptionCancelled = billing.cancelled > 0;
 
     const { error } = await createAdminClient().auth.admin.deleteUser(user.id);
     if (error) throw error;
@@ -254,5 +258,5 @@ export async function deleteAccount(confirmation: string): Promise<DeleteAccount
   }
 
   revalidatePath("/", "layout");
-  redirect("/login?notice=deleted");
+  return { ok: true };
 }

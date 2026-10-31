@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { deleteAccount } from "@/app/settings/actions";
+import { clearDeviceData } from "@/lib/device-data";
 
 const CONFIRM_WORD = "DELETE";
 
@@ -25,9 +26,16 @@ export function DeleteAccountForm() {
     if (!armed || pending) return;
     setError(null);
     startTransition(async () => {
-      // On success the action redirects and this never resolves with a value.
       const result = await deleteAccount(typed);
-      if (result?.error) setError(result.error);
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+      // The account is gone: clear this device, then a full load so nothing
+      // from the signed-in session stays in memory. Kept in the transition so
+      // the button stays disabled through the navigation.
+      clearDeviceData();
+      window.location.replace("/login?notice=deleted");
     });
   }
 

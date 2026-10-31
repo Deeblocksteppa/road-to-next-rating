@@ -120,6 +120,179 @@ export async function retrieveOwnedSubscription(
   return sub;
 }
 
+/** Stripe's "no such object". Ids left over from the old Stripe account come back this way. */
+function isMissing(err: unknown): boolean {
+  return (err as { code?: string } | null)?.code === "resource_missing";
+}
+
+async function orWhenMissing<T>(call: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await call;
+  } catch (err) {
+    if (isMissing(err)) return fallback;
+    throw err;
+  }
+}
+
+/**
+ * Every status except these can still charge: `incomplete` if its payment
+ * completes, `paused` if it resumes.
+ */
+function hasEnded(sub: Stripe.Subscription): boolean {
+  return sub.status === "canceled" || sub.status === "incomplete_expired";
+}
+
+function ownedBy(userId: string, metadata: Stripe.Metadata | null | undefined): boolean {
+  return metadata?.supabase_user_id === userId;
+}
+
+export type BillingIds = {
+  email: string | null;
+  subscriptionId: string | null;
+  customerId: string | null;
+};
+
+/**
+ * A player's subscriptions and customers, however Stripe knows them. The id on
+ * the profile can be empty or out of date (a checkout whose profile write
+ * failed, two tabs making two subscriptions). Search is eventually consistent,
+ * so a subscription minutes old may only show through its customer, which the
+ * email lookup finds when the profile never got the customer id either.
+ */
+async function findBilling(stripe: Stripe, userId: string, ids: BillingIds) {
+  const subscriptions = new Map<string, Stripe.Subscription>();
+  const customerIds = new Set<string>(ids.customerId ? [ids.customerId] : []);
+
+  const keep = (sub: Stripe.Subscription) => {
+    subscriptions.set(sub.id, sub);
+    const customer = idOf(sub.customer);
+    if (customer && ownedBy(userId, sub.metadata)) customerIds.add(customer);
+  };
+
+  if (ids.subscriptionId) {
+    const sub = await orWhenMissing(stripe.subscriptions.retrieve(ids.subscriptionId), null);
+    if (sub) keep(sub);
+  }
+
+  const searched = await stripe.subscriptions
+    .search({ query: `metadata['supabase_user_id']:'${userId}'`, limit: 100 })
+    .autoPagingToArray({ limit: 1000 });
+  searched.forEach(keep);
+
+  if (ids.email) {
+    const customers = await stripe.customers
+      .list({ email: ids.email, limit: 100 })
+      .autoPagingToArray({ limit: 1000 });
+    for (const customer of customers) {
+      if (ownedBy(userId, customer.metadata)) customerIds.add(customer.id);
+    }
+  }
+
+  for (const customer of Array.from(customerIds)) {
+    const listed = await orWhenMissing(
+      stripe.subscriptions
+        .list({ customer, status: "all", limit: 100 })
+        .autoPagingToArray({ limit: 1000 }),
+      []
+    );
+    listed.forEach(keep);
+  }
+
+  return {
+    subscriptions: Array.from(subscriptions.values()),
+    customerIds: Array.from(customerIds),
+  };
+}
+
+/**
+ * Expire this player's open Checkout Sessions, so a tab left open can't start a
+ * subscription after the account is gone. A session that finished or expired
+ * meanwhile can't be expired, and that's fine: the second look in `closeBilling`
+ * picks up anything it created.
+ */
+async function expireOpenCheckouts(stripe: Stripe, userId: string, customerIds: string[]) {
+  for (const customer of customerIds) {
+    const sessions = await orWhenMissing(
+      stripe.checkout.sessions
+        .list({ customer, status: "open", limit: 100 })
+        .autoPagingToArray({ limit: 1000 }),
+      []
+    );
+    for (const session of sessions) {
+      if (!ownedBy(userId, session.metadata)) continue;
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (err) {
+        const now = await stripe.checkout.sessions.retrieve(session.id);
+        if (now.status === "open") throw err;
+      }
+    }
+  }
+}
+
+export type CloseBillingResult =
+  /** Nothing can charge this player now. `cancelled` is how many this call ended. */
+  | { outcome: "closed"; cancelled: number }
+  /** A live subscription isn't theirs. Nothing was cancelled. */
+  | { outcome: "not_owned" }
+  /** Stripe failed before anything was cancelled. */
+  | { outcome: "unreachable" }
+  /** At least one subscription was cancelled, then another failed. */
+  | { outcome: "partial" };
+
+/**
+ * Ends everything that could charge a player, before their account goes. All
+ * the finding and checking comes first, so a refusal changes nothing. Nothing
+ * here is refunded, and the Stripe Customer and its invoices stay.
+ */
+export async function closeBilling(
+  userId: string,
+  ids: BillingIds,
+  stripe: Stripe = getStripe()
+): Promise<CloseBillingResult> {
+  const notOwned = (subs: Stripe.Subscription[]) =>
+    subs.filter((sub) => !hasEnded(sub) && !ownedBy(userId, sub.metadata));
+
+  let live: Stripe.Subscription[];
+  try {
+    const found = await findBilling(stripe, userId, ids);
+    // Not theirs: a deletion here could leave a deleted user being charged
+    // under an id we can't see, and cancelling could hit someone else's billing.
+    if (notOwned(found.subscriptions).length) {
+      console.error("closeBilling: subscription owner mismatch, refusing", {
+        userId,
+        subscriptions: notOwned(found.subscriptions).map((sub) => sub.id),
+      });
+      return { outcome: "not_owned" };
+    }
+
+    await expireOpenCheckouts(stripe, userId, found.customerIds);
+
+    // A checkout that finished before it could be expired is on the customer now.
+    const again = await findBilling(stripe, userId, ids);
+    if (notOwned(again.subscriptions).length) return { outcome: "not_owned" };
+    live = again.subscriptions.filter((sub) => !hasEnded(sub));
+  } catch (err) {
+    console.error("closeBilling: couldn't read billing", err);
+    return { outcome: "unreachable" };
+  }
+
+  let cancelled = 0;
+  for (const sub of live) {
+    try {
+      await stripe.subscriptions.cancel(sub.id);
+      cancelled += 1;
+    } catch (err) {
+      // Already gone in Stripe is fine; anything else stops the deletion.
+      if (isMissing(err)) continue;
+      console.error("closeBilling: cancel failed", { userId, subscription: sub.id, cancelled }, err);
+      return { outcome: cancelled ? "partial" : "unreachable" };
+    }
+  }
+
+  return { outcome: "closed", cancelled };
+}
+
 /** Subscription ended for good — drop to the free tier. */
 export async function clearSubscription(profileId: string): Promise<void> {
   const supabase = createAdminClient();
