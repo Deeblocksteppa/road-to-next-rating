@@ -2,7 +2,13 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
-import { clearSubscription, findProfileId, syncSubscription } from "@/lib/billing";
+import {
+  accountIsGone,
+  clearSubscription,
+  closeOrphanedSubscription,
+  findProfileId,
+  syncSubscription,
+} from "@/lib/billing";
 import { getStripe, idOf } from "@/lib/stripe";
 
 // Signature verification needs the raw body, and this reads server-only env —
@@ -13,6 +19,7 @@ export const dynamic = "force-dynamic";
 /** Events we act on. Anything else is acknowledged and ignored. */
 const HANDLED = new Set<Stripe.Event["type"]>([
   "checkout.session.completed",
+  "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
 ]);
@@ -58,6 +65,9 @@ export async function POST(request: Request) {
       case "checkout.session.completed":
         await onCheckoutCompleted(event.data.object);
         break;
+      case "customer.subscription.created":
+        await onSubscriptionCreated(event.data.object);
+        break;
       case "customer.subscription.updated":
         await onSubscriptionUpdated(event.data.object);
         break;
@@ -85,18 +95,26 @@ export async function POST(request: Request) {
 async function onCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (session.mode !== "subscription") return;
 
+  const subscriptionId = idOf(session.subscription);
+  if (!subscriptionId) {
+    console.warn("checkout.session.completed with no subscription id — skipping.");
+    return;
+  }
+
+  // The account was deleted while this checkout was open. Checked before the
+  // payment status, because whatever that says the subscription has to go.
+  const namedUser = session.client_reference_id ?? session.metadata?.supabase_user_id;
+  if (namedUser && (await accountIsGone(namedUser))) {
+    await closeOrphanedSubscription(subscriptionId, namedUser);
+    return;
+  }
+
   // `paid` for immediate charges; `no_payment_required` covers 100% coupons
   // and trials. Anything else (e.g. `unpaid`) grants nothing.
   if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
     console.warn(
       `checkout.session.completed with payment_status=${session.payment_status} — not granting access.`
     );
-    return;
-  }
-
-  const subscriptionId = idOf(session.subscription);
-  if (!subscriptionId) {
-    console.warn("checkout.session.completed with no subscription id — skipping.");
     return;
   }
 
@@ -113,6 +131,17 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session) {
   // where the authoritative plan and period end live.
   const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
   await syncSubscription(profileId, subscription);
+}
+
+/**
+ * Only the backstop for a deleted account. For a live account this changes
+ * nothing: `checkout.session.completed` grants access once the payment is through.
+ */
+async function onSubscriptionCreated(sub: Stripe.Subscription) {
+  const namedUser = sub.metadata?.supabase_user_id;
+  if (namedUser && (await accountIsGone(namedUser))) {
+    await closeOrphanedSubscription(sub.id, namedUser);
+  }
 }
 
 /** Renewal, plan change, or a cancellation scheduled for period end. */

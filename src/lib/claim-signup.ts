@@ -1,6 +1,6 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
-import { resultRowsExist } from "@/lib/result-exists";
+import { resultRowsStatus } from "@/lib/result-exists";
 
 const PENDING_KEYS = {
   p_assessment_id: "pending_assessment_id",
@@ -24,12 +24,13 @@ const PENDING_KEYS = {
  *   - with no ids in the metadata it returns without touching the database;
  *   - the RPC only assigns rows that are still unclaimed, so a repeat, or a
  *     claim the original browser already made, changes nothing;
- *   - after a successful claim the ids are cleared from the metadata, so
- *     later sign-ins skip the call entirely.
+ *   - once every named row is the caller's, the ids are cleared from the
+ *     metadata, so later sign-ins skip the call entirely.
  *
- * The RPC updates 0 rows without error when the rows have been deleted (30
- * days unclaimed), so existence is checked first and comes back as "expired",
- * with the ids cleared the same way.
+ * Rows that were deleted (30 days unclaimed) come back from the check as
+ * "expired", with the ids cleared. If the check can't answer, or the RPC says
+ * the caller holds fewer rows than were named, the ids stay for the next
+ * sign-in: only the full set counts as claimed.
  *
  * It never throws: a failure here must not block signing in, and /home's own
  * claim from the browser is still there as the fallback.
@@ -61,19 +62,24 @@ export async function claimSignupRecords(
   };
 
   try {
-    const exists = await resultRowsExist({
+    const status = await resultRowsStatus({
       assessment: ids.p_assessment_id,
       diagnosis: ids.p_diagnosis_id,
       plan: ids.p_plan_id,
     });
-    if (!exists) {
+    if (status === "unknown") return "none";
+    if (status === "expired") {
       await clearIds();
       return "expired";
     }
 
-    const { error } = await supabase.rpc("claim_anonymous_records", ids);
+    const { data: held, error } = await supabase.rpc("claim_anonymous_records", ids);
     if (error) {
       console.error("claimSignupRecords: claim failed", error.code);
+      return "none";
+    }
+    if (held !== Object.values(ids).filter(Boolean).length) {
+      console.error("claimSignupRecords: claim incomplete", held);
       return "none";
     }
 

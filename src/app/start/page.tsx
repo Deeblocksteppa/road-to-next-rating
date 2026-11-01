@@ -17,9 +17,10 @@ import { focusReason, retestStart } from "@/lib/result-copy";
 import { AnswerMap } from "@/lib/types";
 import {
   attachLocalResult,
+  ClaimIncompleteError,
   clearDeviceResult,
   clearPendingIds,
-  deviceResultExpired,
+  deviceResultStatus,
   saveAnonymousResult,
 } from "@/lib/persistence";
 
@@ -65,9 +66,9 @@ export default function Start() {
       // Ids whose rows are gone (30 days unclaimed): the plan below rebuilds
       // from the device with no network call, so this has to ask first, or
       // they could make an account and only then be told the result is gone.
-      const expired = await deviceResultExpired();
+      const status = await deviceResultStatus();
       if (cancelled) return;
-      if (expired) {
+      if (status === "expired") {
         clearDeviceResult();
         // `getUser`, not the cookie: a cookie left by a deleted account would
         // bounce through /home to /login and lose this message.
@@ -88,6 +89,11 @@ export default function Start() {
         const { data } = await createClient().auth.getSession();
         if (cancelled) return;
         if (data.session) {
+          // The check couldn't answer: claim nothing, clear nothing. Home asks again.
+          if (status === "unknown") {
+            window.location.replace("/home");
+            return;
+          }
           let attached = false;
           try {
             const diag = diagnose(stored.answers);
@@ -96,6 +102,13 @@ export default function Start() {
           } catch (err) {
             // Home's own claim is the retry.
             console.error("Failed to attach the result on this device:", err);
+            // Rows on another account (a shared device) will never attach. Home
+            // would only link back here, so let this player take their own.
+            if (err instanceof ClaimIncompleteError) {
+              clearSignupPending();
+              setPhase("assessment");
+              return;
+            }
           }
           clearSignupPending();
           window.location.replace(attached ? "/home?saved=1" : "/home");

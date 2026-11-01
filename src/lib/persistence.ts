@@ -6,7 +6,8 @@ import type { AnswerMap, Diagnosis } from "@/lib/types";
 import { generateRoadmap, type Roadmap } from "@/lib/roadmap";
 import { clearLocalResult, loadLocalResult } from "@/lib/local-result";
 import { clearSignupPending } from "@/lib/signup-pending";
-import { resultStillExists } from "@/app/start/actions";
+import { resultStatus } from "@/app/start/actions";
+import type { ResultStatus } from "@/lib/result-exists";
 
 /**
  * Anonymous-first persistence. Each row is created with user_id = NULL and an
@@ -204,22 +205,23 @@ export function clearPendingIds() {
 const EXPIRY_CHECK_TIMEOUT_MS = 4000;
 
 /**
- * True when this device holds ids whose rows have been deleted (unclaimed for
- * 30 days). Asks the server, because visitors can't read those rows. No ids
- * means nothing to check. A failed or slow check reads as not expired, so a
+ * Whether this device's ids still have their rows, or those rows were deleted
+ * (unclaimed for 30 days). Asks the server, because visitors can't read them.
+ * No ids means nothing to check. A failed or slow check is "unknown", so a
  * device is never wiped on a network error.
  */
-export async function deviceResultExpired(): Promise<boolean> {
+export async function deviceResultStatus(): Promise<ResultStatus> {
   const ids = getPendingIds();
-  if (!ids.assessment && !ids.diagnosis && !ids.plan) return false;
+  if (!ids.assessment && !ids.diagnosis && !ids.plan) return "exists";
   try {
-    const exists = await Promise.race([
-      resultStillExists(ids),
-      new Promise<boolean>((resolve) => setTimeout(() => resolve(true), EXPIRY_CHECK_TIMEOUT_MS)),
+    return await Promise.race([
+      resultStatus(ids),
+      new Promise<ResultStatus>((resolve) =>
+        setTimeout(() => resolve("unknown"), EXPIRY_CHECK_TIMEOUT_MS)
+      ),
     ]);
-    return !exists;
   } catch {
-    return false;
+    return "unknown";
   }
 }
 
@@ -230,20 +232,29 @@ export function clearDeviceResult() {
   clearSignupPending();
 }
 
+/**
+ * The claim ran, and the caller holds fewer rows than were named. With the rows
+ * still there, another account holds the rest: the device can't claim them.
+ */
+export class ClaimIncompleteError extends Error {}
+
 async function claimIds(ids: PendingIds): Promise<void> {
-  const { error } = await createClient().rpc("claim_anonymous_records", {
+  const { data: held, error } = await createClient().rpc("claim_anonymous_records", {
     p_assessment_id: ids.assessment,
     p_diagnosis_id: ids.diagnosis,
     p_plan_id: ids.plan,
   });
   if (error) throw error;
+  const named = [ids.assessment, ids.diagnosis, ids.plan].filter(Boolean).length;
+  if (held !== named) throw new ClaimIncompleteError(`Claim holds ${held} of ${named} rows`);
 }
 
 /**
  * Claim a complete saved set for the signed-in player, then clear the device
  * copy: the plan lives in the account now, and leaving it would make /start
  * keep saying "saved only on this device" about a plan that isn't. On any
- * failure nothing is cleared, so the next claim can try again.
+ * failure, or a claim that ends short of the full set, nothing is cleared, so
+ * the next claim can try again.
  */
 export async function claimAnonymousResult(ids: SavedIds): Promise<void> {
   await claimIds(ids);
@@ -273,9 +284,12 @@ export async function attachLocalResult(
  *
  * Checked first: ids whose rows are gone are cleared, not saved again. The
  * save would write new rows under an old result the policy says is deleted.
+ * A check that can't answer changes nothing, and the next load asks again.
  */
 export async function claimDeviceResult(): Promise<"none" | "claimed" | "expired"> {
-  if (await deviceResultExpired()) {
+  const status = await deviceResultStatus();
+  if (status === "unknown") return "none";
+  if (status === "expired") {
     clearDeviceResult();
     return "expired";
   }

@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -291,6 +292,121 @@ export async function closeBilling(
   }
 
   return { outcome: "closed", cancelled };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * True only when the database and Auth both answered, and neither has this
+ * user. A failed read throws, so the webhook returns 500 and Stripe retries: an
+ * outage must never look like a deleted account, because the caller refunds on
+ * this. An id that isn't a uuid isn't one of ours, so it isn't a deleted account.
+ */
+export async function accountIsGone(
+  userId: string,
+  admin: SupabaseClient = createAdminClient()
+): Promise<boolean> {
+  if (!UUID.test(userId)) return false;
+
+  const { data: profile, error } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (profile) return false;
+
+  const { data, error: authError } = await admin.auth.admin.getUserById(userId);
+  if (authError) {
+    if (authError.status === 404) return true;
+    throw authError;
+  }
+  return !data.user;
+}
+
+/**
+ * Written onto the subscription by the same call that cancels it. It is how a
+ * retried event knows the cancel was this backstop's, and so still owes the
+ * refund. A subscription cancelled any other way (Settings, or `closeBilling` on
+ * a normal account deletion) has no refund owed, even if its first event is
+ * delivered late or resent by hand after the account is gone.
+ */
+const ORPHANED_COMMENT = "Account no longer exists. Cancelled and refunded by the webhook backstop.";
+
+/**
+ * The backstop for a checkout that finishes after its account was deleted, which
+ * `closeBilling` can't see coming: cancel the subscription now and refund what it
+ * took in full. Runs on two events that can arrive in either order, and on
+ * retries. The first may come before the payment, so it cancels and finds nothing
+ * to refund, and the other refunds. Stripe's idempotency key and
+ * `charge_already_refunded` mean a repeat can't refund twice. Any failure throws,
+ * so Stripe retries the event.
+ */
+export async function closeOrphanedSubscription(
+  subscriptionId: string,
+  userId: string,
+  stripe: Stripe = getStripe()
+): Promise<void> {
+  let sub = await stripe.subscriptions.retrieve(subscriptionId);
+
+  if (!hasEnded(sub)) {
+    try {
+      sub = await stripe.subscriptions.cancel(subscriptionId, {
+        cancellation_details: { comment: ORPHANED_COMMENT },
+      });
+      console.error("ORPHANED CHECKOUT: subscription cancelled, account no longer exists", {
+        userId,
+        subscription: subscriptionId,
+        customer: idOf(sub.customer),
+      });
+    } catch (err) {
+      // The other event may have just cancelled it. If it's still live, retry.
+      sub = await stripe.subscriptions.retrieve(subscriptionId);
+      if (!hasEnded(sub)) throw err;
+    }
+  }
+
+  if (sub.cancellation_details?.comment !== ORPHANED_COMMENT) {
+    console.warn("Orphaned checkout: subscription ended some other way, no refund owed", {
+      userId,
+      subscription: subscriptionId,
+      status: sub.status,
+    });
+    return;
+  }
+
+  const invoice = idOf(sub.latest_invoice);
+  if (!invoice) return;
+
+  const payments = await stripe.invoicePayments
+    .list({ invoice, limit: 100 })
+    .autoPagingToArray({ limit: 1000 });
+  for (const { id, status, payment } of payments) {
+    if (status !== "paid") continue;
+
+    const paymentIntent = idOf(payment.payment_intent);
+    const charge = idOf(payment.charge);
+    const target = paymentIntent ?? charge;
+    if (!target) throw new Error(`Invoice payment ${id} has nothing that can be refunded`);
+
+    try {
+      const refund = await stripe.refunds.create(
+        paymentIntent ? { payment_intent: paymentIntent } : { charge: charge as string },
+        { idempotencyKey: `orphaned-checkout-refund-${target}` }
+      );
+      console.error("ORPHANED CHECKOUT: payment refunded in full, account no longer exists", {
+        userId,
+        subscription: subscriptionId,
+        invoice,
+        payment: target,
+        refund: refund.id,
+        amount: refund.amount,
+        currency: refund.currency,
+      });
+    } catch (err) {
+      if ((err as { code?: string } | null)?.code !== "charge_already_refunded") throw err;
+    }
+  }
 }
 
 /** Subscription ended for good — drop to the free tier. */

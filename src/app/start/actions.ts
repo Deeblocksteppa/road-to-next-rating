@@ -1,12 +1,12 @@
 "use server";
 
-import { resultRowsExist } from "@/lib/result-exists";
+import { resultRowsStatus, type ResultStatus } from "@/lib/result-exists";
 
-/** See `resultRowsExist`. Called with the ids stored on the visitor's device. */
-export async function resultStillExists(ids: {
+/** See `resultRowsStatus`. Called with the ids stored on the visitor's device. */
+export async function resultStatus(ids: {
   assessment: string | null;
   diagnosis: string | null;
   plan: string | null;
-}): Promise<boolean> {
-  return resultRowsExist(ids);
+}): Promise<ResultStatus> {
+  return resultRowsStatus(ids);
 }
