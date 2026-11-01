@@ -5,6 +5,8 @@ import { diagnose, scoreSkills } from "@/lib/engine";
 import type { AnswerMap, Diagnosis } from "@/lib/types";
 import { generateRoadmap, type Roadmap } from "@/lib/roadmap";
 import { clearLocalResult, loadLocalResult } from "@/lib/local-result";
+import { clearSignupPending } from "@/lib/signup-pending";
+import { resultStillExists } from "@/app/start/actions";
 
 /**
  * Anonymous-first persistence. Each row is created with user_id = NULL and an
@@ -198,6 +200,36 @@ export function clearPendingIds() {
   }
 }
 
+/** A slow check must not hold the player on a blank screen. */
+const EXPIRY_CHECK_TIMEOUT_MS = 4000;
+
+/**
+ * True when this device holds ids whose rows have been deleted (unclaimed for
+ * 30 days). Asks the server, because visitors can't read those rows. No ids
+ * means nothing to check. A failed or slow check reads as not expired, so a
+ * device is never wiped on a network error.
+ */
+export async function deviceResultExpired(): Promise<boolean> {
+  const ids = getPendingIds();
+  if (!ids.assessment && !ids.diagnosis && !ids.plan) return false;
+  try {
+    const exists = await Promise.race([
+      resultStillExists(ids),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(true), EXPIRY_CHECK_TIMEOUT_MS)),
+    ]);
+    return !exists;
+  } catch {
+    return false;
+  }
+}
+
+/** Removes the result and everything waiting on it from this device. */
+export function clearDeviceResult() {
+  clearPendingIds();
+  clearLocalResult();
+  clearSignupPending();
+}
+
 async function claimIds(ids: PendingIds): Promise<void> {
   const { error } = await createClient().rpc("claim_anonymous_records", {
     p_assessment_id: ids.assessment,
@@ -237,19 +269,27 @@ export async function attachLocalResult(
  * after an email-confirmation or OAuth round trip). With the answers still
  * here, the complete set is saved and claimed. Without them (ids left by an
  * older build), the ids are claimed as they are, since nothing is left to
- * rebuild a missing row from. Returns true if a claim was made.
+ * rebuild a missing row from.
+ *
+ * Checked first: ids whose rows are gone are cleared, not saved again. The
+ * save would write new rows under an old result the policy says is deleted.
  */
-export async function claimDeviceResult(): Promise<boolean> {
+export async function claimDeviceResult(): Promise<"none" | "claimed" | "expired"> {
+  if (await deviceResultExpired()) {
+    clearDeviceResult();
+    return "expired";
+  }
+
   const stored = loadLocalResult();
   if (stored) {
     const diagnosis = diagnose(stored.answers);
     await attachLocalResult(stored.answers, diagnosis, generateRoadmap(diagnosis, stored.answers));
-    return true;
+    return "claimed";
   }
 
   const ids = getPendingIds();
-  if (!ids.assessment && !ids.diagnosis && !ids.plan) return false;
+  if (!ids.assessment && !ids.diagnosis && !ids.plan) return "none";
   await claimIds(ids);
   clearPendingIds();
-  return true;
+  return "claimed";
 }

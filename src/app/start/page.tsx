@@ -5,6 +5,7 @@ import { Assessment } from "@/components/assessment/Assessment";
 import { Computing } from "@/components/assessment/Computing";
 import { Reveal } from "@/components/diagnosis/Reveal";
 import { SaveGate } from "@/components/auth/SaveGate";
+import { EXPIRED_BUTTON, ExpiredResult } from "@/components/plan/ExpiredResult";
 import { PlanView } from "@/components/plan/PlanView";
 import { SKILL_TITLES } from "@/lib/diagnoses";
 import { diagnose } from "@/lib/engine";
@@ -14,7 +15,13 @@ import { createClient } from "@/lib/supabase/client";
 import { generateRoadmap } from "@/lib/roadmap";
 import { focusReason, retestStart } from "@/lib/result-copy";
 import { AnswerMap } from "@/lib/types";
-import { attachLocalResult, clearPendingIds, saveAnonymousResult } from "@/lib/persistence";
+import {
+  attachLocalResult,
+  clearDeviceResult,
+  clearPendingIds,
+  deviceResultExpired,
+  saveAnonymousResult,
+} from "@/lib/persistence";
 
 /**
  * The anonymous funnel.
@@ -34,7 +41,7 @@ import { attachLocalResult, clearPendingIds, saveAnonymousResult } from "@/lib/p
  * complete set of ids. If it still fails after its retries, the form does
  * not open and the plan says so; the next tap tries again.
  */
-type Phase = "loading" | "assessment" | "computing" | "reveal" | "savegate" | "saved";
+type Phase = "loading" | "expired" | "assessment" | "computing" | "reveal" | "savegate" | "saved";
 
 export default function Start() {
   const [phase, setPhase] = useState<Phase>("loading");
@@ -55,6 +62,22 @@ export default function Start() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Ids whose rows are gone (30 days unclaimed): the plan below rebuilds
+      // from the device with no network call, so this has to ask first, or
+      // they could make an account and only then be told the result is gone.
+      const expired = await deviceResultExpired();
+      if (cancelled) return;
+      if (expired) {
+        clearDeviceResult();
+        // `getUser`, not the cookie: a cookie left by a deleted account would
+        // bounce through /home to /login and lose this message.
+        const { data } = await createClient().auth.getUser();
+        if (cancelled) return;
+        if (data.user) window.location.replace("/home?expired=1");
+        else setPhase("expired");
+        return;
+      }
+
       const stored = loadLocalResult();
 
       // A signed-in player with a result still on this device doesn't belong
@@ -160,6 +183,18 @@ export default function Start() {
 
   if (phase === "loading") {
     return <main className="min-h-app w-full bg-background" />;
+  }
+
+  if (phase === "expired") {
+    return (
+      <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center bg-background px-6 py-8 text-ink">
+        <ExpiredResult>
+          <button type="button" onClick={() => setPhase("assessment")} className={EXPIRED_BUTTON}>
+            Take the assessment
+          </button>
+        </ExpiredResult>
+      </main>
+    );
   }
 
   if (phase === "computing") {

@@ -1,5 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
+import { resultRowsExist } from "@/lib/result-exists";
+
 const PENDING_KEYS = {
   p_assessment_id: "pending_assessment_id",
   p_diagnosis_id: "pending_diagnosis_id",
@@ -25,14 +27,17 @@ const PENDING_KEYS = {
  *   - after a successful claim the ids are cleared from the metadata, so
  *     later sign-ins skip the call entirely.
  *
- * Returns true when a claim was made on this call. It never throws: a
- * failure here must not block signing in, and /home's own claim from the
- * browser is still there as the fallback.
+ * The RPC updates 0 rows without error when the rows have been deleted (30
+ * days unclaimed), so existence is checked first and comes back as "expired",
+ * with the ids cleared the same way.
+ *
+ * It never throws: a failure here must not block signing in, and /home's own
+ * claim from the browser is still there as the fallback.
  */
 export async function claimSignupRecords(
   supabase: SupabaseClient,
   user: User | null | undefined
-): Promise<boolean> {
+): Promise<"none" | "claimed" | "expired"> {
   const meta = user?.user_metadata ?? {};
   const id = (key: string) => (typeof meta[key] === "string" && meta[key] ? (meta[key] as string) : null);
   const ids = {
@@ -40,17 +45,11 @@ export async function claimSignupRecords(
     p_diagnosis_id: id(PENDING_KEYS.p_diagnosis_id),
     p_plan_id: id(PENDING_KEYS.p_plan_id),
   };
-  if (!ids.p_assessment_id && !ids.p_diagnosis_id && !ids.p_plan_id) return false;
+  if (!ids.p_assessment_id && !ids.p_diagnosis_id && !ids.p_plan_id) return "none";
 
-  try {
-    const { error } = await supabase.rpc("claim_anonymous_records", ids);
-    if (error) {
-      console.error("claimSignupRecords: claim failed", error.code);
-      return false;
-    }
-
-    // The ids have done their job. Left in place they are harmless (see
-    // above), so a failure to clear them is logged and ignored.
+  // The ids have done their job. Left in place they are harmless (see above),
+  // so a failure to clear them is logged and ignored.
+  const clearIds = async () => {
     const { error: clearError } = await supabase.auth.updateUser({
       data: {
         [PENDING_KEYS.p_assessment_id]: null,
@@ -59,10 +58,29 @@ export async function claimSignupRecords(
       },
     });
     if (clearError) console.error("claimSignupRecords: could not clear ids", clearError.code);
+  };
 
-    return true;
+  try {
+    const exists = await resultRowsExist({
+      assessment: ids.p_assessment_id,
+      diagnosis: ids.p_diagnosis_id,
+      plan: ids.p_plan_id,
+    });
+    if (!exists) {
+      await clearIds();
+      return "expired";
+    }
+
+    const { error } = await supabase.rpc("claim_anonymous_records", ids);
+    if (error) {
+      console.error("claimSignupRecords: claim failed", error.code);
+      return "none";
+    }
+
+    await clearIds();
+    return "claimed";
   } catch (err) {
     console.error("claimSignupRecords: unexpected failure", err);
-    return false;
+    return "none";
   }
 }

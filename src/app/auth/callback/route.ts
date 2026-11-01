@@ -26,8 +26,11 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       // An old-style confirmation link (or Google) starts a session here.
-      const claimed = await claimSignupRecords(supabase, data.user);
-      const landing = claimed && next === AFTER_AUTH ? `${next}?saved=1` : next;
+      const claim = await claimSignupRecords(supabase, data.user);
+      const landing =
+        claim !== "none" && next === AFTER_AUTH
+          ? `${next}?${claim === "expired" ? "expired" : "saved"}=1`
+          : next;
       return NextResponse.redirect(`${origin}${landing}`);
     }
     console.error("auth/callback: code exchange failed", error.code, error.status);

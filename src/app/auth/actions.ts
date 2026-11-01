@@ -35,10 +35,14 @@ export async function login(formData: FormData) {
   // A player who confirmed somewhere the claim didn't run (an old-style
   // link) gets their plan attached the first time they sign in, on any
   // device. Home says so once.
-  const claimed = await claimSignupRecords(supabase, data.user);
+  const claim = await claimSignupRecords(supabase, data.user);
 
   revalidatePath("/", "layout");
-  redirect(claimed && next === AFTER_AUTH ? `${next}?saved=1` : next);
+  redirect(
+    claim !== "none" && next === AFTER_AUTH
+      ? `${next}?${claim === "expired" ? "expired" : "saved"}=1`
+      : next
+  );
 }
 
 /** Email + password sign up. The DB trigger creates the profiles row. */

@@ -18,12 +18,19 @@ import { clearSignupPending } from "@/lib/signup-pending";
  * attached to the account, whether that happened here or (`saved`) on the
  * way in, at the Save Gate or on the confirmation link. Being on /home means
  * being signed in, so the device's "sign-up pending" note is cleared too.
+ *
+ * A device result whose rows have been deleted (30 days unclaimed) is cleared,
+ * never saved again, and Home is reloaded with `?expired=1`, which shows the
+ * expired copy if the account has no plan.
  */
 export function ClaimOnLoad({
   saved = false,
+  expired = false,
   hasPlan = false,
 }: {
   saved?: boolean;
+  /** Arrived with `?expired=1`: only here to drop the flag from the URL. */
+  expired?: boolean;
   /**
    * The account has a plan for the diagnosis on show. "Plan saved" used to
    * appear on every confirmed sign-up, including one with nothing to save (a
@@ -38,13 +45,16 @@ export function ClaimOnLoad({
   useEffect(() => {
     clearSignupPending();
     // The flag has done its job; drop it so a refresh doesn't repeat it.
-    if (saved) window.history.replaceState(null, "", window.location.pathname);
+    if (saved || expired) window.history.replaceState(null, "", window.location.pathname);
 
     let cancelled = false;
     (async () => {
       try {
-        const claimed = await claimDeviceResult();
-        if (claimed && !cancelled) {
+        const claim = await claimDeviceResult();
+        if (cancelled) return;
+        if (claim === "expired") {
+          router.replace("/home?expired=1");
+        } else if (claim === "claimed") {
           setJustSaved(true);
           router.refresh();
         }
@@ -55,7 +65,7 @@ export function ClaimOnLoad({
     return () => {
       cancelled = true;
     };
-  }, [router, saved]);
+  }, [router, saved, expired]);
 
   // A claim made here refreshes the page, so `hasPlan` turns true with it.
   if (!justSaved || !hasPlan) return null;

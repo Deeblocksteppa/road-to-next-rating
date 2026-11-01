@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { ClaimOnLoad } from "@/components/auth/ClaimOnLoad";
 import { Logo } from "@/components/brand/Logo";
+import { EXPIRED_BUTTON, ExpiredResult } from "@/components/plan/ExpiredResult";
 import { TodaySession, todayState } from "@/components/home/TodaySession";
 import { RetestOpen } from "@/components/retest/RetestOpen";
 import { monthDay } from "@/lib/date-format";
@@ -22,7 +23,7 @@ import type { AnswerMap, SkillId } from "@/lib/types";
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { saved?: string };
+  searchParams: { saved?: string; expired?: string };
 }) {
   const supabase = await createClient();
 
@@ -135,7 +136,11 @@ export default async function HomePage({
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8">
-      <ClaimOnLoad saved={searchParams.saved === "1"} hasPlan={hasPlan} />
+      <ClaimOnLoad
+        saved={searchParams.saved === "1"}
+        expired={searchParams.expired === "1"}
+        hasPlan={hasPlan}
+      />
 
       <header className="flex items-center justify-between pt-4">
         <Logo />
@@ -201,6 +206,12 @@ export default async function HomePage({
             <p className="-mt-2 pb-1 text-[16px] leading-[1.5] text-ink-2">{caption}</p>
           )}
         </>
+      ) : searchParams.expired === "1" ? (
+        <ExpiredResult>
+          <Link href="/start" className={EXPIRED_BUTTON}>
+            Take the assessment
+          </Link>
+        </ExpiredResult>
       ) : (
         <p className="mt-2 border-y border-line py-5 text-[16px] leading-[1.6] text-ink-2">
           No diagnosis yet.{" "}

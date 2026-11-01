@@ -53,9 +53,13 @@ export async function GET(request: Request) {
     if (!error) {
       // Every link that starts a session claims the sign-up's rows (a no-op
       // when there are none, or they were claimed already).
-      await claimSignupRecords(supabase, data.user);
-      // A confirmed sign-up lands on Home with a brief "Plan saved".
-      const landing = !isRecovery && next === AFTER_AUTH ? `${next}?saved=1` : next;
+      const claim = await claimSignupRecords(supabase, data.user);
+      // A confirmed sign-up lands on Home with a brief "Plan saved", or the
+      // line that says their result is gone.
+      const landing =
+        !isRecovery && next === AFTER_AUTH
+          ? `${next}?${claim === "expired" ? "expired" : "saved"}=1`
+          : next;
       return NextResponse.redirect(`${origin}${landing}`);
     }
     // Code and status only: the message can echo the token.
