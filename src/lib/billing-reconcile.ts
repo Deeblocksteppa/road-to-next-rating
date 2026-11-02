@@ -12,9 +12,13 @@ import { idOf } from "@/lib/stripe";
  * other way round: every subscription Stripe can still charge, checked against
  * our users.
  *
- * It only acts when Auth definitely says not found and no profile row exists.
- * Any error or ambiguity skips that subscription and logs it. Nothing without a
- * `supabase_user_id` is touched: it may have been made by hand.
+ * It only acts when Auth definitely says not found and no profile row exists,
+ * and a fresh read after that says the subscription is still live and still
+ * names that user. The list can be minutes old, and a normal deletion cancels
+ * first and deletes the user second, so its subscription can be on the list with
+ * the user already gone. That one is owed no refund. Any error or ambiguity skips
+ * the subscription and logs it. Nothing without a `supabase_user_id` is touched:
+ * it may have been made by hand.
  *
  * The real switch is `BILLING_RECONCILE_ENABLED` in the route. A dry run makes the
  * same reads, so its counts include what would be skipped, and changes nothing.
@@ -32,8 +36,10 @@ export interface ReconcileSummary {
   /** Actually done, on a real run. */
   cancelled: number;
   refunded: number;
-  /** A failed read or an ambiguous answer: nothing done, logged, tried again tomorrow. */
+  /** A failed read, an ambiguous answer or a failed cancel: no refund, logged. */
   skipped_errors: number;
+  /** Cancelled, then the refund failed. Nothing retries it: refund these by hand. */
+  refund_failed: number;
   /** No `supabase_user_id`: logged only. */
   no_metadata: number;
 }
@@ -72,46 +78,49 @@ async function findRefund(stripe: Stripe, subscriptionId: string): Promise<Refun
 }
 
 /**
- * Refund first, then cancel. A cancelled subscription drops out of tomorrow's
- * list, so cancelling first would leave a failed refund with nothing to retry it.
- * This order retries either step tomorrow, and a repeat can't refund twice. The
- * cancel carries the backstop's comment, so a late webhook sees why it ended.
+ * The cancel decides whether a refund is owed. It only succeeds on a subscription
+ * still live at that moment, so one that a normal deletion just ended throws here
+ * and never reaches the refund. The comment is what tells a late webhook the
+ * cancel was automatic. Stripe's cancel call takes no metadata.
  */
-async function refundAndCancel(
-  stripe: Stripe,
-  sub: Stripe.Subscription,
-  userId: string,
-  target: RefundTarget | null
-): Promise<boolean> {
-  let refunded = false;
-  if (target) {
-    try {
-      const refund = await stripe.refunds.create(target.params, {
-        idempotencyKey: `billing-reconcile-refund-${sub.id}`,
-      });
-      refunded = true;
-      console.error("BILLING RECONCILE: payment refunded in full, account no longer exists", {
-        userId,
-        subscription: sub.id,
-        invoice: target.invoice,
-        refund: refund.id,
-        amount: refund.amount,
-        currency: refund.currency,
-      });
-    } catch (err) {
-      if ((err as { code?: string } | null)?.code !== "charge_already_refunded") throw err;
-    }
-  }
-
-  await stripe.subscriptions.cancel(sub.id, {
+async function cancelOrphan(stripe: Stripe, sub: Stripe.Subscription, userId: string) {
+  const cancelled = await stripe.subscriptions.cancel(sub.id, {
     cancellation_details: { comment: ORPHANED_COMMENT },
   });
+  if (cancelled.cancellation_details?.comment !== ORPHANED_COMMENT) {
+    throw new Error(`Cancel of ${sub.id} didn't record the automatic cancellation`);
+  }
   console.error("BILLING RECONCILE: subscription cancelled, account no longer exists", {
     userId,
     subscription: sub.id,
     customer: idOf(sub.customer),
   });
-  return refunded;
+}
+
+/** True if this call refunded. Already refunded is fine; a repeat can't refund twice. */
+async function refundOrphan(
+  stripe: Stripe,
+  sub: Stripe.Subscription,
+  userId: string,
+  target: RefundTarget
+): Promise<boolean> {
+  try {
+    const refund = await stripe.refunds.create(target.params, {
+      idempotencyKey: `billing-reconcile-refund-${sub.id}`,
+    });
+    console.error("BILLING RECONCILE: payment refunded in full, account no longer exists", {
+      userId,
+      subscription: sub.id,
+      invoice: target.invoice,
+      refund: refund.id,
+      amount: refund.amount,
+      currency: refund.currency,
+    });
+    return true;
+  } catch (err) {
+    if ((err as { code?: string } | null)?.code === "charge_already_refunded") return false;
+    throw err;
+  }
 }
 
 export async function reconcileBilling(
@@ -126,6 +135,7 @@ export async function reconcileBilling(
     cancelled: 0,
     refunded: 0,
     skipped_errors: 0,
+    refund_failed: 0,
     no_metadata: 0,
   };
 
@@ -156,12 +166,37 @@ export async function reconcileBilling(
         if (!isUserId(userId)) throw new Error("supabase_user_id is not a uuid");
         if (!(await accountIsGone(userId, admin))) continue;
 
+        const current = await stripe.subscriptions.retrieve(sub.id);
+        if (!LIVE_STATUSES.some((live) => live === current.status)) {
+          console.warn("billing reconcile: no longer live, no refund owed", {
+            subscription: sub.id,
+            status: current.status,
+          });
+          continue;
+        }
+        if (current.metadata?.supabase_user_id !== userId) {
+          throw new Error("supabase_user_id changed since the list");
+        }
+
         const target = await findRefund(stripe, sub.id);
         summary.would_cancel++;
         if (dryRun) continue;
 
-        if (await refundAndCancel(stripe, sub, userId, target)) summary.refunded++;
+        await cancelOrphan(stripe, current, userId);
         summary.cancelled++;
+        if (!target) continue;
+
+        try {
+          if (await refundOrphan(stripe, current, userId, target)) summary.refunded++;
+        } catch (err) {
+          // Cancelled now, so it won't be on tomorrow's list.
+          console.error(
+            "BILLING RECONCILE: REFUND FAILED after cancelling, refund by hand",
+            { subscription: sub.id, userId, invoice: target.invoice },
+            err
+          );
+          summary.refund_failed++;
+        }
       } catch (err) {
         console.error("billing reconcile: skipped", { subscription: sub.id, userId }, err);
         summary.skipped_errors++;
