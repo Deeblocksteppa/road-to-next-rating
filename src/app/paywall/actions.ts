@@ -83,7 +83,10 @@ export async function startCheckout(
       },
       // No custom_text here: this account has Stripe Managed Payments on,
       // which rejects it and fails the whole checkout. What the subscription
-      // adds is described by the product in the Stripe dashboard.
+      // adds is described by the product in the Stripe dashboard. It rejects
+      // payment_method_types and payment_method_configuration the same way, so
+      // a delayed method is possible: the webhook grants on
+      // checkout.session.async_payment_succeeded.
       success_url: `${origin}/paywall/success?session_id={CHECKOUT_SESSION_ID}&from=${encodeURIComponent(destination)}`,
       cancel_url: `${origin}/paywall?from=${encodeURIComponent(destination)}`,
       allow_promotion_codes: true,

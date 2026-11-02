@@ -142,7 +142,9 @@ export default function Privacy() {
             <Lead>Results never saved to an account</Lead>: deleted after 30 days.
           </li>
           <li>
-            <Lead>Sign-ups never confirmed</Lead>: deleted after 30 days.
+            <Lead>Sign-ups never confirmed</Lead>: the results saved with them are deleted after 30
+            days. The unconfirmed email address stays in our sign-in system until you ask us to
+            delete it.
           </li>
           <li>
             <Lead>Payment records</Lead>: kept by Stripe and by us as long as tax and accounting

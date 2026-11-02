@@ -1,5 +1,7 @@
 "use client";
 
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
+
 import { createClient } from "@/lib/supabase/client";
 import { diagnose, scoreSkills } from "@/lib/engine";
 import type { AnswerMap, Diagnosis } from "@/lib/types";
@@ -273,6 +275,24 @@ export async function attachLocalResult(
   roadmap: Roadmap
 ): Promise<void> {
   await claimAnonymousResult(await saveAnonymousResult(answers, diagnosis, roadmap));
+}
+
+/**
+ * Whether a player is signed in, asked of Auth and not the cookie: a cookie left
+ * by a deleted account isn't one. "no" takes a definite answer, no session or
+ * Auth refusing the one here. "unknown" is a network failure, a rate limit or a
+ * server error, and must not read as signed out.
+ */
+export async function signedInStatus(): Promise<"yes" | "no" | "unknown"> {
+  try {
+    const { data, error } = await createClient().auth.getUser();
+    if (data.user) return "yes";
+    if (isAuthSessionMissingError(error)) return "no";
+    const status = error?.status ?? 0;
+    return status >= 400 && status < 500 && status !== 429 ? "no" : "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 /**

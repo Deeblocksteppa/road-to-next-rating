@@ -20,15 +20,18 @@ interface AnonymousContext {
   focusReason: string;
   /** The address a sign-up on this device is waiting on, if any. */
   pendingEmail: string | null;
+  /** Retaking while signed in: no account to pitch, and the plan isn't on it yet. */
+  signedIn: boolean;
   /**
-   * The button waiting on the result's save before the form opens (it reads
-   * "Saving…" and both are disabled), and the one whose save failed.
+   * The button waiting on the result's save before the form opens or, signed
+   * in, the claim (it reads "Saving…" and both are disabled), and the one whose
+   * save failed.
    */
   saving: "save" | "session" | null;
   saveFailed: "save" | "session" | null;
-  /** "Start session": sessions need an account, so this opens the save form saying so. */
+  /** "Start session": sessions need an account, so this opens the save form saying so. Signed in: claims, then opens the session. */
   onStartSession: () => void;
-  /** "Save my plan": the same form, without the session line. */
+  /** "Save my plan": the same form, without the session line. Signed in: claims, then opens /plan. */
   onSavePlan: () => void;
   /** Drop the pending sign-up and reopen the form. */
   onChangeEmail: () => void;
@@ -61,7 +64,8 @@ interface MemberContext {
  * Anonymous only: the sign-up status, the reason for the focus, Replay, the
  * account block and Start over. Starting a session needs an account (that is
  * where the counts are kept), so both of the anonymous buttons open the save
- * form. Nothing opens it by itself.
+ * form, or save straight to the account of a signed-in player retaking.
+ * Nothing opens the form by itself.
  */
 export function PlanView({
   skill,
@@ -241,10 +245,11 @@ export function PlanView({
       {anon && !anon.pendingEmail && (
         <section className="flex flex-col gap-4">
           <p className="text-pretty text-[16px] leading-[1.6] text-ink">
-            Your plan is saved on this device. A free account runs your sessions, keeps what you log,
-            and opens your plan on any device.
+            {anon.signedIn
+              ? "This plan isn't on your account yet. Saving it, or starting a session, makes it your current plan."
+              : "Your plan is saved on this device. A free account runs your sessions, keeps what you log, and opens your plan on any device."}
           </p>
-          {/* Secondary: Start session is the screen's main action, and it opens the same form. */}
+          {/* Secondary: Start session is the screen's main action, and it saves the same way. */}
           <button
             type="button"
             onClick={anon.onSavePlan}

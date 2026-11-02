@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
 /** Events we act on. Anything else is acknowledged and ignored. */
 const HANDLED = new Set<Stripe.Event["type"]>([
   "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
@@ -63,6 +64,9 @@ export async function POST(request: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed":
+      // A delayed payment method: `completed` came with payment_status=unpaid
+      // and granted nothing, and this is the same session, now paid.
+      case "checkout.session.async_payment_succeeded":
         await onCheckoutCompleted(event.data.object);
         break;
       case "customer.subscription.created":

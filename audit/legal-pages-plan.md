@@ -182,9 +182,9 @@ Batched for PostgREST's row and URL limits. No migration.
 - `/auth/confirm`, password sign-in and `/auth/callback`, the three places that claim from metadata: same check in `claimSignupRecords`, then clear the metadata and land on `/home?expired=1` instead of `?saved=1`.
 - Check fails on the network: treat as still there. Never wipe a device on a failed request.
 
-**As built.** A set is also kept, and counted, if a row below its top row is under 30 days old, because a return visit can save a missing plan under an old diagnosis. After the Codex review, the checks and deletes are one Postgres transaction (`retention_sweep`, 20261101120000): it locks each set top down, re-checks it and deletes it bottom up, so a claim mid-run waits or makes the set ineligible. The 30-day cutoff now applies to every set, which replaces approved default 18: rows named in an unconfirmed user's metadata no longer go early. An unconfirmed user also stays until their last confirmation email is 2 days old. `/start` signed-in check uses `getUser`, not the cookie, so a cookie from a deleted account still shows the copy. `/auth/callback` shares the claim code but wasn't exercised: Google is off and old PKCE links can't be replayed.
+**As built.** A set is also kept, and counted, if a row below its top row is under 30 days old, because a return visit can save a missing plan under an old diagnosis. After the Codex review, the checks and deletes are one Postgres transaction (`retention_sweep`, 20261101120000): it locks each set top down, re-checks it and deletes it bottom up, so a claim mid-run waits or makes the set ineligible. The 30-day cutoff now applies to every set, which replaces approved default 18: rows named in an unconfirmed user's metadata no longer go early. Auth users are never deleted: a delete could race someone confirming, so the 30 days covers the results saved with an unconfirmed sign-up, and the address stays until someone asks. `/start` signed-in check uses `getUser`, not the cookie, so a cookie from a deleted account still shows the copy. `/auth/callback` shares the claim code but wasn't exercised: Google is off and old PKCE links can't be replayed.
 
-**Dry run:** `?dry=1` counts only, and the route dry-runs unless `RETENTION_ENABLED=true`. It requires `CRON_SECRET` always; unlike the reminder route, a missing secret means refusal, not open access. Output: assessments, diagnoses and plans to delete, unconfirmed users to delete, partly claimed sets skipped, users skipped.
+**Dry run:** `?dry=1` counts only, and the route dry-runs unless `RETENTION_ENABLED=true`. It requires `CRON_SECRET` always; unlike the reminder route, a missing secret means refusal, not open access. Output: assessments, diagnoses and plans to delete, partly claimed sets skipped, recent sets skipped.
 
 **Risks**
 - **Real deletes are irreversible.** Backups aside, nothing brings them back. The sequence is: I run the dry run and show you the counts, you read them, you set the env var. I don't run a real delete against this database in testing.
@@ -193,7 +193,7 @@ Batched for PostgREST's row and URL limits. No migration.
 - **Vercel plan limits** on cron count and duration aren't visible from here. Two daily crons should fit; the first dry run will show timing.
 
 **Still false after this phase**
-- "Results never saved to an account: deleted after 30 days" and "Sign-ups never confirmed: deleted after 30 days" stay false until `RETENTION_ENABLED` is set and the first real run finishes.
+- "Results never saved to an account: deleted after 30 days" and "Sign-ups never confirmed: the results saved with them are deleted after 30 days" stay false until `RETENTION_ENABLED` is set and the first real run finishes.
 - Partly claimed sets that the sweep skips outlive 30 days. If the dry run shows any, you decide what happens to them.
 - A device copy stays in the visitor's own browser until they come back, when it's cleared. A device result with no stored ids (private mode at save time) has nothing to check against and stays.
 

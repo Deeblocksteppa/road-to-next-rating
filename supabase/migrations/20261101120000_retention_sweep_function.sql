@@ -17,12 +17,13 @@
 --      nowhere in the set, no claimed row and no drill session below. Deletes go
 --      bottom up.
 --    - The 30-day cutoff applies to every set. A row named in an unconfirmed user's
---      pending metadata gets no shorter limit.
+--      pending metadata gets no shorter limit and no longer one: it goes through the
+--      same rules as every other row.
+--    - Eligibility is kept per table. Ids are unique within a table, not across them.
 --
---    Auth users can't be deleted here: that is the admin API's job. The function
---    returns the ids of unconfirmed users still eligible, and src/lib/retention.ts
---    reads each one fresh before deleting it. Only `p_dry_run = false` deletes
---    anything; true or null counts and changes nothing. service_role only.
+--    Only `p_dry_run = false` deletes anything; true or null counts and changes
+--    nothing. service_role only. It never touches auth.users: an unconfirmed sign-up
+--    keeps its auth user until someone asks us to delete it.
 --
 -- 2. claim_anonymous_records now returns how many of the named rows belong to the
 --    caller after the call, counting rows they already held, so a repeat of a claim
@@ -53,8 +54,7 @@
 --     (select count(*) from public.assessments) as assessments,
 --     (select count(*) from public.diagnoses) as diagnoses,
 --     (select count(*) from public.plans) as plans,
---     (select count(*) from public.drill_sessions) as drill_sessions,
---     (select count(*) from auth.users) as users;
+--     (select count(*) from public.drill_sessions) as drill_sessions;
 --
 --   3. Old unclaimed rows. After, the dry run's numbers should not exceed these:
 --
@@ -101,15 +101,16 @@ declare
   v_assessments uuid[];
   v_diagnoses uuid[];
   v_plans uuid[];
-  v_eligible uuid[];
-  v_blocked_claimed uuid[];
-  v_blocked_recent uuid[];
-  v_delete_assessments uuid[];
+  v_eligible_assessments uuid[];
+  v_eligible_diagnoses uuid[];
+  v_eligible_plans uuid[];
+  v_blocked_assessments uuid[];
+  v_blocked_diagnoses uuid[];
+  v_blocked_plans uuid[];
   v_delete_diagnoses uuid[];
   v_delete_plans uuid[];
   v_skipped_partly_claimed integer;
-  v_users uuid[];
-  v_unconfirmed integer;
+  v_skipped_recent integer;
   v_deleted_assessments integer;
   v_deleted_diagnoses integer;
   v_deleted_plans integer;
@@ -172,46 +173,54 @@ begin
     group by a.id
   ),
   roots as (
-    select id, claimed, recent from assessment_state
+    select 'assessment' as kind, id, claimed, recent from assessment_state
     union all
-    select id, claimed, recent from diagnosis_state where assessment_id is null
+    select 'diagnosis', id, claimed, recent from diagnosis_state where assessment_id is null
     union all
-    select id, claimed, recent from plan_state where diagnosis_id is null
+    select 'plan', id, claimed, recent from plan_state where diagnosis_id is null
   )
   select
-    coalesce(array_agg(id) filter (where not claimed and not recent), '{}'),
-    coalesce(array_agg(id) filter (where claimed), '{}'),
-    coalesce(array_agg(id) filter (where recent and not claimed), '{}')
-  into v_eligible, v_blocked_claimed, v_blocked_recent
+    coalesce(array_agg(id) filter (where kind = 'assessment' and not claimed and not recent), '{}'),
+    coalesce(array_agg(id) filter (where kind = 'diagnosis' and not claimed and not recent), '{}'),
+    coalesce(array_agg(id) filter (where kind = 'plan' and not claimed and not recent), '{}'),
+    coalesce(array_agg(id) filter (where kind = 'assessment' and claimed), '{}'),
+    coalesce(array_agg(id) filter (where kind = 'diagnosis' and claimed), '{}'),
+    coalesce(array_agg(id) filter (where kind = 'plan' and claimed), '{}'),
+    count(*) filter (where recent and not claimed)
+  into
+    v_eligible_assessments, v_eligible_diagnoses, v_eligible_plans,
+    v_blocked_assessments, v_blocked_diagnoses, v_blocked_plans,
+    v_skipped_recent
   from roots;
-
-  select coalesce(array_agg(a.id), '{}') into v_delete_assessments
-  from public.assessments a
-  where a.id = any (v_assessments) and a.id = any (v_eligible);
 
   select coalesce(array_agg(d.id), '{}') into v_delete_diagnoses
   from public.diagnoses d
   where d.id = any (v_diagnoses)
-    and (d.id = any (v_eligible) or d.assessment_id = any (v_eligible));
+    and (d.id = any (v_eligible_diagnoses) or d.assessment_id = any (v_eligible_assessments));
 
   select coalesce(array_agg(p.id), '{}') into v_delete_plans
   from public.plans p
   where p.id = any (v_plans)
-    and (p.id = any (v_eligible) or p.diagnosis_id = any (v_delete_diagnoses));
+    and (p.id = any (v_eligible_plans) or p.diagnosis_id = any (v_delete_diagnoses));
 
   -- Sets kept for a claimed row, plus old unclaimed rows under a parent that isn't
   -- old and unclaimed. Named by the set's top row, so a set counts once.
   select count(*) into v_skipped_partly_claimed
   from (
-    select unnest(v_blocked_claimed) as id
+    select 'assessment' as kind, unnest(v_blocked_assessments) as id
     union
-    select d.assessment_id
+    select 'diagnosis', unnest(v_blocked_diagnoses)
+    union
+    select 'plan', unnest(v_blocked_plans)
+    union
+    select 'assessment', d.assessment_id
     from public.diagnoses d
     where d.user_id is null and d.created_at < v_cutoff
       and d.assessment_id is not null
       and not (d.assessment_id = any (v_assessments))
     union
-    select coalesce(d.assessment_id, d.id)
+    select case when d.assessment_id is null then 'diagnosis' else 'assessment' end,
+      coalesce(d.assessment_id, d.id)
     from public.plans p
     join public.diagnoses d on d.id = p.diagnosis_id
     where p.user_id is null and p.created_at < v_cutoff
@@ -221,34 +230,15 @@ begin
   if p_dry_run is distinct from false then
     v_deleted_plans := cardinality(v_delete_plans);
     v_deleted_diagnoses := cardinality(v_delete_diagnoses);
-    v_deleted_assessments := cardinality(v_delete_assessments);
+    v_deleted_assessments := cardinality(v_eligible_assessments);
   else
     delete from public.plans where id = any (v_delete_plans) and user_id is null;
     get diagnostics v_deleted_plans = row_count;
     delete from public.diagnoses where id = any (v_delete_diagnoses) and user_id is null;
     get diagnostics v_deleted_diagnoses = row_count;
-    delete from public.assessments where id = any (v_delete_assessments) and user_id is null;
+    delete from public.assessments where id = any (v_eligible_assessments) and user_id is null;
     get diagnostics v_deleted_assessments = row_count;
   end if;
-
-  -- Unconfirmed sign-ups. Their pending rows went through the rules above with every
-  -- other set, so a row named in metadata stays until it is 30 days old on its own.
-  select
-    count(*),
-    coalesce(array_agg(u.id order by u.id) filter (
-      where u.last_sign_in_at is null
-        and u.confirmation_sent_at < now() - interval '2 days'
-        and not exists (select 1 from public.profiles pr where pr.id = u.id and pr.stripe_customer_id is not null)
-        and not exists (select 1 from public.assessments o where o.user_id = u.id)
-        and not exists (select 1 from public.diagnoses o where o.user_id = u.id)
-        and not exists (select 1 from public.plans o where o.user_id = u.id)
-        and not exists (select 1 from public.drill_sessions o where o.user_id = u.id)
-    ), '{}')
-  into v_unconfirmed, v_users
-  from auth.users u
-  where u.email_confirmed_at is null
-    and u.confirmed_at is null
-    and u.created_at < v_cutoff;
 
   return jsonb_build_object(
     'cutoff', v_cutoff,
@@ -256,9 +246,7 @@ begin
     'diagnoses', v_deleted_diagnoses,
     'plans', v_deleted_plans,
     'skippedPartlyClaimed', v_skipped_partly_claimed,
-    'skippedRecentRows', cardinality(v_blocked_recent),
-    'skippedUsers', v_unconfirmed - cardinality(v_users),
-    'userIds', to_jsonb(v_users)
+    'skippedRecentRows', v_skipped_recent
   );
 end;
 $$;

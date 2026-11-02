@@ -22,6 +22,7 @@ import {
   clearPendingIds,
   deviceResultStatus,
   saveAnonymousResult,
+  signedInStatus,
 } from "@/lib/persistence";
 
 /**
@@ -35,6 +36,9 @@ import {
  * Nothing opens the save form by itself: only "Start session" and "Save my
  * plan" do, and every way out of it ("Not now", "Back to my plan") returns
  * to the plan. Replaying the diagnosis also returns there.
+ *
+ * A signed-in player retaking the assessment never sees the form: the same two
+ * buttons save and claim the new result, then go to the session or /plan.
  *
  * The result (assessment, diagnosis, plan) is saved once, starting when the
  * assessment ends, through `saveAnonymousResult`. Both buttons wait for that
@@ -51,6 +55,8 @@ export default function Start() {
   // Drives the Save Gate's check-your-inbox screen and the plan's status
   // line, so neither pitches an account to someone who just made one.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  // Only changes the plan's line about accounts. The buttons ask again when tapped.
+  const [signedIn, setSignedIn] = useState(false);
   // Why the save form is open: "Start session" adds one line saying sessions
   // need an account.
   const [gateReason, setGateReason] = useState<"save" | "session">("save");
@@ -106,6 +112,7 @@ export default function Start() {
             // would only link back here, so let this player take their own.
             if (err instanceof ClaimIncompleteError) {
               clearSignupPending();
+              setSignedIn(true);
               setPhase("assessment");
               return;
             }
@@ -116,7 +123,13 @@ export default function Start() {
         }
       }
 
+      // Nothing stored, so this may be a signed-in player about to retake.
+      const signedInNow = !stored && (await signedInStatus()) === "yes";
       if (cancelled) return;
+      if (signedInNow) {
+        clearSignupPending();
+        setSignedIn(true);
+      }
       setPendingEmail(loadSignupPending()?.email ?? null);
       if (stored) {
         setAnswers(stored.answers);
@@ -164,12 +177,26 @@ export default function Start() {
     window.scrollTo(0, 0);
   }
 
-  async function openGate(reason: "save" | "session") {
+  /** "Start session" and "Save my plan": claim for a signed-in player, the form for anyone else. */
+  async function saveResult(reason: "save" | "session") {
     if (!answers || !diagnosis || !roadmap || saving) return;
     setSaving(reason);
     setSaveFailed(null);
     try {
       await saveAnonymousResult(answers, diagnosis, roadmap);
+
+      const status = await signedInStatus();
+      // Auth couldn't answer. The form would offer an account to someone who may
+      // already have one, so it stays closed and the next tap asks again.
+      if (status === "unknown") throw new Error("Couldn't check who is signed in");
+      setSignedIn(status === "yes");
+      if (status === "yes") {
+        // Throws unless the caller ended up with all three rows.
+        await attachLocalResult(answers, diagnosis, roadmap);
+        clearSignupPending();
+        window.location.assign(reason === "session" ? "/session" : "/plan");
+        return;
+      }
     } catch (err) {
       // Retried already. The form needs all three ids, so it stays closed.
       console.error("Failed to save the result:", err);
@@ -249,14 +276,15 @@ export default function Start() {
               kind: "anonymous",
               focusReason: focusReason(diagnosis, answers),
               pendingEmail,
+              signedIn,
               saving,
               saveFailed,
-              onStartSession: () => openGate("session"),
-              onSavePlan: () => openGate("save"),
+              onStartSession: () => saveResult("session"),
+              onSavePlan: () => saveResult("save"),
               onChangeEmail: () => {
                 clearSignupPending();
                 setPendingEmail(null);
-                openGate("save");
+                saveResult("save");
               },
               onReplay: () => setPhase("reveal"),
               onStartOver: handleStartOver,

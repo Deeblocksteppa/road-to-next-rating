@@ -118,7 +118,7 @@ We may also share information if the law requires it, to protect someone's safet
 ## How long we keep it
 - **Account data** (answers, diagnoses, plans, practice logs): until you delete your account.
 - **Results never saved to an account**: deleted after 30 days.
-- **Sign-ups never confirmed**: deleted after 30 days.
+- **Sign-ups never confirmed**: the results saved with them are deleted after 30 days. The unconfirmed email address stays in our sign-in system until you ask us to delete it.
 - **Payment records**: kept by Stripe and by us as long as tax and accounting rules require, even after you delete your account.
 - **Server logs and backups**: kept by our providers for a limited time, then deleted.
 

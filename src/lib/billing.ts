@@ -296,17 +296,22 @@ export async function closeBilling(
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isUserId(value: string): boolean {
+  return UUID.test(value);
+}
+
 /**
  * True only when the database and Auth both answered, and neither has this
- * user. A failed read throws, so the webhook returns 500 and Stripe retries: an
- * outage must never look like a deleted account, because the caller refunds on
- * this. An id that isn't a uuid isn't one of ours, so it isn't a deleted account.
+ * user. Anything less definite throws, so the webhook returns 500 and Stripe
+ * retries: an outage must never look like a deleted account, because the caller
+ * refunds on this. An id that isn't a uuid isn't one of ours, so it isn't a
+ * deleted account.
  */
 export async function accountIsGone(
   userId: string,
   admin: SupabaseClient = createAdminClient()
 ): Promise<boolean> {
-  if (!UUID.test(userId)) return false;
+  if (!isUserId(userId)) return false;
 
   const { data: profile, error } = await admin
     .from("profiles")
@@ -318,10 +323,11 @@ export async function accountIsGone(
 
   const { data, error: authError } = await admin.auth.admin.getUserById(userId);
   if (authError) {
-    if (authError.status === 404) return true;
+    if (authError.status === 404 && authError.code === "user_not_found") return true;
     throw authError;
   }
-  return !data.user;
+  if (!data.user) throw new Error("Auth returned neither a user nor an error");
+  return false;
 }
 
 /**
@@ -331,7 +337,7 @@ export async function accountIsGone(
  * a normal account deletion) has no refund owed, even if its first event is
  * delivered late or resent by hand after the account is gone.
  */
-const ORPHANED_COMMENT = "Account no longer exists. Cancelled and refunded by the webhook backstop.";
+export const ORPHANED_COMMENT = "Account no longer exists. Cancelled and refunded automatically.";
 
 /**
  * The backstop for a checkout that finishes after its account was deleted, which
