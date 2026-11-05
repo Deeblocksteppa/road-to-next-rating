@@ -9,7 +9,7 @@ import {
   findProfileId,
   syncSubscription,
 } from "@/lib/billing";
-import { getStripe, idOf } from "@/lib/stripe";
+import { getStripe, idOf, stripeEnv } from "@/lib/stripe";
 
 // Signature verification needs the raw body, and this reads server-only env —
 // Node runtime, never cached or prerendered.
@@ -34,7 +34,7 @@ const HANDLED = new Set<Stripe.Event["type"]>([
  * `checkout.session.completed` and grant themselves a subscription.
  */
 export async function POST(request: Request) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = stripeEnv("STRIPE_WEBHOOK_SECRET");
   if (!secret) {
     console.error("STRIPE_WEBHOOK_SECRET is not set — refusing to process events.");
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });

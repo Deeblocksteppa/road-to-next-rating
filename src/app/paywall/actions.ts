@@ -81,12 +81,14 @@ export async function startCheckout(
       subscription_data: {
         metadata: { supabase_user_id: user.id, plan },
       },
-      // No custom_text here: this account has Stripe Managed Payments on,
-      // which rejects it and fails the whole checkout. What the subscription
-      // adds is described by the product in the Stripe dashboard. It rejects
-      // payment_method_types and payment_method_configuration the same way, so
-      // a delayed method is possible: the webhook grants on
-      // checkout.session.async_payment_succeeded.
+      // Managed Payments (Stripe as merchant of record) is off for this
+      // session, so the app is the seller. Left on, it rejects custom_text,
+      // payment_method_types and payment_method_configuration and fails the
+      // whole checkout. Card only, so access never waits on a delayed method;
+      // Apple Pay and Google Pay still show, since they pay by card. The
+      // webhook also grants on checkout.session.async_payment_succeeded.
+      managed_payments: { enabled: false },
+      payment_method_types: ["card"],
       success_url: `${origin}/paywall/success?session_id={CHECKOUT_SESSION_ID}&from=${encodeURIComponent(destination)}`,
       cancel_url: `${origin}/paywall?from=${encodeURIComponent(destination)}`,
       allow_promotion_codes: true,

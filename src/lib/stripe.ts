@@ -12,13 +12,28 @@ import Stripe from "stripe";
 
 export type Plan = "annual" | "monthly";
 
+type StripeEnvVar =
+  | "STRIPE_SECRET_KEY"
+  | "STRIPE_WEBHOOK_SECRET"
+  | "STRIPE_PRICE_ANNUAL"
+  | "STRIPE_PRICE_MONTHLY";
+
+/**
+ * A Stripe env var with surrounding whitespace and newlines removed. A value
+ * pasted into Vercel with a trailing newline otherwise fails auth, signature
+ * checks or price matching. Empty after trimming counts as unset.
+ */
+export function stripeEnv(name: StripeEnvVar): string | undefined {
+  return process.env[name]?.trim() || undefined;
+}
+
 let cached: Stripe | undefined;
 
 /** Throws loudly rather than failing halfway through a checkout. */
 export function getStripe(): Stripe {
   if (cached) return cached;
 
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = stripeEnv("STRIPE_SECRET_KEY");
   if (!key) {
     throw new Error("STRIPE_SECRET_KEY is not set — add it to .env.local.");
   }
@@ -35,8 +50,8 @@ export function getStripe(): Stripe {
 export function priceIdFor(plan: Plan): string {
   const id =
     plan === "annual"
-      ? process.env.STRIPE_PRICE_ANNUAL
-      : process.env.STRIPE_PRICE_MONTHLY;
+      ? stripeEnv("STRIPE_PRICE_ANNUAL")
+      : stripeEnv("STRIPE_PRICE_MONTHLY");
 
   if (!id) {
     throw new Error(
@@ -59,8 +74,8 @@ export function planFromSubscription(sub: Stripe.Subscription): Plan | null {
   if (!item) return null;
 
   const priceId = item.price?.id;
-  if (priceId && priceId === process.env.STRIPE_PRICE_ANNUAL) return "annual";
-  if (priceId && priceId === process.env.STRIPE_PRICE_MONTHLY) return "monthly";
+  if (priceId && priceId === stripeEnv("STRIPE_PRICE_ANNUAL")) return "annual";
+  if (priceId && priceId === stripeEnv("STRIPE_PRICE_MONTHLY")) return "monthly";
 
   const interval = item.price?.recurring?.interval;
   if (interval === "year") return "annual";
