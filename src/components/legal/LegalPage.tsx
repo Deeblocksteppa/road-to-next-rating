@@ -4,18 +4,30 @@ import { Logo } from "@/components/brand/Logo";
 import { SiteFooter } from "@/components/legal/SiteFooter";
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 import { LEGAL_EFFECTIVE_LABEL } from "@/lib/legal";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * The frame for /terms, /privacy and /refunds. The words on those pages are
  * `audit/legal-copy.md` verbatim: change the markdown first, then the page.
+ *
+ * The back link has a fixed destination: Settings when signed in (where the
+ * legal links live in the app), Home when not.
  */
-export function LegalPage({
+export async function LegalPage({
   title,
   children,
 }: {
   title: string;
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const back = user
+    ? { href: "/settings", label: "Back to Settings" }
+    : { href: "/", label: "Back to home" };
+
   return (
     <>
       <main className="mx-auto min-h-app w-full max-w-[680px] px-6 py-12 md:py-20">
@@ -23,7 +35,16 @@ export function LegalPage({
           <Logo />
         </Link>
 
-        <h1 className="mt-14 font-display text-[24px] font-bold leading-[1.25] tracking-[-0.01em] text-ink md:text-[32px] md:leading-[1.15]">
+        <div className="mt-8">
+          <Link
+            href={back.href}
+            className="inline-flex min-h-11 items-center text-[15px] text-ink-2 underline underline-offset-4 transition-colors hover:text-ink"
+          >
+            {back.label}
+          </Link>
+        </div>
+
+        <h1 className="mt-6 font-display text-[24px] font-bold leading-[1.25] tracking-[-0.01em] text-ink md:text-[32px] md:leading-[1.15]">
           {title}
         </h1>
         <p className="mt-3 text-[15px] leading-[1.5] text-ink-2">
