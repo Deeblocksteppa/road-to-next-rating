@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { claimMySignup } from "@/app/auth/actions";
 import { CodeEntry } from "@/components/auth/CodeEntry";
+import { InlineLogIn } from "@/components/auth/InlineLogIn";
 import { ConsentLine } from "@/components/legal/ConsentLine";
 import { AUTH_ERRORS, authErrorCode, isEmailIntervalLimit } from "@/lib/auth-errors";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
@@ -21,11 +22,14 @@ const MIN_PASSWORD_LENGTH = 8;
  * Post-roadmap Save Gate. Creates an account, then claims the anonymous
  * assessment/diagnosis/plan rows into it.
  *
- * Two screens, never mixed:
+ * Three screens, never mixed:
  *
  *   - the form, which says what an account adds and what skipping keeps;
  *   - the code screen (`CodeEntry`), shown once a sign-up is waiting on the
- *     6-digit code it emailed. It replaces the form outright.
+ *     6-digit code it emailed. It replaces the form outright;
+ *   - the log-in (`InlineLogIn`), for an address that already has an account
+ *     ("Log in" on the form's existing-account note, or "Already confirmed?
+ *     Log in" on the code screen). Logging in claims the plan the same way.
  *
  * Nothing is sent until the result's save (`saveResult`) has finished with
  * all three rows: the sign-up carries their ids, and a partial set is never
@@ -65,6 +69,19 @@ export function SaveGate({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The address typed already has a confirmed account: the form says so and
+  // offers the log-in in place of the sign-up. Editing the address clears it.
+  const [existing, setExisting] = useState(false);
+  const [view, setView] = useState<"form" | "login">("form");
+  // The address the log-in opens with.
+  const [loginEmail, setLoginEmail] = useState("");
+  const logInRef = useRef<HTMLButtonElement>(null);
+
+  // The note's "Log in" is the way on now; left on the sign-up button, Enter
+  // would only ask again and get the same note.
+  useEffect(() => {
+    if (existing) logInRef.current?.focus();
+  }, [existing]);
 
   async function handleEmailSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -108,18 +125,24 @@ export function SaveGate({
         awaitCode(address);
         return;
       }
+      const reason = authErrorCode(error);
+      if (reason === "email_taken") {
+        showExisting();
+        return;
+      }
       // Friendly fixed copy, not Supabase's raw wording (lib/auth-errors.ts).
-      setError(AUTH_ERRORS[authErrorCode(error)]);
+      setError(AUTH_ERRORS[reason]);
       setLoading(false);
       return;
     }
 
     // An address that already has a confirmed account comes back as a user
-    // with no identities and no email is sent. Saying "check your inbox"
-    // there would leave the player waiting for a link that never arrives.
+    // with no identities and no email is sent. Asking for a code there would
+    // leave the player waiting for an email that never arrives. Saying the
+    // account exists confirms the address is registered; the owner chose to
+    // say it (audit/signup-otp-plan.md, 5a).
     if (data.user && data.user.identities?.length === 0) {
-      setError(AUTH_ERRORS.email_taken);
-      setLoading(false);
+      showExisting();
       return;
     }
 
@@ -149,12 +172,25 @@ export function SaveGate({
     window.scrollTo(0, 0);
   }
 
+  function showExisting() {
+    setExisting(true);
+    setLoading(false);
+  }
+
+  function openLogIn(address: string) {
+    setLoginEmail(address);
+    setError(null);
+    setView("login");
+    window.scrollTo(0, 0);
+  }
+
   /**
-   * Signed in by the code (or by the link in another tab). Claims the rows
-   * named in the sign-up's metadata, then this device's own set, then goes
-   * where the player was heading. If the device claim fails, the player is
-   * still signed in and the device keeps its result: Home's claim tries
-   * again and says "Plan saved" once it lands.
+   * Signed in by the code, by the link in another tab, or by logging in.
+   * Claims the rows named in the sign-up's metadata (none, for an account
+   * that confirmed long ago), then this device's own set, then goes where the
+   * player was heading. If the device claim fails, the player is still signed
+   * in and the device keeps its result: Home's claim tries again and says
+   * "Plan saved" once it lands.
    */
   async function handleVerified() {
     // Another tab may have finished already (the link opened there lands on
@@ -223,6 +259,27 @@ export function SaveGate({
     // On success the browser is redirected to Google.
   }
 
+  /* ── The log-in ───────────────────────────────────────────── */
+  if (view === "login") {
+    return (
+      <InlineLogIn
+        initialEmail={loginEmail}
+        onSignedIn={handleVerified}
+        onUnconfirmed={(address) => {
+          onPendingChange(address);
+          setView("form");
+          window.scrollTo(0, 0);
+        }}
+        // Back to where it opened from: the code screen while a sign-up is
+        // waiting, the form otherwise.
+        onBack={() => {
+          setView("form");
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
+  }
+
   /* ── The code ─────────────────────────────────────────────── */
   if (pendingEmail) {
     return (
@@ -233,8 +290,10 @@ export function SaveGate({
           clearSignupPending();
           onPendingChange(null);
           setEmail("");
+          setExisting(false);
           setError(null);
         }}
+        onLogIn={() => openLogIn(pendingEmail)}
         onBack={onSkip}
       />
     );
@@ -327,7 +386,10 @@ export function SaveGate({
               autoComplete="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setExisting(false);
+              }}
               required
               className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
             />
@@ -365,10 +427,34 @@ export function SaveGate({
             </p>
           </div>
 
+          {/* The address has an account already. The log-in takes the
+              screen's one accent while this shows; the sign-up goes
+              secondary. A neutral note, not an error: nothing went wrong. */}
+          {existing && (
+            <div role="status" className="flex flex-col gap-3 border-t border-line pt-4">
+              <p className="text-[16px] leading-[1.5] text-ink">
+                You already have an account with this email.
+              </p>
+              <button
+                ref={logInRef}
+                type="button"
+                onClick={() => openLogIn(email.trim())}
+                className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
+              >
+                Log in
+              </button>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+            className={[
+              "flex h-[52px] w-full items-center justify-center rounded-lg text-[15px] font-semibold transition-colors active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60",
+              existing
+                ? "border border-line-strong bg-surface-2 text-ink hover:border-line-hover"
+                : "bg-optic text-optic-ink hover:bg-optic-hover",
+            ].join(" ")}
           >
             {loading ? "Creating your account…" : "Create account & save plan"}
           </button>

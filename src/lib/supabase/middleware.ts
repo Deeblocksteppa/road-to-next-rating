@@ -4,7 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Routes that require an authenticated user. Anything under these prefixes
  * redirects to /login when there's no session. Everything else (the landing
- * page, the anonymous assessment flow, /login, /signup, /auth/*) stays public.
+ * page, the anonymous assessment flow, /login, /signup (a redirect to
+ * /start), /auth/*) stays public.
  */
 const PROTECTED_PREFIXES = [
   "/home",
@@ -67,8 +68,11 @@ export async function updateSession(request: NextRequest) {
 
   // Already logged in and visiting an auth screen or the public marketing
   // site → send to the app. A signed-in player has no reason to read the
-  // storefront; "/" is for cold traffic.
-  if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
+  // storefront; "/" is for cold traffic. Page loads only: a server action
+  // posts to the page it runs on, and /login's code screen calls one right
+  // after the code signs the player in. Redirected, that call never ran.
+  const isPageLoad = request.method === "GET" || request.method === "HEAD";
+  if (user && isPageLoad && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/home";
     url.search = "";

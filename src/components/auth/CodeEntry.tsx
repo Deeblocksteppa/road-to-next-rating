@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ResendCode } from "@/components/auth/ResendCode";
@@ -39,13 +38,17 @@ export function CodeEntry({
   email,
   onVerified,
   onChangeEmail,
+  onLogIn,
   onBack,
 }: {
   email: string;
   /** Signed in now: claim the plan and leave the screen. Runs once. */
   onVerified: () => Promise<void>;
   onChangeEmail: () => void;
-  onBack: () => void;
+  /** "Already confirmed? Log in": the log-in form, with this address filled in. */
+  onLogIn: () => void;
+  /** "Back to my plan", where there is one to go back to (the save form). */
+  onBack?: () => void;
 }) {
   const [code, setCode] = useState("");
   const [checking, setChecking] = useState(false);
@@ -211,25 +214,29 @@ export function CodeEntry({
 
       <div className="flex flex-col items-start gap-3">
         {/* The way out when the link was opened on another device: this
-            code is spent, and this device can't know. Logging in lands on
-            Home, which claims this device's plan. */}
+            code is spent, and this device can't know. Logging in here
+            claims this device's plan, as the code would have. */}
         <p className="text-[16px] leading-[1.5] text-ink-2">
           Already confirmed?{" "}
-          <Link
-            href="/login"
-            className="text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+          <button
+            type="button"
+            onClick={onLogIn}
+            disabled={checking}
+            className="-my-2 py-2 text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
           >
             Log in
-          </Link>
+          </button>
         </p>
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={checking}
-          className="-my-2 disabled:pointer-events-none disabled:opacity-60 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
-        >
-          Back to my plan
-        </button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={checking}
+            className="-my-2 disabled:pointer-events-none disabled:opacity-60 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+          >
+            Back to my plan
+          </button>
+        )}
       </div>
     </main>
   );

@@ -1,7 +1,7 @@
 /**
  * Whether "Continue with Google" is offered.
  *
- * The OAuth code path is complete — `signInWithOAuth` on the login, signup and
+ * The OAuth code path is complete — `signInWithOAuth` on the log-in and
  * Save Gate screens, returning through /auth/callback — but the Google provider
  * is switched off in the Supabase project, so the button sent people to a raw
  * "provider is not enabled" error from Supabase. A button that fails is worse

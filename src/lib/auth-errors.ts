@@ -12,6 +12,8 @@ export const AUTH_ERRORS = {
   credentials: "That email and password don't match an account. Check both and try again.",
   unconfirmed: "Confirm your email first. The link is in your inbox.",
   rate_limited: "Too many attempts. Wait a few minutes and try again.",
+  // Kept for old `?error=` URLs: the save form shows its existing-account
+  // note instead, and the /signup page that sent this is gone.
   email_taken: "There's already an account with that email. Sign in instead.",
   weak_password: "That password is too easy to guess. Try a longer one.",
   same_password: "That's your current password. Choose a new one.",

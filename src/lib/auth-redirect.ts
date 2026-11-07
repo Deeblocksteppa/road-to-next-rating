@@ -9,8 +9,17 @@ export const AFTER_RECOVERY = "/reset-password";
  */
 export function safeNextPath(next: string | null | undefined): string | null {
   if (!next || !next.startsWith("/")) return null;
-  const second = next[1];
-  if (second === "/" || second === "\\") return null;
+  // URL parsing drops tabs and newlines anywhere and reads "\\" as "/", so
+  // "/%09/evil.com" or "/\\evil.com" would land on another site. No real
+  // path here has either.
+  if (/[\u0000-\u001f\u007f\\]/.test(next)) return null;
+  if (next[1] === "/") return null;
+  // And it must still be this site once a browser resolves it.
+  try {
+    if (new URL(next, "http://same.invalid").origin !== "http://same.invalid") return null;
+  } catch {
+    return null;
+  }
   return next;
 }
 
@@ -36,4 +45,15 @@ export function linkErrorPath(
   reason: "browser" | "expired"
 ): string {
   return `/auth/link-error?kind=${kind}&reason=${reason}`;
+}
+
+/**
+ * Where a log-in goes once its sign-up rows are claimed. Home says "Plan
+ * saved" (or that the plan expired) once, so the flag rides along only when
+ * Home is where the player is going.
+ */
+export function afterClaimPath(claim: "none" | "claimed" | "expired", next: string): string {
+  return claim !== "none" && next === AFTER_AUTH
+    ? `${next}?${claim === "expired" ? "expired" : "saved"}=1`
+    : next;
 }

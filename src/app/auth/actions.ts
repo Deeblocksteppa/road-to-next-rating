@@ -5,30 +5,37 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import { authErrorCode } from "@/lib/auth-errors";
+import { AFTER_AUTH, afterClaimPath, safeNextPath } from "@/lib/auth-redirect";
 import { claimSignupRecords } from "@/lib/claim-signup";
-import { consentMetadata } from "@/lib/legal";
 import { createClient } from "@/lib/supabase/server";
-
-/** Where to send users after a successful login/signup. */
-const AFTER_AUTH = "/home";
 
 /** Restrict post-login redirects to same-site relative paths. */
 function safeNext(next: FormDataEntryValue | null): string {
-  const value = typeof next === "string" ? next : "";
-  return value.startsWith("/") && !value.startsWith("//") ? value : AFTER_AUTH;
+  return safeNextPath(typeof next === "string" ? next : null) ?? AFTER_AUTH;
 }
 
-/** Email + password sign in for returning users. */
-export async function login(formData: FormData) {
+/**
+ * Email + password log-in for returning players.
+ *
+ * An account still waiting on its sign-up code comes back as
+ * `{ unconfirmed: email }` instead of a redirect: the page emails a fresh code
+ * from the browser and shows the code screen in place, keeping the address out
+ * of the URL. Supabase only answers "email not confirmed" once the password
+ * checked out, so this says nothing a wrong password wouldn't. Every other
+ * error redirects with its code, as before.
+ */
+export async function login(formData: FormData): Promise<{ unconfirmed: string } | undefined> {
   const supabase = await createClient();
   const next = safeNext(formData.get("next"));
+  const email = String(formData.get("email") ?? "").trim();
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: String(formData.get("email")),
+    email,
     password: String(formData.get("password")),
   });
 
   if (error) {
+    if (error.code === "email_not_confirmed") return { unconfirmed: email };
     redirect(`/login?error=${authErrorCode(error)}`);
   }
 
@@ -38,11 +45,7 @@ export async function login(formData: FormData) {
   const claim = await claimSignupRecords(supabase, data.user);
 
   revalidatePath("/", "layout");
-  redirect(
-    claim !== "none" && next === AFTER_AUTH
-      ? `${next}?${claim === "expired" ? "expired" : "saved"}=1`
-      : next
-  );
+  redirect(afterClaimPath(claim, next));
 }
 
 /**
@@ -68,37 +71,7 @@ export async function claimMySignup(): Promise<"none" | "claimed" | "expired"> {
   }
 }
 
-/** Email + password sign up. The DB trigger creates the profiles row. */
-export async function signup(formData: FormData) {
-  const supabase = await createClient();
-  const origin = (await headers()).get("origin");
-  const next = safeNext(formData.get("next"));
-
-  const { data, error } = await supabase.auth.signUp({
-    email: String(formData.get("email")),
-    password: String(formData.get("password")),
-    options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      data: consentMetadata(),
-    },
-  });
-
-  if (error) {
-    redirect(`/signup?error=${authErrorCode(error)}`);
-  }
-
-  // If email confirmation is disabled, signUp returns a live session and the
-  // user is signed in immediately. If it's enabled, there's no session yet —
-  // they must click the link in their email first.
-  if (data.session) {
-    revalidatePath("/", "layout");
-    redirect(next);
-  }
-
-  redirect("/signup?check_email=1");
-}
-
-/** Google OAuth — shared by both the sign in and sign up screens. */
+/** Google OAuth, from the log-in screen. */
 export async function signInWithGoogle(formData: FormData) {
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
