@@ -21,11 +21,13 @@ node --env-file=.env.local .claude/skills/test-user/scripts/test-user.mjs <comma
 | `link <email>` | Prints a one-time sign-in URL for the local `/auth/confirm` route. |
 | `status <email>` | Auth user, row counts in all five tables, Stripe customer and subscription status. |
 | `cleanup <email>` | Cancels any live Stripe subscription, deletes the auth user (every table cascades from `profiles`), then prints `status`. |
-| `list` | Every leftover `rtnr-test+` user. |
+| `list` | Every leftover test user: `rtnr-test+`, and `TEST_USER_EXTRA_PREFIX` when set. |
 | `anon <assessment> <diagnosis> <plan>` | Records the ids of anonymous rows this run created (in the gitignored `anon-ledger.json`) and prints each row's owner, `created_at` and `retest_date`. |
 | `anon-cleanup` | Deletes every recorded row that is still unclaimed, refuses any claimed by a real account, prints what is left, and empties the ledger once nothing is. `cleanup` runs it too. |
 
 Any Stripe step aborts unless `STRIPE_SECRET_KEY` starts with `sk_test_`.
+
+`TEST_USER_EXTRA_PREFIX` in `.env.local` (e.g. `name+rtnr-otp-`) lets `status`, `cleanup`, `list` and `anon-cleanup` also treat users made through the real sign-up on the owner's plus-tagged inbox as test users. It must contain `+rtnr-`, or the script refuses to run. `create` still makes `rtnr-test+` users only.
 
 ## Steps
 

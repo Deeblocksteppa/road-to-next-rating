@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
+import { ResendCode } from "@/components/auth/ResendCode";
 import { SkillTitle } from "@/components/diagnosis/SkillTitle";
 import { ShotDemo } from "@/components/session/ShotDemo";
 import { AUTH_ERRORS } from "@/lib/auth-errors";
@@ -383,7 +383,7 @@ function PendingStatus({ email, onChangeEmail }: { email: string; onChangeEmail:
         Check <span className="break-words font-semibold">{email}</span> to finish saving your plan.
       </p>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-        <ResendConfirmation email={email} />
+        <ResendCode email={email} />
         <button
           type="button"
           onClick={onChangeEmail}

@@ -25,7 +25,10 @@ const EMAIL_OTP_TYPES: readonly EmailOtpType[] = [
  *
  * The Supabase email templates point here with a token hash
  * (`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…`), and
- * `verifyOtp` turns that hash into a session. Nothing about it depends on the
+ * `verifyOtp` turns that hash into a session. The Confirm signup
+ * template's link is `…&type=email&next=/home`; the same email carries
+ * the 6-digit code the save form's code screen takes (`CodeEntry`), one
+ * token for both. Nothing about it depends on the
  * browser that asked for the email, so the link works in a mail app's
  * browser, on another device, anywhere.
  *

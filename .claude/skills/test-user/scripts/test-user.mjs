@@ -9,6 +9,16 @@ const { createClient } = require("@supabase/supabase-js");
 const Stripe = require("stripe");
 
 const PREFIX = "rtnr-test+";
+// A second prefix for test users made through the real sign-up (plus-tagged
+// addresses on the owner's inbox, e.g. "name+rtnr-otp-"), from .env.local.
+// Must carry "+rtnr-", so it can never match a real account's address.
+const EXTRA_PREFIX = process.env.TEST_USER_EXTRA_PREFIX?.trim() || null;
+if (EXTRA_PREFIX && !EXTRA_PREFIX.includes("+rtnr-")) {
+  console.error(`✗ TEST_USER_EXTRA_PREFIX must contain "+rtnr-" (got ${EXTRA_PREFIX}).`);
+  process.exit(1);
+}
+const PREFIXES = EXTRA_PREFIX ? [PREFIX, EXTRA_PREFIX] : [PREFIX];
+const isTestEmail = (email) => PREFIXES.some((p) => email?.startsWith(p));
 const TABLES = ["assessments", "diagnoses", "plans", "drill_sessions"];
 const ORIGIN = process.env.TEST_USER_ORIGIN ?? "http://localhost:3000";
 // Anonymous rows a test run created, by id. Gitignored; emptied by anon-cleanup.
@@ -38,7 +48,7 @@ async function allTestUsers() {
   for (let page = 1; ; page++) {
     const { data, error } = await db.auth.admin.listUsers({ page, perPage: 200 });
     if (error) fail(error.message);
-    found.push(...data.users.filter((u) => u.email?.startsWith(PREFIX)));
+    found.push(...data.users.filter((u) => isTestEmail(u.email)));
     if (data.users.length < 200) return found;
   }
 }
@@ -49,7 +59,7 @@ async function resolve(target) {
   const user = (await allTestUsers()).find((u) => u.email === target || u.id === target);
   // A deleted test user can still be checked by email or id; anything else is refused.
   const isId = UUID.test(target);
-  if (!user && !target.startsWith(PREFIX) && !isId) fail(`${target} is not a ${PREFIX} test user.`);
+  if (!user && !isTestEmail(target) && !isId) fail(`${target} is not a ${PREFIXES.join(" or ")} test user.`);
   return user ?? null;
 }
 

@@ -45,6 +45,29 @@ export async function login(formData: FormData) {
   );
 }
 
+/**
+ * Claim the rows named in the signed-in player's sign-up metadata, right after
+ * the code screen's `verifyOtp` set the session cookies in the browser. The
+ * code is checked in the browser, not here, so Supabase's per-IP limit on
+ * token checks counts the player's IP rather than one shared by every player.
+ * Never throws: with no session, or on any failure, it answers "none".
+ */
+export async function claimMySignup(): Promise<"none" | "claimed" | "expired"> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return "none";
+    const claim = await claimSignupRecords(supabase, user);
+    if (claim !== "none") revalidatePath("/", "layout");
+    return claim;
+  } catch (err) {
+    console.error("claimMySignup: unexpected failure", err);
+    return "none";
+  }
+}
+
 /** Email + password sign up. The DB trigger creates the profiles row. */
 export async function signup(formData: FormData) {
   const supabase = await createClient();

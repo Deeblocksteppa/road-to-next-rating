@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { ResendConfirmation } from "@/components/auth/ResendConfirmation";
+import { claimMySignup } from "@/app/auth/actions";
+import { CodeEntry } from "@/components/auth/CodeEntry";
 import { ConsentLine } from "@/components/legal/ConsentLine";
-import { AUTH_ERRORS, authErrorCode } from "@/lib/auth-errors";
+import { AUTH_ERRORS, authErrorCode, isEmailIntervalLimit } from "@/lib/auth-errors";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 import { consentMetadata } from "@/lib/legal";
+import { loadLocalResult } from "@/lib/local-result";
 import { claimAnonymousResult, type SavedIds } from "@/lib/persistence";
 import { clearSignupPending, saveSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
@@ -22,12 +24,8 @@ const MIN_PASSWORD_LENGTH = 8;
  * Two screens, never mixed:
  *
  *   - the form, which says what an account adds and what skipping keeps;
- *   - "Check your inbox", shown once a sign-up is waiting on its
- *     confirmation email. It replaces the form outright. It used to be the
- *     same screen with the fields swapped for a grey note, still headed
- *     "Keep what you just found" above a "Saving" card, so a player who had
- *     just signed up was looking at the sign-up pitch and could reasonably
- *     think nothing had happened.
+ *   - the code screen (`CodeEntry`), shown once a sign-up is waiting on the
+ *     6-digit code it emailed. It replaces the form outright.
  *
  * Nothing is sent until the result's save (`saveResult`) has finished with
  * all three rows: the sign-up carries their ids, and a partial set is never
@@ -35,8 +33,10 @@ const MIN_PASSWORD_LENGTH = 8;
  *
  * - Confirmation OFF → a session is live immediately: claim here, go to Home.
  * - Confirmation ON → no session yet. The plan stays on this device (nothing
- *   is cleared), the device remembers the pending sign-up, and the rows are
- *   claimed when the emailed link is opened, on any device (/auth/confirm).
+ *   is cleared) and the device remembers the pending sign-up. The code typed
+ *   here signs the player in on this screen, which claims the plan and goes
+ *   on to the session or the plan (`handleVerified`). The emailed link does
+ *   the same from any device, landing on Home (/auth/confirm).
  */
 export function SaveGate({
   saveResult,
@@ -65,8 +65,6 @@ export function SaveGate({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const planLine = `${bottleneckTitle} · ${weeksTarget}-week plan`;
 
   async function handleEmailSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -104,6 +102,12 @@ export function SaveGate({
     });
 
     if (error) {
+      // An email went to this address under a minute ago, so it has a
+      // sign-up waiting with a code that still works: show the code screen.
+      if (isEmailIntervalLimit(error)) {
+        awaitCode(address);
+        return;
+      }
       // Friendly fixed copy, not Supabase's raw wording (lib/auth-errors.ts).
       setError(AUTH_ERRORS[authErrorCode(error)]);
       setLoading(false);
@@ -133,12 +137,60 @@ export function SaveGate({
     }
 
     // Confirmation is on. Nothing on this device is cleared: the plan stays
-    // here until the link is opened.
+    // here until the code is entered or the link is opened.
+    awaitCode(address);
+  }
+
+  function awaitCode(address: string) {
     saveSignupPending(address);
     onPendingChange(address);
     setPassword("");
     setLoading(false);
     window.scrollTo(0, 0);
+  }
+
+  /**
+   * Signed in by the code (or by the link in another tab). Claims the rows
+   * named in the sign-up's metadata, then this device's own set, then goes
+   * where the player was heading. If the device claim fails, the player is
+   * still signed in and the device keeps its result: Home's claim tries
+   * again and says "Plan saved" once it lands.
+   */
+  async function handleVerified() {
+    // Another tab may have finished already (the link opened there lands on
+    // Home, which claims and clears the device). Saving now would write the
+    // result a second time.
+    const deviceHasResult = loadLocalResult() !== null;
+
+    let claim: Awaited<ReturnType<typeof claimMySignup>> = "none";
+    try {
+      claim = await claimMySignup();
+    } catch (err) {
+      console.error("Failed to claim the sign-up's records:", err);
+    }
+    // The metadata's rows were deleted (30 days unclaimed). With a result
+    // still on this device, that result is the one to keep: the metadata can
+    // name an older sign-up on this address (Supabase keeps the first
+    // attempt's metadata), and /start already cleared a device whose own
+    // rows were gone.
+    if (claim === "expired" && !deviceHasResult) {
+      clearSignupPending();
+      window.location.assign("/home?expired=1");
+      return;
+    }
+
+    if (deviceHasResult) {
+      try {
+        await claimAnonymousResult(await saveResult());
+      } catch (err) {
+        console.error("Failed to claim records:", err);
+        clearSignupPending();
+        window.location.assign("/home");
+        return;
+      }
+    }
+    clearSignupPending();
+    window.location.assign(reason === "session" ? "/session" : "/plan");
   }
 
   async function handleGoogle() {
@@ -171,59 +223,20 @@ export function SaveGate({
     // On success the browser is redirected to Google.
   }
 
-  /* ── Check your inbox ───────────────────────────────────────── */
+  /* ── The code ─────────────────────────────────────────────── */
   if (pendingEmail) {
     return (
-      <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center gap-7 bg-background px-6 py-12 text-ink">
-        <div className="flex flex-col gap-2.5">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-            Confirm your email
-          </p>
-          <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
-            Check your inbox
-          </h1>
-          <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-            We sent a confirmation link to{" "}
-            <span className="break-words font-medium text-ink">{pendingEmail}</span>. Open it to
-            finish setting up your account.
-          </p>
-        </div>
-
-        {/* One line naming what is being saved. Ruled, not boxed. */}
-        <p className="border-y border-line py-3.5 text-[16px] font-semibold text-ink">
-          {planLine}
-        </p>
-
-        <div className="flex flex-col gap-4">
-          <button
-            type="button"
-            onClick={onSkip}
-            className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
-          >
-            Back to my plan
-          </button>
-
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
-            <ResendConfirmation email={pendingEmail} />
-            <button
-              type="button"
-              onClick={() => {
-                clearSignupPending();
-                onPendingChange(null);
-                setEmail("");
-                setError(null);
-              }}
-              className="-my-2 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
-            >
-              Use a different email
-            </button>
-          </div>
-        </div>
-
-        <p className="text-center text-[16px] leading-[1.5] text-ink-3">
-          Your plan stays on this device while you confirm.
-        </p>
-      </main>
+      <CodeEntry
+        email={pendingEmail}
+        onVerified={handleVerified}
+        onChangeEmail={() => {
+          clearSignupPending();
+          onPendingChange(null);
+          setEmail("");
+          setError(null);
+        }}
+        onBack={onSkip}
+      />
     );
   }
 

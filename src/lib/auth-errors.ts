@@ -19,16 +19,38 @@ export const AUTH_ERRORS = {
   password_mismatch: "Those two passwords don't match.",
   email_required: "Enter your email address.",
   link_expired: "That link is invalid or has expired. Request a new one.",
+  // Supabase answers a wrong code and an expired one with the same error, so
+  // one message covers both. The Resend control sits right under it.
+  code_failed: "That code didn't work or has expired.",
   signin_failed: "Sign in couldn't be completed. Try again.",
   generic: "Something went wrong. Try again.",
 } as const;
 
 export type AuthErrorCode = keyof typeof AUTH_ERRORS;
 
+/**
+ * Seconds before a sign-up code can be sent again. Mirrors the Supabase
+ * dashboard's minimum interval between emails (Authentication > Rate Limits):
+ * a resend inside it is refused.
+ */
+export const RESEND_COOLDOWN_SECONDS = 60;
+
 /** The message for a `?error=` value, or null when there is none. */
 export function authErrorMessage(code: string | null | undefined): string | null {
   if (!code) return null;
   return code in AUTH_ERRORS ? AUTH_ERRORS[code as AuthErrorCode] : AUTH_ERRORS.generic;
+}
+
+/**
+ * Supabase refused to email an address again inside its minimum interval
+ * ("you can only request this after N seconds"): an email went to that
+ * address moments ago. The project-wide hourly cap shares the error code but
+ * not the wording, and means no email went out, so it isn't matched.
+ */
+export function isEmailIntervalLimit(error: { code?: string; message?: string } | null | undefined): boolean {
+  return (
+    error?.code === "over_email_send_rate_limit" && /after \d+ seconds?/i.test(error.message ?? "")
+  );
 }
 
 /** Map a Supabase auth error to one of the codes above. */
@@ -48,6 +70,8 @@ export function authErrorCode(error: { code?: string; status?: number } | null |
       return "weak_password";
     case "same_password":
       return "same_password";
+    case "otp_expired":
+      return "code_failed";
   }
   if (error?.status === 429) return "rate_limited";
   return "generic";
