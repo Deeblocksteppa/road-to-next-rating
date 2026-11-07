@@ -189,9 +189,8 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 
 ### Progress bar
 
-- **Thin:** height 3px, track `line`, fill `optic`, `radius-full`. (Assessment header, home mini.)
+- **Thin:** height 3px, track `line`, fill `optic`, `radius-full`. (Assessment header.)
 - **Thick:** height 6px, track `line`, fill `optic`, `radius-full`. (Readiness, delta.)
-- Home readiness mini-bar: height 4px.
 
 ### Tab bar — height 64px · text-only, no icons
 
@@ -316,16 +315,33 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - *Placed at peak motivation, right after the free delta — not on entry. Annual is default.*
 
 ### Save Gate (auth)
-- Eyebrow `YOUR DIAGNOSIS IS READY` → Archivo 800 30px **"Keep what you just found."** → body: "Save your bottleneck and 3-week plan to your account so it's here tomorrow. No card, nothing to pay." (originally "Free — always." — dropped with the rest of the permanence language)
-- "Saving" card: accent dot + "Third-shot drop · 3-week plan · Day 8".
-- Auth stack: **"Continue with Google"** (secondary, "G" glyph) → "OR" divider → Email input → "Create a password" input → primary **"Save my plan"**.
-- Footer: "Already have an account? Sign in".
-- *A **save** action, not a signup wall — comes after value is delivered and shows exactly what's being kept.*
+- Top row: a small text link **"Log in"** at the right (opens the inline log-in view, address carried over).
+- Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you."
+- **One grouped field block** (`radius-md`, border `line-strong`, bg `surface`): Email row, hairline `line`, Password row with a mono Show/Hide. Each row keeps its mono uppercase label inside the block (EMAIL, PASSWORD), so it doesn't vanish when typed over. Inputs 16px; the password placeholder carries the rule ("8+ characters"). The focus ring sits inside the row.
+- Primary full-width **"Create account"** ("Creating account…" while busy) directly under the block → consent line → **"Not now"** as a quiet left-aligned text link.
+- **Existing account:** a sign-up with an address that already has a confirmed account shows a neutral note under the block (hairline above): "You already have an account with this email." with a primary **"Log in"**; "Create account" goes secondary while it shows, and editing the address hides it.
+- No eyebrow, no "Your plan" card, no reason paragraph, no Google button (the flag is off), no bottom "Already have an account?" line.
+- *A **save** action, not a signup wall: it comes after value is delivered.*
 
-### Sign in (auth)
+### Code screen (sign-up)
+- Archivo 800 30px **"Enter the code we emailed"** → "Sent to {email} · Change email".
+- One 6-digit code field (mono, spaced digits; a pasted code with spaces is accepted) → resend line under it: "Resend code in Ns", then a **"Resend code"** text button, then "Code sent · resend in Ns". The countdown runs from the last send, stored, so a refresh keeps it.
+- Primary **"Continue"** ("Checking…") → "Already confirmed? Log in" (opens the inline log-in) → "Back to my plan" (save form only; not on `/login`).
+- Wrong or expired code: one alert, "That code didn't work or has expired.", with the code selected for retyping.
+
+### Inline log-in (save form)
+- Archivo 800 30px **"Log in"** → Email (filled in) → Password with Show/Hide → "Forgot password?" → primary **"Log in"** ("Logging in…") → "Back".
+- An account still waiting on its code gets a fresh one emailed and goes to the code screen.
+
+### Pending sign-up (on the plan)
+- Between hairlines at the top of the plan: "Enter the code we sent to **{email}** to finish saving your plan." → text buttons **"Enter code"** (opens the code screen) · the resend countdown · **"Change email"** (back to the empty form) → "Already confirmed? Log in" (opens the inline log-in; Back returns to the plan).
+
+### Log in (auth)
 - Logo + wordmark → Archivo 800 30px **"Welcome back."**
-- Email input → Password input (with mono "FORGOT?" inline) → primary **"Sign in"** → "OR" divider → "Continue with Google" (secondary).
-- Footer: "New here? Take the assessment". *Two fields, one primary action.*
+- Email input → Password input (with mono "FORGOT?" inline) → primary **"Log in"** → ("OR" divider → "Continue with Google" only when the Google provider is on).
+- An unconfirmed account gets a fresh code and the code screen in place.
+- Footer, left-aligned: "New here? Take the assessment". *Two fields, one primary action.*
+- Player-facing wording is "Log in" everywhere (button, links, errors). Settings' "Sign out" is unchanged.
 
 ### Settings
 - Header: back button + Archivo 700 22px "Settings".

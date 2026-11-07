@@ -68,9 +68,9 @@ export default function ForgotPasswordPage({
         )}
       </div>
 
-      <p className="pb-2 text-center text-[16px] text-ink-2">
+      <p className="pb-2 text-[16px] text-ink-2">
         <Link href="/login" className="underline underline-offset-4">
-          Back to sign in
+          Back to log in
         </Link>
       </p>
     </main>

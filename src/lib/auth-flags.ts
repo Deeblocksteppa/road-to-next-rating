@@ -1,8 +1,8 @@
 /**
  * Whether "Continue with Google" is offered.
  *
- * The OAuth code path is complete — `signInWithOAuth` on the log-in and
- * Save Gate screens, returning through /auth/callback — but the Google provider
+ * The OAuth code path is complete on the log-in page (`signInWithGoogle`,
+ * returning through /auth/callback), but the Google provider
  * is switched off in the Supabase project, so the button sent people to a raw
  * "provider is not enabled" error from Supabase. A button that fails is worse
  * than no button, so it is hidden until the provider is really on.
@@ -17,7 +17,8 @@
  *      /auth/callback is in Redirect URLs (localhost and production).
  *   4. Set NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true (locally and in hosting).
  *
- * NEXT_PUBLIC_ because the Save Gate is a client component and has to make the
- * same decision the server-rendered login page makes.
+ * NEXT_PUBLIC_ because the log-in form (`LoginScreen`) is a client component.
+ * The save form no longer offers Google (signup-otp, Phase 3); turning this on
+ * adds the button to /login only.
  */
 export const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";

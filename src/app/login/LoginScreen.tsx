@@ -198,7 +198,7 @@ export function LoginScreen({
         )}
       </div>
 
-      <p className="pb-2 text-center text-[16px] text-ink-2">
+      <p className="pb-2 text-[16px] text-ink-2">
         New here?{" "}
         <Link href="/start" className="underline underline-offset-4">
           Take the assessment
@@ -217,7 +217,7 @@ function SubmitButton({ busy }: { busy: boolean }) {
       disabled={pending || busy}
       className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
     >
-      Sign in
+      Log in
     </button>
   );
 }

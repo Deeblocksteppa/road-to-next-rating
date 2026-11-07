@@ -14,7 +14,7 @@ export const AUTH_ERRORS = {
   rate_limited: "Too many attempts. Wait a few minutes and try again.",
   // Kept for old `?error=` URLs: the save form shows its existing-account
   // note instead, and the /signup page that sent this is gone.
-  email_taken: "There's already an account with that email. Sign in instead.",
+  email_taken: "There's already an account with that email. Log in instead.",
   weak_password: "That password is too easy to guess. Try a longer one.",
   same_password: "That's your current password. Choose a new one.",
   password_short: "Use at least 8 characters.",
@@ -24,7 +24,7 @@ export const AUTH_ERRORS = {
   // Supabase answers a wrong code and an expired one with the same error, so
   // one message covers both. The Resend control sits right under it.
   code_failed: "That code didn't work or has expired.",
-  signin_failed: "Sign in couldn't be completed. Try again.",
+  signin_failed: "Log-in couldn't be completed. Try again.",
   generic: "Something went wrong. Try again.",
 } as const;
 

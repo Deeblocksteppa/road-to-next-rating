@@ -7,7 +7,6 @@ import { Reveal } from "@/components/diagnosis/Reveal";
 import { SaveGate } from "@/components/auth/SaveGate";
 import { EXPIRED_BUTTON, ExpiredResult } from "@/components/plan/ExpiredResult";
 import { PlanView } from "@/components/plan/PlanView";
-import { SKILL_TITLES } from "@/lib/diagnoses";
 import { diagnose } from "@/lib/engine";
 import { clearLocalResult, loadLocalResult, saveLocalResult } from "@/lib/local-result";
 import { clearSignupPending, loadSignupPending } from "@/lib/signup-pending";
@@ -52,14 +51,16 @@ export default function Start() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [answers, setAnswers] = useState<AnswerMap | null>(null);
   // The address a sign-up on this device is waiting on (`signup-pending.ts`).
-  // Drives the Save Gate's check-your-inbox screen and the plan's status
+  // Drives the Save Gate's code screen and the plan's status
   // line, so neither pitches an account to someone who just made one.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   // Only changes the plan's line about accounts. The buttons ask again when tapped.
   const [signedIn, setSignedIn] = useState(false);
-  // Why the save form is open: "Start session" adds one line saying sessions
-  // need an account.
+  // Why the save form is open: where the player goes once signed in ("Start
+  // session" to the session, anything else to the plan), and which view it
+  // opens on (the plan's "Already confirmed? Log in" opens the log-in).
   const [gateReason, setGateReason] = useState<"save" | "session">("save");
+  const [gateView, setGateView] = useState<"form" | "login">("form");
   // The button waiting on the save, and the one whose save failed.
   const [saving, setSaving] = useState<"save" | "session" | null>(null);
   const [saveFailed, setSaveFailed] = useState<"save" | "session" | null>(null);
@@ -173,12 +174,18 @@ export default function Start() {
 
   function handleLeaveGate() {
     setGateReason("save");
+    setGateView("form");
     setPhase("saved");
     window.scrollTo(0, 0);
   }
 
-  /** "Start session" and "Save my plan": claim for a signed-in player, the form for anyone else. */
-  async function saveResult(reason: "save" | "session") {
+  /**
+   * "Start session", "Save my plan", and the pending line's "Enter code" and
+   * "Log in": claim for a signed-in player, the save form for anyone else
+   * (the code screen while a sign-up is waiting; `view` "login" opens the
+   * log-in).
+   */
+  async function saveResult(reason: "save" | "session", view: "form" | "login" = "form") {
     if (!answers || !diagnosis || !roadmap || saving) return;
     setSaving(reason);
     setSaveFailed(null);
@@ -206,6 +213,7 @@ export default function Start() {
     }
     setSaving(null);
     setGateReason(reason);
+    setGateView(view);
     setPhase("savegate");
     window.scrollTo(0, 0);
   }
@@ -249,12 +257,11 @@ export default function Start() {
     return (
       <SaveGate
         saveResult={() => saveAnonymousResult(answers, diagnosis, roadmap)}
-        bottleneckTitle={SKILL_TITLES[diagnosis.bottleneck]}
-        weeksTarget={roadmap.weeksTarget}
         onSkip={handleLeaveGate}
         pendingEmail={pendingEmail}
         onPendingChange={setPendingEmail}
         reason={gateReason}
+        initialView={gateView}
       />
     );
   }
@@ -281,6 +288,8 @@ export default function Start() {
               saveFailed,
               onStartSession: () => saveResult("session"),
               onSavePlan: () => saveResult("save"),
+              onEnterCode: () => saveResult("save"),
+              onLogIn: () => saveResult("save", "login"),
               onChangeEmail: () => {
                 clearSignupPending();
                 setPendingEmail(null);

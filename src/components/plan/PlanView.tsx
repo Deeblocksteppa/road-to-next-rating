@@ -35,6 +35,10 @@ interface AnonymousContext {
   onSavePlan: () => void;
   /** Drop the pending sign-up and reopen the form. */
   onChangeEmail: () => void;
+  /** The pending sign-up's code screen. */
+  onEnterCode: () => void;
+  /** The save form's log-in, for a sign-up confirmed elsewhere. */
+  onLogIn: () => void;
   onReplay: () => void;
   onStartOver: () => void;
 }
@@ -111,7 +115,14 @@ export function PlanView({
   return (
     <div className="flex flex-col gap-10">
       {anon?.pendingEmail && (
-        <PendingStatus email={anon.pendingEmail} onChangeEmail={anon.onChangeEmail} />
+        <PendingStatus
+          email={anon.pendingEmail}
+          busy={anon.saving !== null}
+          failed={anon.saveFailed === "save"}
+          onEnterCode={anon.onEnterCode}
+          onChangeEmail={anon.onChangeEmail}
+          onLogIn={anon.onLogIn}
+        />
       )}
 
       {/* ── The focus: the skill is the title ── */}
@@ -376,34 +387,57 @@ function DrillRow({
  * Sign-up pending: status, not a pitch. A player who has just made an
  * account sees where it stands, never the "create an account" block again.
  */
-function PendingStatus({ email, onChangeEmail }: { email: string; onChangeEmail: () => void }) {
+function PendingStatus({
+  email,
+  busy,
+  failed,
+  onEnterCode,
+  onChangeEmail,
+  onLogIn,
+}: {
+  email: string;
+  /** The result's save is in flight (any of the plan's buttons): nothing opens twice. */
+  busy: boolean;
+  /** "Enter code" or "Log in" couldn't save the result first, so nothing opened. */
+  failed: boolean;
+  onEnterCode: () => void;
+  onChangeEmail: () => void;
+  onLogIn: () => void;
+}) {
+  const action =
+    "-my-2 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60";
   return (
-    <div role="status" className="flex flex-col gap-2.5 border-y border-line py-4">
-      <p className="text-pretty text-[16px] leading-[1.5] text-ink">
-        Check <span className="break-words font-semibold">{email}</span> to finish saving your plan.
+    <div className="flex flex-col gap-2.5 border-y border-line py-4">
+      {/* The live region is the sentence only: the resend countdown below
+          ticks every second and must not be read out each time. */}
+      <p role="status" className="text-pretty text-[16px] leading-[1.5] text-ink">
+        Enter the code we sent to <span className="break-words font-semibold">{email}</span> to
+        finish saving your plan.
       </p>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+        <button type="button" onClick={onEnterCode} disabled={busy} className={action}>
+          Enter code
+        </button>
         <ResendCode email={email} />
-        <button
-          type="button"
-          onClick={onChangeEmail}
-          className="-my-2 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
-        >
-          Use a different email
+        <button type="button" onClick={onChangeEmail} disabled={busy} className={action}>
+          Change email
         </button>
       </div>
       {/* The way out when the link was opened on another device: this one
-          can't know that happened. Signing in lands on Home, which clears the
-          pending note and this device's copy of the plan. */}
-      <p className="text-[15px] leading-[1.5] text-ink-2">
+          can't know that happened. Logging in here claims this device's
+          plan, as the code would have. */}
+      <p className="text-[16px] leading-[1.5] text-ink-2">
         Already confirmed?{" "}
-        <Link
-          href="/login"
-          className="text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+        <button
+          type="button"
+          onClick={onLogIn}
+          disabled={busy}
+          className="-my-2 py-2 text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
         >
-          Sign in
-        </Link>
+          Log in
+        </button>
       </p>
+      {failed && <SaveError />}
     </div>
   );
 }

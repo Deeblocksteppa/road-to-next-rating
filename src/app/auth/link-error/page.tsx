@@ -8,10 +8,10 @@ import { authErrorMessage } from "@/lib/auth-errors";
  * Where a dead email link lands: an expired or already-used link, or an old
  * one opened in a different browser from the one that requested it.
  *
- * It used to drop the player on Sign in with "Sign in couldn't be
+ * It used to drop the player on the log-in page with "Sign in couldn't be
  * completed", which named neither the cause nor the way out. This says what
  * happened and puts the fix one tap away: a new reset link, or a new
- * confirmation email.
+ * confirmation email (its code and link).
  *
  * All copy is fixed and chosen by two keyed params; nothing from the URL is
  * rendered.
@@ -45,7 +45,7 @@ export default function LinkErrorPage({
           </h1>
           <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
             {sent
-              ? "If that address has an account waiting to be confirmed, a new link is on its way. It can take a minute, and it may land in spam."
+              ? "If that address has an account waiting to be confirmed, a new code and link are on their way. It can take a minute, and it may land in spam."
               : explanation}
           </p>
         </div>
@@ -85,23 +85,23 @@ export default function LinkErrorPage({
                 type="submit"
                 className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
               >
-                Send a new confirmation link
+                Send a new code
               </button>
             </form>
           )
         )}
       </div>
 
-      <p className="pb-2 text-center text-[16px] text-ink-2">
+      <p className="pb-2 text-[16px] text-ink-2">
         {isRecovery ? (
           <Link href="/login" className="underline underline-offset-4">
-            Back to sign in
+            Back to log in
           </Link>
         ) : (
           <>
             Already confirmed?{" "}
             <Link href="/login" className="underline underline-offset-4">
-              Sign in
+              Log in
             </Link>
           </>
         )}

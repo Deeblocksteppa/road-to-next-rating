@@ -175,7 +175,7 @@ export function GuidedSession(props: GuidedSessionProps) {
               // this user's plan). Nothing below may run until the write is
               // confirmed: "logged" is only ever said about a saved number.
               if (!result) {
-                setError("Couldn't save that. You may have been signed out. Sign in and try again.");
+                setError("Couldn't save that. You may have been logged out. Log in and try again.");
                 return;
               }
               setWeekly(result);

@@ -54,7 +54,7 @@ export function SiteHeader() {
           href="/login"
           className="-mx-2 -my-3 shrink-0 whitespace-nowrap px-2 py-3 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink hover:decoration-ink-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-optic"
         >
-          Sign in
+          Log in
         </Link>
       </div>
     </header>
@@ -566,7 +566,7 @@ export function Footer() {
         <Logo />
         <nav className="flex flex-wrap items-center gap-x-7 gap-y-3">
           {[
-            { href: "/login", label: "Sign in" },
+            { href: "/login", label: "Log in" },
             ...LEGAL_LINKS,
             { href: SUPPORT_MAILTO, label: SUPPORT_EMAIL },
           ].map((link) => (

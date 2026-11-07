@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { claimMySignup } from "@/app/auth/actions";
@@ -8,14 +7,13 @@ import { CodeEntry } from "@/components/auth/CodeEntry";
 import { InlineLogIn } from "@/components/auth/InlineLogIn";
 import { ConsentLine } from "@/components/legal/ConsentLine";
 import { AUTH_ERRORS, authErrorCode, isEmailIntervalLimit } from "@/lib/auth-errors";
-import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 import { consentMetadata } from "@/lib/legal";
 import { loadLocalResult } from "@/lib/local-result";
 import { claimAnonymousResult, type SavedIds } from "@/lib/persistence";
 import { clearSignupPending, saveSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 
-/** Shown under the password field and enforced by it. Matches the reset flow. */
+/** Named in the password field's placeholder and enforced by it. Matches the reset flow. */
 const MIN_PASSWORD_LENGTH = 8;
 
 /**
@@ -24,12 +22,14 @@ const MIN_PASSWORD_LENGTH = 8;
  *
  * Three screens, never mixed:
  *
- *   - the form, which says what an account adds and what skipping keeps;
+ *   - the form: a title, one line on what the account keeps, email and
+ *     password in one block, "Create account", and "Not now" back to the plan;
  *   - the code screen (`CodeEntry`), shown once a sign-up is waiting on the
  *     6-digit code it emailed. It replaces the form outright;
  *   - the log-in (`InlineLogIn`), for an address that already has an account
- *     ("Log in" on the form's existing-account note, or "Already confirmed?
- *     Log in" on the code screen). Logging in claims the plan the same way.
+ *     ("Log in" at the form's top right or on its existing-account note, or
+ *     "Already confirmed? Log in" on the code screen or the plan's pending
+ *     line). Logging in claims the plan the same way.
  *
  * Nothing is sent until the result's save (`saveResult`) has finished with
  * all three rows: the sign-up carries their ids, and a partial set is never
@@ -45,24 +45,22 @@ const MIN_PASSWORD_LENGTH = 8;
 export function SaveGate({
   saveResult,
   onSkip,
-  bottleneckTitle,
-  weeksTarget,
   pendingEmail,
   onPendingChange,
   reason = "save",
+  initialView = "form",
 }: {
   /** The anonymous result's save (`saveAnonymousResult`): the complete set of ids, or a rejection. */
   saveResult: () => Promise<SavedIds>;
   /** Back to the result page. */
   onSkip: () => void;
-  /** Title-case skill name ("The reset"). */
-  bottleneckTitle: string;
-  weeksTarget: number;
   /** The address a sign-up on this device is waiting on, if any. */
   pendingEmail: string | null;
   onPendingChange: (email: string | null) => void;
-  /** `session`: opened from "Start session", so it says why an account is needed. */
+  /** Where the player goes once signed in: `session` from "Start session", the plan otherwise. */
   reason?: "save" | "session";
+  /** `login`: opened from the plan's "Already confirmed? Log in", straight to the log-in. */
+  initialView?: "form" | "login";
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,9 +70,12 @@ export function SaveGate({
   // The address typed already has a confirmed account: the form says so and
   // offers the log-in in place of the sign-up. Editing the address clears it.
   const [existing, setExisting] = useState(false);
-  const [view, setView] = useState<"form" | "login">("form");
+  const [view, setView] = useState<"form" | "login">(initialView);
   // The address the log-in opens with.
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginEmail, setLoginEmail] = useState(initialView === "login" ? pendingEmail ?? "" : "");
+  // Where the log-in's Back goes: the plan when the gate opened on it, else
+  // back into the gate (the code screen while a sign-up waits, or the form).
+  const [loginFrom, setLoginFrom] = useState<"plan" | "gate">(initialView === "login" ? "plan" : "gate");
   const logInRef = useRef<HTMLButtonElement>(null);
 
   // The note's "Log in" is the way on now; left on the sign-up button, Enter
@@ -179,6 +180,7 @@ export function SaveGate({
 
   function openLogIn(address: string) {
     setLoginEmail(address);
+    setLoginFrom("gate");
     setError(null);
     setView("login");
     window.scrollTo(0, 0);
@@ -229,36 +231,6 @@ export function SaveGate({
     window.location.assign(reason === "session" ? "/session" : "/plan");
   }
 
-  async function handleGoogle() {
-    setLoading(true);
-    setError(null);
-
-    // The rows must all be saved before leaving: Home claims them by the ids
-    // on this device when Google sends the player back.
-    try {
-      await saveResult();
-    } catch (err) {
-      console.error("Failed to save the result:", err);
-      setError(AUTH_ERRORS.generic);
-      setLoading(false);
-      return;
-    }
-
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/home`,
-      },
-    });
-
-    if (error) {
-      setError(AUTH_ERRORS.signin_failed);
-      setLoading(false);
-    }
-    // On success the browser is redirected to Google.
-  }
-
   /* ── The log-in ───────────────────────────────────────────── */
   if (view === "login") {
     return (
@@ -270,9 +242,13 @@ export function SaveGate({
           setView("form");
           window.scrollTo(0, 0);
         }}
-        // Back to where it opened from: the code screen while a sign-up is
-        // waiting, the form otherwise.
+        // Back to where it opened from: the plan when it opened straight
+        // here, else the code screen while a sign-up is waiting, else the form.
         onBack={() => {
+          if (loginFrom === "plan") {
+            onSkip();
+            return;
+          }
           setView("form");
           window.scrollTo(0, 0);
         }}
@@ -301,117 +277,86 @@ export function SaveGate({
 
   /* ── The form ───────────────────────────────────────────────── */
   return (
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center gap-5 bg-background px-6 py-12 text-ink">
-      <div className="flex flex-col gap-2.5">
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-          Save your plan
-        </p>
-        <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
-          Keep what you just found.
-        </h1>
-        {/* What each choice gets, plainly: the account is what runs sessions
-            and keeps the counts. Skipping keeps the plan on this device and
-            nothing more; it used to read as though sessions came with it. */}
-        {/* The first words answer the button that opened the form: "Save my
-            plan" hears that saving makes an account, "Start session" that
-            sessions need one. Each says it once. */}
-        <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-          {reason === "session" ? (
-            <>
-              Sessions need a free account. It keeps what you log, on any device. Skip it and
-              your plan stays on this device. No card, nothing to pay.
-            </>
-          ) : (
-            <>
-              Saving creates a free account. It runs your guided sessions and keeps what you log,
-              on any device. Skip it and your plan stays on this device, but sessions and logging
-              need the account. No card, nothing to pay.
-            </>
-          )}
-        </p>
-      </div>
-
-      {/* The real bottleneck and plan being saved. */}
-      <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-[18px] py-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">Your plan</p>
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-ink-2" />
-          <span className="text-[16px] font-semibold">{bottleneckTitle}</span>
-          <span className="text-[15px] text-ink-3">· {weeksTarget}-week plan</span>
-        </div>
-      </div>
-
-      {error && (
-        <p
-          role="alert"
-          className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
+      {/* An account already: the log-in, with whatever address is typed. */}
+      <div className="flex justify-end pt-1">
+        <button
+          type="button"
+          onClick={() => openLogIn(email.trim())}
+          disabled={loading}
+          className="-my-2.5 py-2.5 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
         >
-          {error}
-        </p>
-      )}
+          Log in
+        </button>
+      </div>
 
-      <div className="flex flex-col gap-3">
-        {/* Hidden until the provider is really on — see `auth-flags.ts`. */}
-        {GOOGLE_AUTH_ENABLED && (
-          <>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleGoogle}
-              className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover disabled:pointer-events-none disabled:opacity-60"
-            >
-              <span className="font-display text-[15px] font-extrabold">G</span>
-              Continue with Google
-            </button>
+      <div className="flex flex-1 flex-col justify-center gap-6 py-10">
+        <div className="flex flex-col gap-2.5">
+          <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
+            Save your plan
+          </h1>
+          <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
+            Free account. Your plan and session numbers stay with you.
+          </p>
+        </div>
 
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-line" />
-              <span className="font-mono text-[10px] text-ink-3">OR</span>
-              <div className="h-px flex-1 bg-line" />
-            </div>
-          </>
+        {error && (
+          <p
+            role="alert"
+            className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
+          >
+            {error}
+          </p>
         )}
 
         <form onSubmit={handleEmailSignup} className="flex flex-col gap-4">
-          {/* Labels sit above the fields and stay there once they're filled:
-              a placeholder-only label disappears exactly when the player
-              goes back to check what they typed. */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-[15px] font-medium text-ink-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setExisting(false);
-              }}
-              required
-              className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[15px] font-medium text-ink-2">
-              Password
-            </label>
-            {/* The ring goes on the row so it wraps the field and its toggle. */}
-            <div className="flex h-12 w-full items-center rounded-md border border-line-strong bg-surface pl-4 pr-1 has-[input:focus-visible]:border-line-hover has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-optic">
+          {/* One block, two rows. Each row keeps its label inside it, so the
+              label is still there once the field is filled: a placeholder-only
+              label disappears exactly when the player goes back to check what
+              they typed. The focus ring sits inside the row it belongs to. */}
+          <div className="flex flex-col rounded-md border border-line-strong bg-surface">
+            <div className="flex flex-col gap-0.5 rounded-t-md px-4 pb-1.5 pt-2.5 has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:-outline-offset-2 has-[input:focus-visible]:outline-optic">
+              <label
+                htmlFor="email"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"
+              >
+                Email
+              </label>
               <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                minLength={MIN_PASSWORD_LENGTH}
-                aria-describedby="password-hint"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setExisting(false);
+                }}
                 required
-                className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
+                className="h-8 w-full bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
               />
+            </div>
+            <div className="h-px bg-line" />
+            <div className="flex items-end gap-2 rounded-b-md pb-1.5 pl-4 pr-1 pt-2.5 has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:-outline-offset-2 has-[input:focus-visible]:outline-optic">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <label
+                  htmlFor="password"
+                  className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  minLength={MIN_PASSWORD_LENGTH}
+                  placeholder={`${MIN_PASSWORD_LENGTH}+ characters`}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-8 w-full bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
@@ -422,9 +367,6 @@ export function SaveGate({
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
-            <p id="password-hint" className="text-[16px] leading-[1.5] text-ink-3">
-              At least {MIN_PASSWORD_LENGTH} characters.
-            </p>
           </div>
 
           {/* The address has an account already. The log-in takes the
@@ -456,26 +398,19 @@ export function SaveGate({
                 : "bg-optic text-optic-ink hover:bg-optic-hover",
             ].join(" ")}
           >
-            {loading ? "Creating your account…" : "Create account & save plan"}
+            {loading ? "Creating account…" : "Create account"}
           </button>
           <ConsentLine />
         </form>
+
+        <button
+          type="button"
+          onClick={onSkip}
+          className="-my-2 self-start py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+        >
+          Not now
+        </button>
       </div>
-
-      <button
-        type="button"
-        onClick={onSkip}
-        className="-my-2 py-2 text-center text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 hover:text-ink"
-      >
-        Not now
-      </button>
-
-      <p className="text-center text-[16px] text-ink-2">
-        Already have an account?{" "}
-        <Link href="/login" className="underline underline-offset-4">
-          Sign in
-        </Link>
-      </p>
     </main>
   );
 }
