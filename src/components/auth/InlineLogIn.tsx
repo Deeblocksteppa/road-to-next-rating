@@ -84,15 +84,6 @@ export function InlineLogIn({
         Log in
       </h1>
 
-      {error && (
-        <p
-          role="alert"
-          className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
-        >
-          {error}
-        </p>
-      )}
-
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           {/* The save form's block, so the address carried over sits where it was typed. */}
@@ -123,6 +114,11 @@ export function InlineLogIn({
         >
           {busy ? "Logging in…" : "Log in"}
         </button>
+        {error && (
+          <p role="alert" className="text-[16px] leading-[1.5] text-danger">
+            {error}
+          </p>
+        )}
       </form>
 
       <button

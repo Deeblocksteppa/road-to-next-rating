@@ -37,7 +37,8 @@ export default async function ResetPasswordPage({
         <Logo />
       </header>
 
-      <div className="flex flex-1 flex-col justify-center gap-5 py-10">
+      {/* Top-aligned under the logo, so the fields and button stay above the keyboard. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5">
         <div className="flex flex-col gap-2.5">
           <h1 className="font-display text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Choose a new password.
@@ -46,12 +47,6 @@ export default async function ResetPasswordPage({
             For {user.email}. At least 8 characters.
           </p>
         </div>
-
-        {errorMessage && (
-          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger">
-            {errorMessage}
-          </p>
-        )}
 
         <form action={updatePassword} className="flex flex-col gap-3">
           <label htmlFor="password" className="sr-only">
@@ -65,6 +60,8 @@ export default async function ResetPasswordPage({
             placeholder="New password"
             minLength={8}
             required
+            aria-invalid={errorMessage ? true : undefined}
+            aria-describedby={errorMessage ? "reset-error" : undefined}
             className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
           <label htmlFor="confirm" className="sr-only">
@@ -86,6 +83,11 @@ export default async function ResetPasswordPage({
           >
             Save new password
           </button>
+          {errorMessage && (
+            <p id="reset-error" role="alert" className="text-[16px] leading-[1.5] text-danger">
+              {errorMessage}
+            </p>
+          )}
         </form>
       </div>
     </main>

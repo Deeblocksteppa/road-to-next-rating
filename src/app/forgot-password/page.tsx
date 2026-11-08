@@ -26,7 +26,8 @@ export default function ForgotPasswordPage({
         <Logo />
       </header>
 
-      <div className="flex flex-1 flex-col justify-center gap-5 py-10">
+      {/* Top-aligned under the logo, so the field and button stay above the keyboard. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5">
         <div className="flex flex-col gap-2.5">
           <h1 className="font-display text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Reset your password.
@@ -37,12 +38,6 @@ export default function ForgotPasswordPage({
               : "Enter the email you signed up with and we'll send you a link to choose a new password."}
           </p>
         </div>
-
-        {errorMessage && (
-          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger">
-            {errorMessage}
-          </p>
-        )}
 
         {!sent && (
           <form action={requestPasswordReset} className="flex flex-col gap-3">
@@ -56,6 +51,10 @@ export default function ForgotPasswordPage({
               autoComplete="email"
               placeholder="Email address"
               required
+              // Arrives server-rendered, where a screen reader may not read the
+              // alert out: the field names it instead.
+              aria-invalid={errorMessage ? true : undefined}
+              aria-describedby={errorMessage ? "reset-link-error" : undefined}
               className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
             />
             <button
@@ -64,6 +63,11 @@ export default function ForgotPasswordPage({
             >
               Send reset link
             </button>
+            {errorMessage && (
+              <p id="reset-link-error" role="alert" className="text-[16px] leading-[1.5] text-danger">
+                {errorMessage}
+              </p>
+            )}
           </form>
         )}
       </div>

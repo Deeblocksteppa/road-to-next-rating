@@ -292,15 +292,6 @@ export function SaveGate({
           </p>
         </div>
 
-        {error && (
-          <p
-            role="alert"
-            className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
-          >
-            {error}
-          </p>
-        )}
-
         <form onSubmit={handleEmailSignup} className="flex flex-col gap-4">
           <CredentialFields
             idPrefix="signup"
@@ -347,6 +338,11 @@ export function SaveGate({
           >
             {loading ? "Creating account…" : "Create account"}
           </button>
+          {error && (
+            <p role="alert" className="text-[16px] leading-[1.5] text-danger">
+              {error}
+            </p>
+          )}
           <ConsentLine />
         </form>
 

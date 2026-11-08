@@ -111,16 +111,11 @@ export function LoginScreen({
         <Logo />
       </header>
 
-      <div className="flex flex-1 flex-col justify-center gap-5 py-10">
+      {/* Top-aligned under the logo, so the fields and button stay above the keyboard. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5">
         <h1 className="text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em] font-display">
           Welcome back.
         </h1>
-
-        {shownError && (
-          <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger">
-            {shownError}
-          </p>
-        )}
 
         {/* A fixed set of notices, keyed — never free text from the URL. */}
         {deleted && (
@@ -144,6 +139,10 @@ export function LoginScreen({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            // Usually arrives server-rendered after a redirect, where a screen
+            // reader may not read the alert out: the fields name it instead.
+            aria-invalid={shownError ? true : undefined}
+            aria-describedby={shownError ? "login-error" : undefined}
             className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
           />
 
@@ -161,6 +160,8 @@ export function LoginScreen({
               autoComplete="current-password"
               placeholder="Password"
               required
+              aria-invalid={shownError ? true : undefined}
+              aria-describedby={shownError ? "login-error" : undefined}
               className="flex-1 bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
             />
             {/* `-my-4 py-4` buys a 47px tap target without growing the row. */}
@@ -173,6 +174,11 @@ export function LoginScreen({
           </div>
 
           <SubmitButton busy={sending} />
+          {shownError && (
+            <p id="login-error" role="alert" className="text-[16px] leading-[1.5] text-danger">
+              {shownError}
+            </p>
+          )}
         </form>
 
         {/* Hidden until the provider is really on — see `auth-flags.ts`. */}

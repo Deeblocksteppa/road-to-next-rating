@@ -38,26 +38,18 @@ export default function LinkErrorPage({
         <Logo />
       </header>
 
-      <div className="flex flex-1 flex-col justify-center gap-5 py-10">
+      {/* Top-aligned under the logo, so the field and button stay above the keyboard. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5">
         <div className="flex flex-col gap-2.5">
           <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
             {sent ? "Check your email." : "That link didn't work."}
           </h1>
           <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
             {sent
-              ? "If that address has an account waiting to be confirmed, a new code and link are on their way. It can take a minute, and it may land in spam. Open the link, or log in and enter the code."
+              ? "If that address has an account waiting to be confirmed, a new code and link are on their way. It can take a minute, and it may land in spam. Open the link, or log in and enter the latest code we sent."
               : explanation}
           </p>
         </div>
-
-        {errorMessage && (
-          <p
-            role="alert"
-            className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
-          >
-            {errorMessage}
-          </p>
-        )}
 
         {isRecovery ? (
           <Link
@@ -79,6 +71,10 @@ export default function LinkErrorPage({
                 autoComplete="email"
                 placeholder="Email address"
                 required
+                // Arrives server-rendered, where a screen reader may not read
+                // the alert out: the field names it instead.
+                aria-invalid={errorMessage ? true : undefined}
+                aria-describedby={errorMessage ? "resend-error" : undefined}
                 className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
               />
               <button
@@ -87,8 +83,19 @@ export default function LinkErrorPage({
               >
                 Send a new code
               </button>
+              {errorMessage && (
+                <p id="resend-error" role="alert" className="text-[16px] leading-[1.5] text-danger">
+                  {errorMessage}
+                </p>
+              )}
             </form>
           )
+        )}
+        {/* No redirect sends an error to these states today; shown anyway, so a future one isn't silent. */}
+        {errorMessage && (isRecovery || sent) && (
+          <p role="alert" className="text-[16px] leading-[1.5] text-danger">
+            {errorMessage}
+          </p>
         )}
       </div>
 

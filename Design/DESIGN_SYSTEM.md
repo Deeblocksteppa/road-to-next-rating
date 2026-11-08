@@ -314,9 +314,13 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - Primary **"Continue — $79/year"** + mono caption "YOUR DIAGNOSIS, PLAN, AND HOME STAY FREE · CANCEL ANYTIME".
 - *Placed at peak motivation, right after the free delta — not on entry. Annual is default.*
 
+### Auth screens (all of them)
+Applies to the Save Gate and its views (form, existing-account note, code screen, inline log-in), `/login` (form and code screen), `/forgot-password`, `/reset-password` and `/auth/link-error`.
+- **Top-aligned:** the heading about 80px from the top of the screen (88px on the pages with a logo, 20px under it), never vertically centered, so the field and the primary button stay above the phone keyboard.
+- **Errors:** plain `danger` text, 16px, directly under the field or button it belongs to, `role="alert"`; no box, border or fill. An error the page arrives with (after a redirect, e.g. an expired reset link) sits there too, and its field points at it (`aria-invalid`, `aria-describedby`), since a screen reader may not read out an alert that was already on the page. The plan's Start session, Save my plan and pending line follow the same rule.
+
 ### Save Gate (auth)
 - Top row: a small text link **"Log in"** at the right (opens the inline log-in view, address carried over).
-- Top-aligned, like every view of the gate (code screen, inline log-in) and `/login`'s code screen: fixed top padding, never vertically centered, so the field and the primary button stay above the phone keyboard.
 - Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you." Opened from "Start session": "Sessions need a free account. Your plan and session numbers stay with you."
 - **One grouped field block** (`radius-md`, border `line-strong`, bg `surface`): Email row, hairline `line`, Password row with a mono Show/Hide. Each row keeps its mono uppercase label inside the block (EMAIL, PASSWORD), so it doesn't vanish when typed over. Inputs 16px; the password placeholder carries the rule ("8+ characters"). The focus ring sits inside the row.
 - Primary full-width **"Create account"** ("Creating account…" while busy) directly under the block → consent line → **"Not now"** as a quiet left-aligned text link.

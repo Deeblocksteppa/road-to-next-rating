@@ -271,13 +271,10 @@ export function PlanView({
   );
 }
 
-/** The result could not be saved, so the form did not open. The same alert as the form's. */
+/** The result could not be saved, so the form did not open. Plain text under the button that failed, as on the form. */
 function SaveError() {
   return (
-    <p
-      role="alert"
-      className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] text-danger"
-    >
+    <p role="alert" className="text-[16px] leading-[1.5] text-danger">
       {AUTH_ERRORS.generic}
     </p>
   );
@@ -413,7 +410,7 @@ function PendingStatus({
         Enter code
       </button>
       {failed && (
-        <div className="mt-4 self-stretch">
+        <div className="mt-2.5">
           <SaveError />
         </div>
       )}
