@@ -352,6 +352,8 @@ Applies to the Save Gate and its views (form, existing-account note, code screen
 - Header: back button + Archivo 700 22px "Settings".
 - **ACCOUNT** group (surface card, dividers `line`): "Email → …", "Display name → … ›".
 - **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (accent text) + caption. *(Free users see "Free · Upgrade to unlock Progress" in the Plan row instead.)*
+- **Subscription already ended in Stripe** (a Cancel or "Keep my subscription" tap on a subscription that had ended, or found when Manage or Settings re-reads Stripe on load): Settings in its free state, with one line under the SUBSCRIPTION group: Body 16px, `ink-2`, `role="status"`, no accent, left-aligned. Cancel or found on load: "Your subscription had already ended. Nothing more will be charged." Keep: "Your subscription ended on {Mon YYYY}, so it can't be resumed. You're on the free plan now." (without a date: "Your subscription has ended, so it can't be resumed. You're on the free plan now."). Never shown while the profile is paid.
+- **Manage subscription error:** "Something went wrong. Email support@… and we'll sort it out." in `danger`, left-aligned, under the button.
 - **NOTIFICATIONS** group: "Email me when my re-test opens" + accent toggle.
 - Footer: "Log out" (secondary) + "Delete account" (`danger` text, hover `danger-hover`).
 - *The plainest screen in the app. Accent appears only on the two things a person came here to do — Manage subscription / Upgrade. Manage and Delete are both one tap from the top, never buried.*
