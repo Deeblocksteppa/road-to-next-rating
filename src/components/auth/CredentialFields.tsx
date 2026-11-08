@@ -2,8 +2,6 @@
 
 import { useState, type Ref } from "react";
 
-const ROW_FOCUS =
-  "has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:-outline-offset-2 has-[input:focus-visible]:outline-optic";
 const LABEL = "font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3";
 const INPUT =
   "h-8 w-full bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none";
@@ -12,8 +10,8 @@ const INPUT =
  * Email and password as one block, two rows: the save form and the inline
  * log-in. Each row keeps its mono label inside it, so the label is still
  * there once the field is filled: a placeholder-only label disappears exactly
- * when the player goes back to check what they typed. The focus ring sits
- * inside the row it belongs to.
+ * when the player goes back to check what they typed. Focus lights the whole
+ * block's border, so its rounded corners stay intact.
  */
 export function CredentialFields({
   idPrefix,
@@ -42,8 +40,8 @@ export function CredentialFields({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="flex flex-col rounded-md border border-line-strong bg-surface">
-      <div className={`flex flex-col gap-0.5 rounded-t-md px-4 pb-1.5 pt-2.5 ${ROW_FOCUS}`}>
+    <div className="flex flex-col rounded-md border border-line-strong bg-surface transition-colors focus-within:border-optic">
+      <div className="flex flex-col gap-0.5 px-4 pb-1.5 pt-2.5">
         <label htmlFor={`${idPrefix}-email`} className={LABEL}>
           Email
         </label>
@@ -60,7 +58,7 @@ export function CredentialFields({
         />
       </div>
       <div className="h-px bg-line" />
-      <div className={`flex items-end gap-2 rounded-b-md pb-1.5 pl-4 pr-1 pt-2.5 ${ROW_FOCUS}`}>
+      <div className="flex items-end gap-2 pb-1.5 pl-4 pr-1 pt-2.5">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <label htmlFor={`${idPrefix}-password`} className={LABEL}>
             Password
