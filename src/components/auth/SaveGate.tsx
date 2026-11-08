@@ -10,7 +10,12 @@ import { ConsentLine } from "@/components/legal/ConsentLine";
 import { AUTH_ERRORS, authErrorCode, isEmailIntervalLimit } from "@/lib/auth-errors";
 import { consentMetadata } from "@/lib/legal";
 import { loadLocalResult } from "@/lib/local-result";
-import { claimAnonymousResult, type SavedIds } from "@/lib/persistence";
+import {
+  claimAnonymousResult,
+  clearOwnSignupPending,
+  PendingOtherAccountError,
+  type SavedIds,
+} from "@/lib/persistence";
 import { clearSignupPending, saveSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 
@@ -149,9 +154,14 @@ export function SaveGate({
       try {
         await claimAnonymousResult(ids);
       } catch (err) {
+        // A sign-up for another address is waiting here: not saved, and its
+        // note and the result stay for it.
+        if (err instanceof PendingOtherAccountError) {
+          window.location.href = "/home";
+          return;
+        }
         console.error("Failed to claim records:", err);
       }
-      clearSignupPending();
       window.location.href = "/home?saved=1";
       return;
     }
@@ -207,22 +217,28 @@ export function SaveGate({
     // attempt's metadata), and /start already cleared a device whose own
     // rows were gone.
     if (claim === "expired" && !deviceHasResult) {
-      clearSignupPending();
+      await clearOwnSignupPending();
       window.location.assign("/home?expired=1");
       return;
     }
 
     if (deviceHasResult) {
       try {
+        // Clears the pending note once claimed. Refuses (clearing nothing)
+        // when the account signed in isn't the one the note names: a log-in
+        // here with a different address than the sign-up waiting on it.
         await claimAnonymousResult(await saveResult());
       } catch (err) {
-        console.error("Failed to claim records:", err);
-        clearSignupPending();
+        if (!(err instanceof PendingOtherAccountError)) {
+          console.error("Failed to claim records:", err);
+        }
+        // Not saved. Home's claim retries a failure, and checks the note again.
         window.location.assign("/home");
         return;
       }
+    } else {
+      await clearOwnSignupPending();
     }
-    clearSignupPending();
     window.location.assign(reason === "session" ? "/session" : "/plan");
   }
 

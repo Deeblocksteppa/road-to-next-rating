@@ -12,7 +12,7 @@ import { AUTH_ERRORS } from "@/lib/auth-errors";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
 import { afterClaimPath } from "@/lib/auth-redirect";
 import { emailSignupCode } from "@/lib/signup-code";
-import { clearSignupPending, loadSignupPending } from "@/lib/signup-pending";
+import { clearSignupPending, signupPendingIs } from "@/lib/signup-pending";
 
 /**
  * The log-in page's form, and the code screen it turns into for an account
@@ -70,7 +70,7 @@ export function LoginScreen({
 
   /** Off the code screen: drop this page's pending note, never another address's. */
   function leaveCode(nextEmail: string) {
-    if (loadSignupPending()?.email === codeEmail) clearSignupPending();
+    if (codeEmail && signupPendingIs(codeEmail)) clearSignupPending();
     setCodeEmail(null);
     setEmail(nextEmail);
   }
@@ -86,7 +86,10 @@ export function LoginScreen({
     } catch (err) {
       console.error("Failed to claim the sign-up's records:", err);
     }
-    clearSignupPending();
+    // This page's own note only (the code just signed in its address); a
+    // sign-up for another address waiting on this device keeps its note, and
+    // Home won't claim the device's result for this account.
+    if (codeEmail && signupPendingIs(codeEmail)) clearSignupPending();
     window.location.assign(afterClaimPath(claim, next));
   }
 
@@ -94,6 +97,7 @@ export function LoginScreen({
     return (
       <CodeEntry
         email={codeEmail}
+        keepOtherNote
         onVerified={handleVerified}
         onChangeEmail={() => leaveCode("")}
         // Confirmed meanwhile (the link, on another device): the password

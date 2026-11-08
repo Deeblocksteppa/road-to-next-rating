@@ -40,8 +40,11 @@ export function CodeEntry({
   onChangeEmail,
   onLogIn,
   onBack,
+  keepOtherNote = false,
 }: {
   email: string;
+  /** /login: a resend here never replaces another address's pending note. */
+  keepOtherNote?: boolean;
   /** Signed in now: claim the plan and leave the screen. Runs once. */
   onVerified: () => Promise<void>;
   onChangeEmail: () => void;
@@ -202,6 +205,7 @@ export function CodeEntry({
           )}
           <ResendCode
             email={email}
+            keepOther={keepOtherNote}
             className="self-start"
             disabled={checking}
             onSent={() => {

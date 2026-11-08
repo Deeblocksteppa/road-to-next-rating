@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { authErrorCode, RESEND_COOLDOWN_SECONDS } from "@/lib/auth-errors";
-import { saveSignupPending, signupSentAt } from "@/lib/signup-pending";
+import { saveSignupPendingUnlessOther, signupSentAt } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 
 type State = "idle" | "sending" | "sent" | "limited" | "failed";
@@ -23,9 +23,16 @@ export function ResendCode({
   email,
   onSent,
   disabled = false,
+  keepOther = false,
   className = "",
 }: {
   email: string;
+  /**
+   * Leave another address's pending note alone (/login's code screen): the
+   * note guards the device's result for that sign-up, and a resend here
+   * must not hand it to this address.
+   */
+  keepOther?: boolean;
   /** A new code is on its way. */
   onSent?: () => void;
   /** A code is being checked: a resend now would spend it. */
@@ -71,7 +78,7 @@ export function ResendCode({
       }
       return;
     }
-    saveSignupPending(email);
+    saveSignupPendingUnlessOther(email, keepOther);
     setUntil(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
     setNow(Date.now());
     setState("sent");

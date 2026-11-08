@@ -1,7 +1,7 @@
 "use client";
 
 import { authErrorCode, isEmailIntervalLimit } from "@/lib/auth-errors";
-import { loadSignupPending, saveSignupPending, signupSentAt } from "@/lib/signup-pending";
+import { saveSignupPendingUnlessOther, signupSentAt } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -24,23 +24,19 @@ export async function emailSignupCode(
   email: string,
   { keepOther = false }: { keepOther?: boolean } = {}
 ): Promise<"sent" | "rate_limited" | "generic"> {
-  const mayNote = () => {
-    const pending = loadSignupPending();
-    return !keepOther || !pending || pending.email === email;
-  };
   const { error } = await createClient().auth.resend({
     type: "signup",
     email,
     options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/home` },
   });
   if (!error) {
-    if (mayNote()) saveSignupPending(email);
+    saveSignupPendingUnlessOther(email, keepOther);
     return "sent";
   }
   if (isEmailIntervalLimit(error)) {
     // Keep the stored time of that email, if this device has it, so the
     // resend countdown runs from when it really went out.
-    if (signupSentAt(email) === null && mayNote()) saveSignupPending(email);
+    if (signupSentAt(email) === null) saveSignupPendingUnlessOther(email, keepOther);
     return "sent";
   }
   console.error("resend failed", error.code, error.status);

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { claimDeviceResult } from "@/lib/persistence";
-import { clearSignupPending } from "@/lib/signup-pending";
 
 /**
  * Runs on /home. If the player arrived with an anonymous result still on this
@@ -16,8 +15,10 @@ import { clearSignupPending } from "@/lib/signup-pending";
  *
  * It also says so, once: a brief "Plan saved" when the plan has just been
  * attached to the account, whether that happened here or (`saved`) on the
- * way in, at the Save Gate or on the confirmation link. Being on /home means
- * being signed in, so the device's "sign-up pending" note is cleared too.
+ * way in, at the Save Gate or on the confirmation link. The device's "sign-up
+ * pending" note is cleared only when it names this account; a note for
+ * another address keeps the result on the device for that sign-up, and
+ * nothing is claimed or said ("pending_other_account").
  *
  * A device result whose rows have been deleted (30 days unclaimed) is cleared,
  * never saved again, and Home is reloaded with `?expired=1`, which shows the
@@ -43,7 +44,6 @@ export function ClaimOnLoad({
   const [justSaved, setJustSaved] = useState(saved);
 
   useEffect(() => {
-    clearSignupPending();
     // The flag has done its job; drop it so a refresh doesn't repeat it.
     if (saved || expired) window.history.replaceState(null, "", window.location.pathname);
 
@@ -58,6 +58,9 @@ export function ClaimOnLoad({
           setJustSaved(true);
           router.refresh();
         }
+        // "pending_other_account": the device's result isn't saved and nothing
+        // here says it is. A `?saved=1` on the way in still stands: since the
+        // confirm fix it only follows a real claim of this account's own rows.
       } catch (err) {
         console.error("Failed to claim records on load:", err);
       }

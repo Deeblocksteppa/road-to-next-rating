@@ -42,10 +42,25 @@ export function loadSignupPending(): SignupPending | null {
   }
 }
 
+/** Whether the device's note names `email` (case-insensitive). */
+export function signupPendingIs(email: string): boolean {
+  return loadSignupPending()?.email.toLowerCase() === email.toLowerCase();
+}
+
+/**
+ * Save the note for `email` unless `keepOther` and the device already waits
+ * on another address's sign-up. That note is what keeps the device's result
+ * from being claimed by any other account (`claimIds`), so a page that
+ * merely sends a code (/login) must never replace it.
+ */
+export function saveSignupPendingUnlessOther(email: string, keepOther: boolean): void {
+  if (!keepOther || !loadSignupPending() || signupPendingIs(email)) saveSignupPending(email);
+}
+
 /** When the last code went to `email`, in ms, or null if this device doesn't know. */
 export function signupSentAt(email: string): number | null {
   const pending = loadSignupPending();
-  if (!pending || pending.email !== email) return null;
+  if (!pending || !signupPendingIs(email)) return null;
   const at = Date.parse(pending.at);
   return Number.isNaN(at) ? null : at;
 }

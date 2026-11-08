@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import {
   AFTER_AUTH,
   AFTER_RECOVERY,
+  afterClaimPath,
   appOrigin,
   linkErrorPath,
   safeNextPath,
@@ -57,12 +58,9 @@ export async function GET(request: Request) {
       // Every link that starts a session claims the sign-up's rows (a no-op
       // when there are none, or they were claimed already).
       const claim = await claimSignupRecords(supabase, data.user);
-      // A confirmed sign-up lands on Home with a brief "Plan saved", or the
-      // line that says their result is gone.
-      const landing =
-        !isRecovery && next === AFTER_AUTH
-          ? `${next}?${claim === "expired" ? "expired" : "saved"}=1`
-          : next;
+      // A confirmed sign-up lands on Home with a brief "Plan saved" only when
+      // rows were claimed, or the line that says their result is gone.
+      const landing = isRecovery ? next : afterClaimPath(claim, next);
       return NextResponse.redirect(`${origin}${landing}`);
     }
     // Code and status only: the message can echo the token.

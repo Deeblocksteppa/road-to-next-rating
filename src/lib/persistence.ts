@@ -7,7 +7,7 @@ import { diagnose, scoreSkills } from "@/lib/engine";
 import type { AnswerMap, Diagnosis } from "@/lib/types";
 import { generateRoadmap, type Roadmap } from "@/lib/roadmap";
 import { clearLocalResult, loadLocalResult } from "@/lib/local-result";
-import { clearSignupPending } from "@/lib/signup-pending";
+import { clearSignupPending, loadSignupPending } from "@/lib/signup-pending";
 import { resultStatus } from "@/app/start/actions";
 import type { ResultStatus } from "@/lib/result-exists";
 
@@ -240,7 +240,52 @@ export function clearDeviceResult() {
  */
 export class ClaimIncompleteError extends Error {}
 
+/**
+ * This device is waiting on a sign-up for one address, and a different
+ * account is signed in (a log-in in another tab, say). The result belongs to
+ * the sign-up, so nothing is claimed and nothing is cleared: the result and
+ * the pending note stay for that address's code or link. Callers treat it as
+ * "not saved".
+ */
+export class PendingOtherAccountError extends Error {}
+
+/** The signed-in user's email, lowercased. Throws when Auth can't say who it is. */
+async function signedInEmail(): Promise<string> {
+  const { data, error } = await createClient().auth.getUser();
+  if (error || !data.user) throw error ?? new Error("No signed-in user to claim for");
+  return (data.user.email ?? "").toLowerCase();
+}
+
+/**
+ * The one check every device claim passes (`claimIds`): with a sign-up
+ * pending on this device, only that address's account may take the result.
+ * With no pending note, anyone signed in may, as before.
+ */
+async function assertPendingBelongsToCaller(): Promise<void> {
+  const pending = loadSignupPending();
+  if (!pending) return;
+  if ((await signedInEmail()) !== pending.email.toLowerCase()) {
+    throw new PendingOtherAccountError("A sign-up for another address is pending on this device");
+  }
+}
+
+/**
+ * Drop the pending note if it names the signed-in account (its sign-up is
+ * done); a note for another address stays. A failed check keeps it too.
+ */
+export async function clearOwnSignupPending(): Promise<void> {
+  const pending = loadSignupPending();
+  if (!pending) return;
+  try {
+    if ((await signedInEmail()) === pending.email.toLowerCase()) clearSignupPending();
+  } catch {
+    // Asked again next time.
+  }
+}
+
 async function claimIds(ids: PendingIds): Promise<void> {
+  // Before the RPC: a claim for the wrong account can't be undone here.
+  await assertPendingBelongsToCaller();
   const { data: held, error } = await createClient().rpc("claim_anonymous_records", {
     p_assessment_id: ids.assessment,
     p_diagnosis_id: ids.diagnosis,
@@ -249,6 +294,8 @@ async function claimIds(ids: PendingIds): Promise<void> {
   if (error) throw error;
   const named = [ids.assessment, ids.diagnosis, ids.plan].filter(Boolean).length;
   if (held !== named) throw new ClaimIncompleteError(`Claim holds ${held} of ${named} rows`);
+  // Claimed by the account the note named (or there was no note): its sign-up is done.
+  clearSignupPending();
 }
 
 /**
@@ -256,7 +303,8 @@ async function claimIds(ids: PendingIds): Promise<void> {
  * copy: the plan lives in the account now, and leaving it would make /start
  * keep saying "saved only on this device" about a plan that isn't. On any
  * failure, or a claim that ends short of the full set, nothing is cleared, so
- * the next claim can try again.
+ * the next claim can try again. Throws `PendingOtherAccountError`, clearing
+ * nothing, when a sign-up for another address is pending here.
  */
 export async function claimAnonymousResult(ids: SavedIds): Promise<void> {
   await claimIds(ids);
@@ -306,7 +354,9 @@ export async function signedInStatus(): Promise<"yes" | "no" | "unknown"> {
  * save would write new rows under an old result the policy says is deleted.
  * A check that can't answer changes nothing, and the next load asks again.
  */
-export async function claimDeviceResult(): Promise<"none" | "claimed" | "expired"> {
+export async function claimDeviceResult(): Promise<
+  "none" | "claimed" | "expired" | "pending_other_account"
+> {
   const status = await deviceResultStatus();
   if (status === "unknown") return "none";
   if (status === "expired") {
@@ -314,16 +364,25 @@ export async function claimDeviceResult(): Promise<"none" | "claimed" | "expired
     return "expired";
   }
 
-  const stored = loadLocalResult();
-  if (stored) {
-    const diagnosis = diagnose(stored.answers);
-    await attachLocalResult(stored.answers, diagnosis, generateRoadmap(diagnosis, stored.answers));
-    return "claimed";
-  }
+  try {
+    const stored = loadLocalResult();
+    if (stored) {
+      const diagnosis = diagnose(stored.answers);
+      await attachLocalResult(stored.answers, diagnosis, generateRoadmap(diagnosis, stored.answers));
+      return "claimed";
+    }
 
-  const ids = getPendingIds();
-  if (!ids.assessment && !ids.diagnosis && !ids.plan) return "none";
-  await claimIds(ids);
-  clearPendingIds();
-  return "claimed";
+    const ids = getPendingIds();
+    if (!ids.assessment && !ids.diagnosis && !ids.plan) {
+      // Nothing to claim; a note left by this account's own sign-up is done.
+      await clearOwnSignupPending();
+      return "none";
+    }
+    await claimIds(ids);
+    clearPendingIds();
+    return "claimed";
+  } catch (err) {
+    if (err instanceof PendingOtherAccountError) return "pending_other_account";
+    throw err;
+  }
 }

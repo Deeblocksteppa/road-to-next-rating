@@ -18,8 +18,10 @@ import {
   attachLocalResult,
   ClaimIncompleteError,
   clearDeviceResult,
+  clearOwnSignupPending,
   clearPendingIds,
   deviceResultStatus,
+  PendingOtherAccountError,
   saveAnonymousResult,
   signedInStatus,
 } from "@/lib/persistence";
@@ -115,8 +117,20 @@ export default function Start() {
               setPhase("assessment");
               return;
             }
+            // A sign-up for another address is waiting on this device: the
+            // result is that sign-up's, so it stays here, with its pending
+            // line, for that address's code (falls through to the plan).
+            if (err instanceof PendingOtherAccountError) {
+              if (cancelled) return;
+              setSignedIn(true);
+              setPendingEmail(loadSignupPending()?.email ?? null);
+              setAnswers(stored.answers);
+              setPhase("saved");
+              return;
+            }
           }
-          clearSignupPending();
+          // A successful claim cleared the pending note itself; a failed one
+          // leaves it for Home's retry, which checks it again.
           window.location.replace(attached ? "/home?saved=1" : "/home");
           return;
         }
@@ -126,7 +140,9 @@ export default function Start() {
       const signedInNow = !stored && (await signedInStatus()) === "yes";
       if (cancelled) return;
       if (signedInNow) {
-        clearSignupPending();
+        // Only this account's own note: another address's stays with its sign-up.
+        await clearOwnSignupPending();
+        if (cancelled) return;
         setSignedIn(true);
       }
       setPendingEmail(loadSignupPending()?.email ?? null);
@@ -195,12 +211,23 @@ export default function Start() {
       setSignedIn(status === "yes");
       if (status === "yes") {
         // Throws unless the caller ended up with all three rows.
+        // Clears the pending note itself once claimed.
         await attachLocalResult(answers, diagnosis, roadmap);
-        clearSignupPending();
         window.location.assign(reason === "session" ? "/session" : "/plan");
         return;
       }
     } catch (err) {
+      // Signed in as someone else while a sign-up waits here ("Enter code",
+      // or either button): nothing was claimed. The gate opens on that
+      // sign-up's code screen, which is how the result gets saved.
+      if (err instanceof PendingOtherAccountError) {
+        setSaving(null);
+        setPendingEmail(loadSignupPending()?.email ?? null);
+        setGateReason(reason);
+        setPhase("savegate");
+        window.scrollTo(0, 0);
+        return;
+      }
       // Retried already. The form needs all three ids, so it stays closed.
       console.error("Failed to save the result:", err);
       setSaving(null);
