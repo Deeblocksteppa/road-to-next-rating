@@ -558,6 +558,112 @@ export async function closeOrphanedSubscription(
   }
 }
 
+/**
+ * The profile's current subscription when it is a different one from
+ * `subscriptionId` and hasn't ended in Stripe. Null when the profile names none,
+ * names this one, or names one that ended or isn't in Stripe.
+ */
+async function otherLiveSubscription(
+  profileId: string,
+  subscriptionId: string,
+  stripe: Stripe
+): Promise<string | null> {
+  const { data, error } = await createAdminClient()
+    .from("profiles")
+    .select("stripe_subscription_id")
+    .eq("id", profileId)
+    .maybeSingle();
+  if (error) throw error;
+
+  const current = data?.stripe_subscription_id ?? null;
+  if (!current || current === subscriptionId) return null;
+
+  const sub = await orWhenMissing(stripe.subscriptions.retrieve(current), null);
+  return sub && !hasEnded(sub) ? current : null;
+}
+
+export type WebhookOutcome =
+  | "synced"
+  | "cleared"
+  | "skipped_no_profile"
+  | "skipped_missing"
+  | "skipped_other_live";
+
+/**
+ * `customer.subscription.updated`: renewal, plan change, or a cancellation
+ * scheduled for period end.
+ *
+ * Writes the subscription as Stripe has it now, never the event's snapshot:
+ * Stripe doesn't promise order, and a late or retried `updated` would
+ * otherwise put a deleted subscription back to "active, cancels …".
+ *
+ * Only for the profile's current subscription: when the profile already names
+ * a different one that is still live (a newer checkout), an event about the
+ * old one changes nothing. A profile with no subscription, or one that ended,
+ * takes this one. `checkout.session.completed` has no such check: a finished
+ * checkout always sets its subscription.
+ */
+export async function applySubscriptionUpdated(
+  event: Stripe.Subscription,
+  stripe: Stripe = getStripe()
+): Promise<WebhookOutcome> {
+  const sub = await orWhenMissing(stripe.subscriptions.retrieve(event.id), null);
+  if (!sub) {
+    console.warn(`Subscription ${event.id} on update isn't in Stripe — skipping.`);
+    return "skipped_missing";
+  }
+
+  const profileId = await findProfileId({
+    metadataUserId: sub.metadata?.supabase_user_id,
+    subscriptionId: sub.id,
+    customerId: idOf(sub.customer),
+  });
+  if (!profileId) {
+    // Can legitimately arrive before checkout.session.completed on a first
+    // subscribe. That event will sync the same subscription moments later.
+    console.warn(`No profile matched subscription ${sub.id} on update — skipping.`);
+    return "skipped_no_profile";
+  }
+
+  const other = await otherLiveSubscription(profileId, sub.id, stripe);
+  if (other) {
+    console.warn(`Subscription ${sub.id} updated, but the profile is on live ${other} — left alone.`);
+    return "skipped_other_live";
+  }
+
+  await syncSubscription(profileId, sub);
+  return "synced";
+}
+
+/**
+ * `customer.subscription.deleted`: back to the free tier, unless the profile
+ * is already on a different subscription that is still live (an old one
+ * ending after a new checkout must not drop a paying player).
+ */
+export async function applySubscriptionDeleted(
+  sub: Stripe.Subscription,
+  stripe: Stripe = getStripe()
+): Promise<WebhookOutcome> {
+  const profileId = await findProfileId({
+    metadataUserId: sub.metadata?.supabase_user_id,
+    subscriptionId: sub.id,
+    customerId: idOf(sub.customer),
+  });
+  if (!profileId) {
+    console.warn(`No profile matched subscription ${sub.id} on delete — skipping.`);
+    return "skipped_no_profile";
+  }
+
+  const other = await otherLiveSubscription(profileId, sub.id, stripe);
+  if (other) {
+    console.warn(`Subscription ${sub.id} deleted, but the profile is on live ${other} — left alone.`);
+    return "skipped_other_live";
+  }
+
+  await clearSubscription(profileId);
+  return "cleared";
+}
+
 /** Subscription ended for good — drop to the free tier. */
 export async function clearSubscription(profileId: string): Promise<void> {
   const supabase = createAdminClient();

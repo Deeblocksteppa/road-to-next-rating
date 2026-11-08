@@ -4,7 +4,8 @@ import type Stripe from "stripe";
 
 import {
   accountIsGone,
-  clearSubscription,
+  applySubscriptionDeleted,
+  applySubscriptionUpdated,
   closeOrphanedSubscription,
   findProfileId,
   syncSubscription,
@@ -73,16 +74,16 @@ export async function POST(request: Request) {
         await onSubscriptionCreated(event.data.object);
         break;
       case "customer.subscription.updated":
-        await onSubscriptionUpdated(event.data.object);
+        await applySubscriptionUpdated(event.data.object);
         break;
       case "customer.subscription.deleted":
-        await onSubscriptionDeleted(event.data.object);
+        await applySubscriptionDeleted(event.data.object);
         break;
     }
   } catch (err) {
     // 500 tells Stripe to retry with backoff. The handlers are idempotent —
-    // they write absolute state read from Stripe, not increments — so a
-    // redelivery of an event we partly processed is safe.
+    // they write absolute state re-read from Stripe, not increments or the
+    // event's snapshot — so a late or repeated delivery is safe.
     console.error(`Stripe webhook handler failed for ${event.type}`, err);
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
@@ -146,36 +147,4 @@ async function onSubscriptionCreated(sub: Stripe.Subscription) {
   if (namedUser && (await accountIsGone(namedUser))) {
     await closeOrphanedSubscription(sub.id, namedUser);
   }
-}
-
-/** Renewal, plan change, or a cancellation scheduled for period end. */
-async function onSubscriptionUpdated(sub: Stripe.Subscription) {
-  const profileId = await findProfileId({
-    metadataUserId: sub.metadata?.supabase_user_id,
-    subscriptionId: sub.id,
-    customerId: idOf(sub.customer),
-  });
-  if (!profileId) {
-    // Can legitimately arrive before checkout.session.completed on a first
-    // subscribe. That event will sync the same subscription moments later.
-    console.warn(`No profile matched subscription ${sub.id} on update — skipping.`);
-    return;
-  }
-
-  await syncSubscription(profileId, sub);
-}
-
-/** Subscription is over — back to the free tier. */
-async function onSubscriptionDeleted(sub: Stripe.Subscription) {
-  const profileId = await findProfileId({
-    metadataUserId: sub.metadata?.supabase_user_id,
-    subscriptionId: sub.id,
-    customerId: idOf(sub.customer),
-  });
-  if (!profileId) {
-    console.warn(`No profile matched subscription ${sub.id} on delete — skipping.`);
-    return;
-  }
-
-  await clearSubscription(profileId);
 }
