@@ -5,12 +5,35 @@ import { Fragment } from "react";
 import { signOut } from "@/app/auth/actions";
 import { DrillReminderToggle } from "@/components/settings/DrillReminderToggle";
 import { RetestReminderToggle } from "@/components/settings/RetestReminderToggle";
+import { healSubscription } from "@/lib/billing";
 import { SUPPORT_MAILTO } from "@/lib/contact";
 import { monthYear } from "@/lib/date-format";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function SettingsPage() {
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The line Settings shows after a subscription turned out to have ended in
+ * Stripe already: from Manage subscription (`?billing=`), or found on this load.
+ */
+function endedNotice(billing: string | undefined, on: string | undefined, healed: boolean) {
+  if (billing === "resume_ended") {
+    return on && ISO_DAY.test(on)
+      ? `Your subscription ended on ${monthYear(`${on}T00:00:00Z`)}, so it can't be resumed. You're on the free plan now.`
+      : "Your subscription has ended, so it can't be resumed. You're on the free plan now.";
+  }
+  if (billing === "ended" || healed) {
+    return "Your subscription had already ended. Nothing more will be charged.";
+  }
+  return null;
+}
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: { billing?: string; on?: string };
+}) {
   const supabase = await createClient();
 
   const {
@@ -19,6 +42,11 @@ export default async function SettingsPage() {
   if (!user) {
     redirect("/login?next=/settings");
   }
+
+  // A paid row past its renewal date is where a missed webhook shows: check it
+  // against Stripe before rendering. Any failure renders the stored state.
+  const healed =
+    (await healSubscription(user.id, user.email ?? null, { onlyIfPastRenewal: true })) === "ended";
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -46,6 +74,9 @@ export default async function SettingsPage() {
     : drillPref?.drill_reminder_enabled ?? true;
 
   const isPaid = profile?.subscription_status === "active";
+  // Only ever on the free state, so a stale or hand-typed URL can't contradict
+  // a live subscription.
+  const notice = isPaid ? null : endedNotice(searchParams.billing, searchParams.on, healed);
   const planLabel = plan?.plan_type === "monthly" ? "Monthly" : "Annual";
 
   return (
@@ -116,6 +147,11 @@ export default async function SettingsPage() {
             </Link>
           )}
         </div>
+        {notice && (
+          <p role="status" className="pl-0.5 text-[16px] leading-[1.5] text-ink-2">
+            {notice}
+          </p>
+        )}
         {/* Says only what Manage subscription does: cancel, or resume a
             scheduled cancellation. It used to promise "change plan, or
             update billing", and neither exists. Sentence case: at this

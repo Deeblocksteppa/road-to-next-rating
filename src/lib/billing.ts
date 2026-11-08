@@ -16,7 +16,7 @@ import {
  * Called from the webhook (the source of truth), from the post-checkout
  * success page (a verified read-back, so a slow or not-yet-running webhook
  * doesn't leave a paying user staring at a locked screen), and from Settings'
- * cancel and resume. Every path writes the same fields from the same Stripe
+ * cancel, resume and page loads (`refreshOwnedSubscription`). Every path writes the same fields from the same Stripe
  * object, so running more than one is harmless.
  *
  * Uses the service-role client: webhook requests carry no user session, and
@@ -95,35 +95,19 @@ export async function syncSubscription(
   if (error) throw error;
 }
 
-/**
- * Fetch a subscription from Stripe only if Stripe says it belongs to `userId`.
- *
- * The id comes from the player's own profile row, which they could once
- * rewrite through the REST API. Checkout stamps `supabase_user_id` onto every
- * subscription's metadata, so a mismatch (or no metadata) means the id isn't
- * theirs: refuse and log rather than cancel or resume someone else's billing.
- * Returns null on a mismatch; Stripe errors (e.g. `resource_missing`) throw.
- */
-export async function retrieveOwnedSubscription(
-  userId: string,
-  subscriptionId: string
-): Promise<Stripe.Subscription | null> {
-  const sub = await getStripe().subscriptions.retrieve(subscriptionId);
-  const owner = sub.metadata?.supabase_user_id ?? null;
-  if (owner !== userId) {
-    console.error("Subscription owner mismatch, refusing", {
-      userId,
-      subscriptionId,
-      metadataUserId: owner,
-    });
-    return null;
-  }
-  return sub;
-}
-
 /** Stripe's "no such object". Ids left over from the old Stripe account come back this way. */
 function isMissing(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === "resource_missing";
+}
+
+/**
+ * A `resource_missing` that is really a key mix-up: the object exists in the
+ * other mode (a live id read with a test key, or the reverse). Stripe says so in
+ * the message. Nothing about the player's billing is known from it.
+ */
+function isOtherMode(err: unknown): boolean {
+  const message = (err as { message?: string } | null)?.message ?? "";
+  return /similar object exists in (live|test) mode/i.test(message);
 }
 
 async function orWhenMissing<T>(call: Promise<T>, fallback: T): Promise<T> {
@@ -292,6 +276,165 @@ export async function closeBilling(
   }
 
   return { outcome: "closed", cancelled };
+}
+
+/**
+ * The player's newest subscription that gives access (active, trialing,
+ * past_due, unpaid), found the way `closeBilling` finds them. Null when there
+ * is none.
+ */
+async function findLiveOwned(
+  stripe: Stripe,
+  userId: string,
+  ids: BillingIds
+): Promise<Stripe.Subscription | null> {
+  const found = await findBilling(stripe, userId, ids);
+  const live = found.subscriptions
+    .filter(
+      (sub) =>
+        ownedBy(userId, sub.metadata) &&
+        !hasEnded(sub) &&
+        statusFromStripe(sub.status) === "active"
+    )
+    .sort((a, b) => b.created - a.created);
+  return live[0] ?? null;
+}
+
+export type RefreshResult =
+  /** The profile's own subscription, theirs and not ended. Profile synced to it. */
+  | { kind: "live"; sub: Stripe.Subscription }
+  /**
+   * The profile's subscription had ended or isn't in Stripe, and another live
+   * one of theirs exists. Profile synced to that one.
+   */
+  | { kind: "replaced"; sub: Stripe.Subscription }
+  /**
+   * Nothing of theirs gives access. Profile now free. `endedAt` is when the
+   * profile's subscription ended, when Stripe has it (not for a missing one).
+   */
+  | { kind: "ended"; endedAt: string | null }
+  /** The subscription's metadata names someone else. Nothing written. */
+  | { kind: "not_owned" };
+
+/**
+ * Re-read the profile's subscription from Stripe and mirror what is true now.
+ * For Settings' cancel and resume, and for the Settings screens on load, so a
+ * missed or out-of-order webhook can't leave a dead subscription with a
+ * Cancel or Keep button on it.
+ *
+ * Every Stripe read happens before any write: if Stripe fails, this throws and
+ * the profile is unchanged.
+ *
+ * - Ownership: the id comes from the player's own profile row, which they could
+ *   once rewrite through the REST API. Checkout stamps `supabase_user_id` onto
+ *   every subscription's metadata, so a mismatch (or no metadata) means the id
+ *   isn't theirs: refuse and log, ended or not.
+ * - Ended (`canceled`, `incomplete_expired`) or missing (`resource_missing`):
+ *   before dropping the player to free, look for another live subscription of
+ *   theirs (two checkouts, or a profile that never got the new id). If there is
+ *   one, the profile moves to it.
+ * - Missing can't be checked for ownership, but the only write is to the
+ *   caller's own row. A missing id that exists in the other mode is a key
+ *   mix-up, not a missing subscription: logged and thrown, nothing written.
+ */
+export async function refreshOwnedSubscription(
+  userId: string,
+  ids: BillingIds & { subscriptionId: string },
+  stripe: Stripe = getStripe()
+): Promise<RefreshResult> {
+  let stored: Stripe.Subscription | null;
+  try {
+    stored = await stripe.subscriptions.retrieve(ids.subscriptionId);
+  } catch (err) {
+    if (isMissing(err) && isOtherMode(err)) {
+      console.error("STRIPE MODE MISMATCH: subscription exists in the other mode, nothing changed", {
+        userId,
+        subscription: ids.subscriptionId,
+      });
+    }
+    if (!isMissing(err) || isOtherMode(err)) throw err;
+    stored = null;
+  }
+
+  if (stored && !ownedBy(userId, stored.metadata)) {
+    console.error("Subscription owner mismatch, refusing", {
+      userId,
+      subscriptionId: stored.id,
+      metadataUserId: stored.metadata?.supabase_user_id ?? null,
+    });
+    return { kind: "not_owned" };
+  }
+
+  if (stored && !hasEnded(stored)) {
+    await syncSubscription(userId, stored);
+    return { kind: "live", sub: stored };
+  }
+
+  const replacement = await findLiveOwned(stripe, userId, {
+    email: ids.email,
+    subscriptionId: null,
+    customerId: ids.customerId ?? idOf(stored?.customer),
+  });
+  if (replacement) {
+    await syncSubscription(userId, replacement);
+    return { kind: "replaced", sub: replacement };
+  }
+
+  if (stored) {
+    await syncSubscription(userId, stored);
+  } else {
+    console.error("SUBSCRIPTION MISSING: profile's subscription isn't in Stripe, moved to free", {
+      userId,
+      subscription: ids.subscriptionId,
+    });
+    await clearSubscription(userId);
+  }
+  return {
+    kind: "ended",
+    endedAt: stored?.ended_at ? new Date(stored.ended_at * 1000).toISOString() : null,
+  };
+}
+
+export type HealResult = RefreshResult["kind"] | "skipped" | "failed";
+
+/**
+ * `refreshOwnedSubscription` for a page load. Runs only for a paid profile
+ * (and, with `onlyIfPastRenewal`, only once its renewal date has passed, which
+ * is when a missed webhook shows). Never throws: on any failure the page
+ * renders what is stored, and nothing was written.
+ */
+export async function healSubscription(
+  userId: string,
+  email: string | null,
+  opts: { onlyIfPastRenewal: boolean }
+): Promise<HealResult> {
+  try {
+    const { data: profile, error } = await createAdminClient()
+      .from("profiles")
+      .select("subscription_status, renews_at, stripe_subscription_id, stripe_customer_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (profile?.subscription_status !== "active" || !profile.stripe_subscription_id) {
+      return "skipped";
+    }
+    if (
+      opts.onlyIfPastRenewal &&
+      (!profile.renews_at || new Date(profile.renews_at).getTime() > Date.now())
+    ) {
+      return "skipped";
+    }
+
+    const result = await refreshOwnedSubscription(userId, {
+      subscriptionId: profile.stripe_subscription_id,
+      customerId: profile.stripe_customer_id ?? null,
+      email,
+    });
+    return result.kind;
+  } catch (err) {
+    console.error("healSubscription failed, showing the stored state", { userId }, err);
+    return "failed";
+  }
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

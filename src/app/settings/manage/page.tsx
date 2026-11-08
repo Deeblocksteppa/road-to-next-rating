@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { CancelSubscriptionForm } from "@/components/settings/CancelSubscriptionForm";
+import { healSubscription } from "@/lib/billing";
 import { monthYear } from "@/lib/date-format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,6 +16,12 @@ export default async function ManageSubscriptionPage() {
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login?next=/settings/manage");
+  }
+
+  // Stripe first: a missed webhook can leave a dead subscription looking
+  // cancellable. If Stripe can't be read, the stored state shows as before.
+  if ((await healSubscription(user.id, user.email ?? null, { onlyIfPastRenewal: false })) === "ended") {
+    redirect("/settings?billing=ended");
   }
 
   const { data: profile } = await supabase

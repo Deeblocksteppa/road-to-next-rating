@@ -26,12 +26,18 @@ export function CancelSubscriptionForm({
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  function run(action: typeof cancelSubscription) {
+  // A subscription that had already ended in Stripe leaves the player on the
+  // free plan, which this screen doesn't serve: Settings says what happened.
+  function run(action: typeof cancelSubscription, endedPath: (at: string | null) => string) {
     setFailed(false);
     startTransition(async () => {
       const result = await action();
       if ("error" in result) {
         setFailed(true);
+        return;
+      }
+      if (result.ended) {
+        router.replace(endedPath(result.ended.at));
         return;
       }
       router.refresh();
@@ -48,7 +54,7 @@ export function CancelSubscriptionForm({
         </p>
         <button
           type="button"
-          onClick={() => run(resumeSubscription)}
+          onClick={() => run(resumeSubscription, resumeEndedPath)}
           disabled={pending}
           className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
         >
@@ -63,7 +69,7 @@ export function CancelSubscriptionForm({
     <div className="flex flex-col gap-3">
       <button
         type="button"
-        onClick={() => run(cancelSubscription)}
+        onClick={() => run(cancelSubscription, () => "/settings?billing=ended")}
         disabled={pending}
         // The Delete account button's recipe: danger text on a 12% danger
         // fill (~5.2:1). It was ink on solid danger, 3.06:1 and 2.37:1 on
@@ -77,9 +83,13 @@ export function CancelSubscriptionForm({
   );
 }
 
+function resumeEndedPath(at: string | null): string {
+  return at ? `/settings?billing=resume_ended&on=${at.slice(0, 10)}` : "/settings?billing=resume_ended";
+}
+
 function SupportError() {
   return (
-    <p role="alert" className="text-center text-[16px] leading-[1.45] text-danger">
+    <p role="alert" className="text-[16px] leading-[1.45] text-danger">
       Something went wrong. Email{" "}
       <a href={SUPPORT_MAILTO} className="underline underline-offset-4">
         {SUPPORT_EMAIL}
