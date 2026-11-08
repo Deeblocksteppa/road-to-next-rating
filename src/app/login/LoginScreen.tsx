@@ -75,7 +75,11 @@ export function LoginScreen({
     setEmail(nextEmail);
   }
 
-  /** The code signed the player in: claim the sign-up's rows, then go on. */
+  /**
+   * The code signed the player in: claim the sign-up's rows, then go on.
+   * Takes no `how`: /login never claims the device's result (Home's
+   * automatic claim does), so nothing here may pass an explicit choice.
+   */
   async function handleVerified() {
     let claim: Awaited<ReturnType<typeof claimMySignup>> = "none";
     try {

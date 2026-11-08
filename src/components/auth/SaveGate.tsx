@@ -149,17 +149,15 @@ export function SaveGate({
     }
 
     if (data.session) {
-      // Signed in immediately — claim the anonymous rows, then go. On a
-      // failure the device keeps its result and Home's claim tries again.
+      // Signed in immediately — claim the anonymous rows, then go. A sign-up
+      // here is the player's choice of account. On a failure the device keeps
+      // its result and Home's claim tries again.
+      // The player chose this account: no other sign-up's note survives, so
+      // if this claim fails, Home's automatic retry claims for this account.
+      clearSignupPending();
       try {
-        await claimAnonymousResult(ids);
+        await claimAnonymousResult(ids, { explicitChoice: true });
       } catch (err) {
-        // A sign-up for another address is waiting here: not saved, and its
-        // note and the result stay for it.
-        if (err instanceof PendingOtherAccountError) {
-          window.location.href = "/home";
-          return;
-        }
         console.error("Failed to claim records:", err);
       }
       window.location.href = "/home?saved=1";
@@ -198,8 +196,16 @@ export function SaveGate({
    * player was heading. If the device claim fails, the player is still signed
    * in and the device keeps its result: Home's claim tries again and says
    * "Plan saved" once it lands.
+   *
+   * A typed code or a log-in here is the player choosing this account
+   * (owner, 2026-11-07), confirmed or not: the result goes to it even when
+   * the pending note names another address, and the note goes. The code
+   * screen's focus check (`elsewhere`) is automatic and keeps the note check.
    */
-  async function handleVerified() {
+  async function handleVerified(how: "code" | "login" | "elsewhere") {
+    const explicitChoice = how !== "elsewhere";
+    // Done with any pending sign-up: the chosen account's, or every one.
+    const dropNote = () => (explicitChoice ? clearSignupPending() : clearOwnSignupPending());
     // Another tab may have finished already (the link opened there lands on
     // Home, which claims and clears the device). Saving now would write the
     // result a second time.
@@ -217,17 +223,22 @@ export function SaveGate({
     // attempt's metadata), and /start already cleared a device whose own
     // rows were gone.
     if (claim === "expired" && !deviceHasResult) {
-      await clearOwnSignupPending();
+      await dropNote();
       window.location.assign("/home?expired=1");
       return;
     }
 
+    // Chosen: the note goes now, not only after a successful claim, so a
+    // failed claim leaves Home's automatic retry claiming for this account
+    // (and a ClaimIncompleteError reaches /start's own-assessment path).
+    if (explicitChoice) clearSignupPending();
+
     if (deviceHasResult) {
       try {
-        // Clears the pending note once claimed. Refuses (clearing nothing)
-        // when the account signed in isn't the one the note names: a log-in
-        // here with a different address than the sign-up waiting on it.
-        await claimAnonymousResult(await saveResult());
+        // Clears the pending note once claimed. An automatic claim refuses
+        // (clearing nothing) when the account signed in isn't the one the
+        // note names.
+        await claimAnonymousResult(await saveResult(), { explicitChoice });
       } catch (err) {
         if (!(err instanceof PendingOtherAccountError)) {
           console.error("Failed to claim records:", err);
@@ -237,7 +248,7 @@ export function SaveGate({
         return;
       }
     } else {
-      await clearOwnSignupPending();
+      await dropNote();
     }
     window.location.assign(reason === "session" ? "/session" : "/plan");
   }
@@ -247,7 +258,7 @@ export function SaveGate({
     return (
       <InlineLogIn
         initialEmail={loginEmail}
-        onSignedIn={handleVerified}
+        onSignedIn={() => handleVerified("login")}
         onUnconfirmed={(address) => {
           onPendingChange(address);
           setView("form");

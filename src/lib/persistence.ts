@@ -243,7 +243,7 @@ export class ClaimIncompleteError extends Error {}
 /**
  * This device is waiting on a sign-up for one address, and a different
  * account is signed in (a log-in in another tab, say). The result belongs to
- * the sign-up, so nothing is claimed and nothing is cleared: the result and
+ * the sign-up, so this automatic claim takes nothing and clears nothing: the result and
  * the pending note stay for that address's code or link. Callers treat it as
  * "not saved".
  */
@@ -257,7 +257,8 @@ async function signedInEmail(): Promise<string> {
 }
 
 /**
- * The one check every device claim passes (`claimIds`): with a sign-up
+ * The check every automatic device claim passes (`claimIds`; an explicit
+ * choice on the save form skips it): with a sign-up
  * pending on this device, only that address's account may take the result.
  * With no pending note, anyone signed in may, as before.
  */
@@ -283,9 +284,20 @@ export async function clearOwnSignupPending(): Promise<void> {
   }
 }
 
-async function claimIds(ids: PendingIds): Promise<void> {
+/**
+ * `explicitChoice`: the player picked this account on the save form (signed
+ * up, typed the code, or logged in there), so the result goes to it and its
+ * claim replaces any pending note. Passed only from the gate's own success
+ * handlers, never from a load, an effect or a focus check: those are the
+ * automatic claims the pending-note check is for.
+ */
+export interface ClaimOptions {
+  explicitChoice?: boolean;
+}
+
+async function claimIds(ids: PendingIds, { explicitChoice = false }: ClaimOptions = {}): Promise<void> {
   // Before the RPC: a claim for the wrong account can't be undone here.
-  await assertPendingBelongsToCaller();
+  if (!explicitChoice) await assertPendingBelongsToCaller();
   const { data: held, error } = await createClient().rpc("claim_anonymous_records", {
     p_assessment_id: ids.assessment,
     p_diagnosis_id: ids.diagnosis,
@@ -294,7 +306,8 @@ async function claimIds(ids: PendingIds): Promise<void> {
   if (error) throw error;
   const named = [ids.assessment, ids.diagnosis, ids.plan].filter(Boolean).length;
   if (held !== named) throw new ClaimIncompleteError(`Claim holds ${held} of ${named} rows`);
-  // Claimed by the account the note named (or there was no note): its sign-up is done.
+  // Claimed by the note's account, by an explicit choice on the save form, or
+  // with no note: any pending sign-up on this device is done.
   clearSignupPending();
 }
 
@@ -304,10 +317,11 @@ async function claimIds(ids: PendingIds): Promise<void> {
  * keep saying "saved only on this device" about a plan that isn't. On any
  * failure, or a claim that ends short of the full set, nothing is cleared, so
  * the next claim can try again. Throws `PendingOtherAccountError`, clearing
- * nothing, when a sign-up for another address is pending here.
+ * nothing, when a sign-up for another address is pending here, unless the
+ * claim is the player's explicit choice on the save form.
  */
-export async function claimAnonymousResult(ids: SavedIds): Promise<void> {
-  await claimIds(ids);
+export async function claimAnonymousResult(ids: SavedIds, options: ClaimOptions = {}): Promise<void> {
+  await claimIds(ids, options);
   clearPendingIds();
   clearLocalResult();
 }

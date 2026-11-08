@@ -45,8 +45,13 @@ export function CodeEntry({
   email: string;
   /** /login: a resend here never replaces another address's pending note. */
   keepOtherNote?: boolean;
-  /** Signed in now: claim the plan and leave the screen. Runs once. */
-  onVerified: () => Promise<void>;
+  /**
+   * Signed in now: claim the plan and leave the screen. Runs once.
+   * `code`: the player typed it (an explicit choice of this account).
+   * `elsewhere`: the focus check found this address signed in by the link in
+   * another tab (automatic).
+   */
+  onVerified: (how: "code" | "elsewhere") => Promise<void>;
   onChangeEmail: () => void;
   /** "Already confirmed? Log in": the log-in form, with this address filled in. */
   onLogIn: () => void;
@@ -65,11 +70,11 @@ export function CodeEntry({
     inputRef.current?.focus();
   }, []);
 
-  const finish = useCallback(async () => {
+  const finish = useCallback(async (how: "code" | "elsewhere") => {
     if (done.current) return;
     done.current = true;
     setChecking(true);
-    await onVerified();
+    await onVerified(how);
   }, [onVerified]);
 
   useEffect(() => {
@@ -77,7 +82,9 @@ export function CodeEntry({
       if (document.visibilityState !== "visible" || inFlight.current || done.current) return;
       try {
         const { data } = await createClient().auth.getUser();
-        if (data.user?.email?.toLowerCase() === email.toLowerCase()) await finish();
+        // A typed code went out meanwhile: it is the one to finish, as "code".
+        if (inFlight.current || done.current) return;
+        if (data.user?.email?.toLowerCase() === email.toLowerCase()) await finish("elsewhere");
       } catch {
         // Asked again on the next focus.
       }
@@ -126,7 +133,7 @@ export function CodeEntry({
       inputRef.current?.select();
       return;
     }
-    await finish();
+    await finish("code");
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {

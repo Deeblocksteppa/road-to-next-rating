@@ -50,7 +50,7 @@ export function signupPendingIs(email: string): boolean {
 /**
  * Save the note for `email` unless `keepOther` and the device already waits
  * on another address's sign-up. That note is what keeps the device's result
- * from being claimed by any other account (`claimIds`), so a page that
+ * from any other account's automatic claim (`claimIds`), so a page that
  * merely sends a code (/login) must never replace it.
  */
 export function saveSignupPendingUnlessOther(email: string, keepOther: boolean): void {

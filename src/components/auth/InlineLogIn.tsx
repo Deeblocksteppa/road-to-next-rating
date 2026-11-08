@@ -98,7 +98,8 @@ export function InlineLogIn({
             passwordRef={passwordRef}
           />
           {/* Leaves the screen; the result stays on this device, and Home
-              claims it once the new password signs the player in. */}
+              claims it once the new password signs the player in, unless
+              another address's sign-up is pending here. */}
           <Link
             href="/forgot-password"
             className="-mb-2 self-start py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
