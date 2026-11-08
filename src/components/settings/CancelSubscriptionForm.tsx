@@ -28,7 +28,7 @@ export function CancelSubscriptionForm({
 
   // A subscription that had already ended in Stripe leaves the player on the
   // free plan, which this screen doesn't serve: Settings says what happened.
-  function run(action: typeof cancelSubscription, endedPath: (at: string | null) => string) {
+  function run(action: typeof cancelSubscription, endedPath: string) {
     setFailed(false);
     startTransition(async () => {
       const result = await action();
@@ -37,7 +37,7 @@ export function CancelSubscriptionForm({
         return;
       }
       if (result.ended) {
-        router.replace(endedPath(result.ended.at));
+        router.replace(endedPath);
         return;
       }
       router.refresh();
@@ -54,7 +54,7 @@ export function CancelSubscriptionForm({
         </p>
         <button
           type="button"
-          onClick={() => run(resumeSubscription, resumeEndedPath)}
+          onClick={() => run(resumeSubscription, "/settings?billing=resume_ended")}
           disabled={pending}
           className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
         >
@@ -69,7 +69,7 @@ export function CancelSubscriptionForm({
     <div className="flex flex-col gap-3">
       <button
         type="button"
-        onClick={() => run(cancelSubscription, () => "/settings?billing=ended")}
+        onClick={() => run(cancelSubscription, "/settings?billing=ended")}
         disabled={pending}
         // The Delete account button's recipe: danger text on a 12% danger
         // fill (~5.2:1). It was ink on solid danger, 3.06:1 and 2.37:1 on
@@ -81,10 +81,6 @@ export function CancelSubscriptionForm({
       {failed && <SupportError />}
     </div>
   );
-}
-
-function resumeEndedPath(at: string | null): string {
-  return at ? `/settings?billing=resume_ended&on=${at.slice(0, 10)}` : "/settings?billing=resume_ended";
 }
 
 function SupportError() {

@@ -50,7 +50,7 @@ export type CancelResult =
    * subscription had already ended in Stripe: the profile is free now and
    * nothing was sent to Stripe.
    */
-  | { ok: true; ended?: { at: string | null } }
+  | { ok: true; ended?: true }
   | { error: string };
 
 /**
@@ -100,7 +100,7 @@ async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelR
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/settings");
 
-  let ended: { at: string | null } | undefined;
+  let ended = false;
   try {
     const { data: profile } = await supabase
       .from("profiles")
@@ -139,7 +139,7 @@ async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelR
       };
     }
     if (now.kind === "ended") {
-      ended = { at: now.endedAt };
+      ended = true;
     } else if (now.kind === "live" && now.sub.cancel_at_period_end !== cancelAtPeriodEnd) {
       try {
         const subscription = await getStripe().subscriptions.update(now.sub.id, {
@@ -158,7 +158,7 @@ async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelR
           throw err;
         }
         if (again.kind !== "ended") throw err;
-        ended = { at: again.endedAt };
+        ended = true;
       }
     }
   } catch (err) {
@@ -176,7 +176,7 @@ async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelR
   revalidatePath("/settings");
   revalidatePath("/settings/manage");
 
-  return ended ? { ok: true, ended } : { ok: true };
+  return ended ? { ok: true, ended: true } : { ok: true };
 }
 
 export type DeleteAccountResult = { ok: true } | { error: string };

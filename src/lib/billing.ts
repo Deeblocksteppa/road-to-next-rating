@@ -359,12 +359,8 @@ export type RefreshResult =
    * access, and another of theirs that does exists. Profile synced to that one.
    */
   | { kind: "replaced"; sub: Stripe.Subscription }
-  /**
-   * Nothing of theirs gives access or can still charge. Profile now free.
-   * `endedAt` is when the profile's subscription ended, when Stripe has it (not
-   * for a missing one).
-   */
-  | { kind: "ended"; endedAt: string | null }
+  /** Nothing of theirs gives access or can still charge. Profile now free. */
+  | { kind: "ended" }
   /**
    * Nothing gives access, so the profile is now free, but something of theirs
    * hasn't ended (`incomplete`, `paused`) and could still charge. Not "ended":
@@ -465,10 +461,7 @@ export async function refreshOwnedSubscription(
     await write(clearSubscription(userId, cas));
   }
   if (owned.canStillCharge) return { kind: "inactive" };
-  return {
-    kind: "ended",
-    endedAt: stored?.ended_at ? new Date(stored.ended_at * 1000).toISOString() : null,
-  };
+  return { kind: "ended" };
 }
 
 export type HealResult = RefreshResult["kind"] | "skipped" | "failed";
