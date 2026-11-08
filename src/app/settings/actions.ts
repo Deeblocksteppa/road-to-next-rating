@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { closeBilling, refreshOwnedSubscription, syncSubscription } from "@/lib/billing";
-import { getStripe } from "@/lib/stripe";
+import { type CancelOutcome, closeBilling, setCancelAtPeriodEnd } from "@/lib/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -64,7 +63,7 @@ export type CancelResult =
  * claiming the subscription is already gone.
  */
 export async function cancelSubscription(): Promise<CancelResult> {
-  return setCancelAtPeriodEnd(true);
+  return setCancel(true);
 }
 
 /**
@@ -73,26 +72,19 @@ export async function cancelSubscription(): Promise<CancelResult> {
  * that has fully ended can't be resumed in Stripe: that comes back as `ended`.
  */
 export async function resumeSubscription(): Promise<CancelResult> {
-  return setCancelAtPeriodEnd(false);
+  return setCancel(false);
 }
 
 /**
- * Cancel and resume share one path. It reads the subscription from Stripe
- * first (`refreshOwnedSubscription`), because the profile can be stale: a
- * webhook that never arrived, or arrived out of order. The id is checked
- * against the subscription's own metadata, so a rewritten profile row can't
- * point this at someone else's billing.
- *
- * - Ended in Stripe: the profile is synced to free and nothing is sent.
- * - Already set the way the player asked (done in the Stripe dashboard): synced,
- *   nothing sent.
- * - Another live subscription of theirs replaced a dead one: the profile moves
- *   to it and the page re-renders with its real state; nothing is sent.
- * - Otherwise the update goes to Stripe. If it fails, one more read tells a
- *   subscription that ended in between (cancelled in the dashboard while this
- *   screen was open) from a real failure.
+ * Cancel and resume share one path, `setCancelAtPeriodEnd` in `billing.ts`: it
+ * reads the profile, re-reads the subscription from Stripe (the profile can be
+ * stale: a webhook that never arrived, or arrived out of order), sends the
+ * change only if Stripe doesn't have it yet, and writes compare-and-set. The id
+ * is checked against the subscription's own metadata, so a rewritten profile
+ * row can't point this at someone else's billing. A write that loses to a
+ * newer one twice shows the profile as it is now (`ok`, the page re-renders).
  */
-async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelResult> {
+async function setCancel(cancelAtPeriodEnd: boolean): Promise<CancelResult> {
   const supabase = await createClient();
 
   const {
@@ -100,83 +92,45 @@ async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelR
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/settings");
 
-  let ended = false;
+  let outcome: CancelOutcome;
   try {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("stripe_subscription_id, stripe_customer_id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const subscriptionId = profile?.stripe_subscription_id;
-    if (!subscriptionId) {
-      return {
-        error: cancelAtPeriodEnd
-          ? "We couldn't find a Stripe subscription on your account. Contact support and we'll sort it out."
-          : "No Stripe subscription found on your account.",
-      };
-    }
-
-    const ids = {
-      subscriptionId,
-      customerId: profile?.stripe_customer_id ?? null,
-      email: user.email ?? null,
-    };
-
-    const now = await refreshOwnedSubscription(user.id, ids);
-    if (now.kind === "not_owned") {
-      return {
-        error:
-          "We couldn't match that subscription to your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
-      };
-    }
-    if (now.kind === "inactive") {
-      // Nothing gives access, but a subscription of theirs could still charge
-      // (incomplete or paused): not something to settle with a button.
-      return {
-        error:
-          "Your subscription isn't active in Stripe right now. Email support@roadtonextrating.com and we'll sort it out.",
-      };
-    }
-    if (now.kind === "ended") {
-      ended = true;
-    } else if (now.kind === "live" && now.sub.cancel_at_period_end !== cancelAtPeriodEnd) {
-      try {
-        const subscription = await getStripe().subscriptions.update(now.sub.id, {
-          cancel_at_period_end: cancelAtPeriodEnd,
-        });
-        // Reflect only what Stripe confirmed in this response (service role:
-        // players can't write billing columns). Compare-and-set: if a webhook
-        // moved the profile meanwhile, its write (re-read from Stripe) stands.
-        await syncSubscription(user.id, subscription, { expected: now.sub.id });
-      } catch (err) {
-        let again: Awaited<ReturnType<typeof refreshOwnedSubscription>>;
-        try {
-          again = await refreshOwnedSubscription(user.id, ids);
-        } catch (rereadErr) {
-          console.error("Re-read after a failed subscription update also failed", rereadErr);
-          throw err;
-        }
-        if (again.kind !== "ended") throw err;
-        ended = true;
-      }
-    }
+    outcome = await setCancelAtPeriodEnd(user.id, user.email ?? null, cancelAtPeriodEnd);
   } catch (err) {
     console.error(cancelAtPeriodEnd ? "cancelSubscription failed" : "resumeSubscription failed", err);
+    // Never the error's own text: it can be raw Stripe or database output.
+    return {
+      error: cancelAtPeriodEnd
+        ? "Couldn't cancel right now. Please try again."
+        : "Couldn't resume. Please try again.",
+    };
+  }
+
+  if (outcome === "no_subscription") {
+    return {
+      error: cancelAtPeriodEnd
+        ? "We couldn't find a Stripe subscription on your account. Contact support and we'll sort it out."
+        : "No Stripe subscription found on your account.",
+    };
+  }
+  if (outcome === "not_owned") {
     return {
       error:
-        err instanceof Error
-          ? err.message
-          : cancelAtPeriodEnd
-            ? "Couldn't cancel right now. Please try again."
-            : "Couldn't resume. Please try again.",
+        "We couldn't match that subscription to your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
+    };
+  }
+  if (outcome === "inactive") {
+    // Nothing gives access, but a subscription of theirs could still charge
+    // (incomplete or paused): not something to settle with a button.
+    return {
+      error:
+        "Your subscription isn't active in Stripe right now. Email support@roadtonextrating.com and we'll sort it out.",
     };
   }
 
   revalidatePath("/settings");
   revalidatePath("/settings/manage");
 
-  return ended ? { ok: true, ended: true } : { ok: true };
+  return outcome === "ended" ? { ok: true, ended: true } : { ok: true };
 }
 
 export type DeleteAccountResult = { ok: true } | { error: string };

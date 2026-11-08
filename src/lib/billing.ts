@@ -19,6 +19,13 @@ import {
  * cancel, resume and page loads (`refreshOwnedSubscription`). Every path writes the same fields from the same Stripe
  * object, so running more than one is harmless.
  *
+ * Every writer except the checkout grant (and the paywall's first write of
+ * `stripe_customer_id`, which only fills an empty column) is compare-and-set on a snapshot
+ * (`readBillingSnapshot`): it reads the profile's billing columns before any
+ * Stripe read and writes only if all of them are still what it read. A write
+ * that lost to a newer one changes nothing, and the caller re-runs from fresh
+ * reads or gives up (see each caller).
+ *
  * Uses the service-role client: webhook requests carry no user session, and
  * players may only update their two reminder columns
  * (20261029180000_profiles_column_grants.sql).
@@ -64,21 +71,64 @@ export async function findProfileId(opts: {
   return null;
 }
 
-/**
- * Only write when the profile still names this subscription id (null: names
- * none). Used by the re-reads and the webhook, so a write based on a read that
- * a newer write has since overtaken changes nothing.
- */
-export type ExpectedSubscription = { expected: string | null };
+/** The profile columns Stripe state is written to. */
+const BILLING_COLUMNS = [
+  "subscription_status",
+  "plan_type",
+  "renews_at",
+  "cancel_at_period_end",
+  "stripe_subscription_id",
+  "stripe_customer_id",
+] as const;
 
-function expecting<Q extends { eq: (c: string, v: string) => Q; is: (c: string, v: null) => Q }>(
-  query: Q,
-  opts?: ExpectedSubscription
-): Q {
-  if (!opts) return query;
-  return opts.expected === null
-    ? query.is("stripe_subscription_id", null)
-    : query.eq("stripe_subscription_id", opts.expected);
+export type BillingSnapshot = {
+  subscription_status: string;
+  plan_type: string | null;
+  renews_at: string | null;
+  cancel_at_period_end: boolean;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+};
+
+/**
+ * The profile's billing columns as they are now. Read before any Stripe read,
+ * then passed to the write, which only lands if every column still matches.
+ */
+export async function readBillingSnapshot(profileId: string): Promise<BillingSnapshot> {
+  const { data, error } = await createAdminClient()
+    .from("profiles")
+    .select(BILLING_COLUMNS.join(", "))
+    .eq("id", profileId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error(`No profile ${profileId} to read billing from`);
+  return data as unknown as BillingSnapshot;
+}
+
+/** Write only if the profile's billing columns all still match this snapshot. */
+export type IfUnchanged = { snapshot: BillingSnapshot };
+
+/**
+ * The one billing write. With `opts.snapshot`, the update matches every
+ * billing column against it (`is` for nulls), so a write based on reads that a
+ * newer write has overtaken changes nothing. Returns the row as written, or
+ * null when nothing matched.
+ */
+async function writeBilling(
+  profileId: string,
+  fields: Partial<BillingSnapshot>,
+  opts?: IfUnchanged
+): Promise<BillingSnapshot | null> {
+  let query = createAdminClient().from("profiles").update(fields).eq("id", profileId);
+  if (opts) {
+    for (const column of BILLING_COLUMNS) {
+      const value = opts.snapshot[column];
+      query = value === null ? query.is(column, null) : query.eq(column, value);
+    }
+  }
+  const { data, error } = await query.select(BILLING_COLUMNS.join(", "));
+  if (error) throw error;
+  return ((data as unknown as BillingSnapshot[] | null) ?? [])[0] ?? null;
 }
 
 /**
@@ -88,41 +138,56 @@ function expecting<Q extends { eq: (c: string, v: string) => Q; is: (c: string, 
  * subscription is still 'active' until the period actually ends, because the
  * user paid for that time.
  *
- * Returns false only when `opts.expected` no longer matched, so nothing was written.
+ * Returns the row as written, or null when `opts.snapshot` no longer matched.
  */
 export async function syncSubscription(
   profileId: string,
   sub: Stripe.Subscription,
-  opts?: ExpectedSubscription
-): Promise<boolean> {
-  const supabase = createAdminClient();
-
+  opts?: IfUnchanged
+): Promise<BillingSnapshot | null> {
   const status = statusFromStripe(sub.status);
   const isActive = status === "active";
 
-  const { data, error } = await expecting(
-    supabase
-      .from("profiles")
-      .update({
-        subscription_status: status,
-        plan_type: isActive ? planFromSubscription(sub) : null,
-        renews_at: isActive ? periodEndISO(sub) : null,
-        cancel_at_period_end: isActive ? sub.cancel_at_period_end : false,
-        stripe_subscription_id: isActive ? sub.id : null,
-        stripe_customer_id: idOf(sub.customer),
-      })
-      .eq("id", profileId),
+  return writeBilling(
+    profileId,
+    {
+      subscription_status: status,
+      plan_type: isActive ? planFromSubscription(sub) : null,
+      renews_at: isActive ? periodEndISO(sub) : null,
+      cancel_at_period_end: isActive ? sub.cancel_at_period_end : false,
+      stripe_subscription_id: isActive ? sub.id : null,
+      stripe_customer_id: idOf(sub.customer),
+    },
     opts
-  ).select("id");
-
-  if (error) throw error;
-  return (data?.length ?? 0) > 0;
+  );
 }
 
 /** A compare-and-set write lost to a newer one. Callers throw it so nothing acts on the stale read. */
 export class ProfileChangedError extends Error {
   constructor(profileId: string) {
     super(`Profile ${profileId} changed while its subscription was being re-read`);
+  }
+}
+
+/** Throw `ProfileChangedError` when a compare-and-set write matched nothing. */
+async function landed(profileId: string, written: Promise<BillingSnapshot | null>): Promise<BillingSnapshot> {
+  const row = await written;
+  if (!row) throw new ProfileChangedError(profileId);
+  return row;
+}
+
+/**
+ * The webhook's rule for a lost compare-and-set: run the whole read-Stripe-
+ * write cycle once more from fresh reads; a second loss throws, so the webhook
+ * answers 500 and Stripe retries later.
+ */
+async function rerunOnceOnConflict<T>(profileId: string, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (!(err instanceof ProfileChangedError)) throw err;
+    console.warn("Billing write lost to a newer one; re-running once from fresh reads", { profileId });
+    return run();
   }
 }
 
@@ -174,8 +239,18 @@ export type BillingIds = {
  * failed, two tabs making two subscriptions). Search is eventually consistent,
  * so a subscription minutes old may only show through its customer, which the
  * email lookup finds when the profile never got the customer id either.
+ *
+ * `strict` (the deletion webhook): a missing subscription or customer throws
+ * instead of counting as "nothing there", because there it means the key
+ * belongs to another account or mode, and "nothing there" would drop a payer.
  */
-async function findBilling(stripe: Stripe, userId: string, ids: BillingIds) {
+async function findBilling(
+  stripe: Stripe,
+  userId: string,
+  ids: BillingIds,
+  opts: { strict?: boolean } = {}
+) {
+  const lenient = <T>(call: Promise<T>, fallback: T) => (opts.strict ? call : orWhenMissing(call, fallback));
   const subscriptions = new Map<string, Stripe.Subscription>();
   const customerIds = new Set<string>(ids.customerId ? [ids.customerId] : []);
 
@@ -186,7 +261,10 @@ async function findBilling(stripe: Stripe, userId: string, ids: BillingIds) {
   };
 
   if (ids.subscriptionId) {
-    const sub = await orWhenMissing(stripe.subscriptions.retrieve(ids.subscriptionId), null);
+    const sub = await lenient<Stripe.Subscription | null>(
+      stripe.subscriptions.retrieve(ids.subscriptionId),
+      null
+    );
     if (sub) keep(sub);
   }
 
@@ -205,7 +283,7 @@ async function findBilling(stripe: Stripe, userId: string, ids: BillingIds) {
   }
 
   for (const customer of Array.from(customerIds)) {
-    const listed = await orWhenMissing(
+    const listed = await lenient<Stripe.Subscription[]>(
       stripe.subscriptions
         .list({ customer, status: "all", limit: 100 })
         .autoPagingToArray({ limit: 1000 }),
@@ -318,9 +396,10 @@ export async function closeBilling(
 async function ownedSubscriptions(
   stripe: Stripe,
   userId: string,
-  ids: BillingIds
+  ids: BillingIds,
+  opts: { strict?: boolean } = {}
 ): Promise<{ access: Stripe.Subscription | null; canStillCharge: boolean }> {
-  const found = await findBilling(stripe, userId, ids);
+  const found = await findBilling(stripe, userId, ids, opts);
   const open = found.subscriptions.filter((sub) => ownedBy(userId, sub.metadata) && !hasEnded(sub));
   const access = open
     .filter((sub) => statusFromStripe(sub.status) === "active")
@@ -352,8 +431,11 @@ async function assertCustomerHere(stripe: Stripe, userId: string, customerId: st
 }
 
 export type RefreshResult =
-  /** The profile's own subscription, theirs and giving access. Profile synced to it. */
-  | { kind: "live"; sub: Stripe.Subscription }
+  /**
+   * The profile's own subscription, theirs and giving access. Profile synced to
+   * it; `profile` is the row as written, the snapshot for a write that follows.
+   */
+  | { kind: "live"; sub: Stripe.Subscription; profile: BillingSnapshot }
   /**
    * The profile's subscription had ended, isn't in Stripe, or no longer gives
    * access, and another of theirs that does exists. Profile synced to that one.
@@ -377,9 +459,9 @@ export type RefreshResult =
  * Cancel or Keep button on it.
  *
  * Every Stripe read happens before any write: if Stripe fails, this throws and
- * the profile is unchanged. Writes are compare-and-set on the id the caller
- * read (`ids.subscriptionId`); losing to a newer write throws
- * `ProfileChangedError`.
+ * the profile is unchanged. The ids come from `snapshot`, which the caller read
+ * before calling (so before any Stripe read), and the write is compare-and-set
+ * on it: losing to a newer write throws `ProfileChangedError`, nothing written.
  *
  * - Ownership: the id comes from the player's own profile row, which they could
  *   once rewrite through the REST API. Checkout stamps `supabase_user_id` onto
@@ -397,9 +479,19 @@ export type RefreshResult =
  */
 export async function refreshOwnedSubscription(
   userId: string,
-  ids: BillingIds & { subscriptionId: string },
+  email: string | null,
+  snapshot: BillingSnapshot,
   stripe: Stripe = getStripe()
 ): Promise<RefreshResult> {
+  if (!snapshot.stripe_subscription_id) {
+    throw new Error(`Profile ${userId} has no subscription to re-read`);
+  }
+  const ids = {
+    subscriptionId: snapshot.stripe_subscription_id,
+    customerId: snapshot.stripe_customer_id,
+    email,
+  };
+
   let stored: Stripe.Subscription | null;
   try {
     stored = await stripe.subscriptions.retrieve(ids.subscriptionId);
@@ -423,14 +515,12 @@ export async function refreshOwnedSubscription(
     return { kind: "not_owned" };
   }
 
-  const cas = { expected: ids.subscriptionId };
-  const write = async (written: Promise<boolean>) => {
-    if (!(await written)) throw new ProfileChangedError(userId);
-  };
+  const cas = { snapshot };
+  const write = (written: Promise<BillingSnapshot | null>) => landed(userId, written);
 
   if (stored && !hasEnded(stored) && statusFromStripe(stored.status) === "active") {
-    await write(syncSubscription(userId, stored, cas));
-    return { kind: "live", sub: stored };
+    const profile = await write(syncSubscription(userId, stored, cas));
+    return { kind: "live", sub: stored, profile };
   }
 
   const customerId = ids.customerId ?? idOf(stored?.customer);
@@ -464,46 +554,131 @@ export async function refreshOwnedSubscription(
   return { kind: "ended" };
 }
 
-export type HealResult = RefreshResult["kind"] | "skipped" | "failed";
+export type HealResult = RefreshResult["kind"] | "skipped" | "conflict" | "failed";
 
 /**
  * `refreshOwnedSubscription` for a page load. Runs only for a paid profile
  * (and, with `onlyIfPastRenewal`, only once its renewal date has passed, which
  * is when a missed webhook shows). Never throws: on any failure the page
- * renders what is stored, and nothing was written.
+ * renders what is stored, and nothing was written. A write that loses to a
+ * newer one (a cancel landing while this read Stripe) is skipped, not retried:
+ * the page then reads the profile fresh, with the newer write in it.
  */
 export async function healSubscription(
   userId: string,
   email: string | null,
-  opts: { onlyIfPastRenewal: boolean }
+  opts: { onlyIfPastRenewal: boolean },
+  stripe?: Stripe
 ): Promise<HealResult> {
   try {
-    const { data: profile, error } = await createAdminClient()
-      .from("profiles")
-      .select("subscription_status, renews_at, stripe_subscription_id, stripe_customer_id")
-      .eq("id", userId)
-      .maybeSingle();
-    if (error) throw error;
-    if (profile?.subscription_status !== "active" || !profile.stripe_subscription_id) {
+    const snapshot = await readBillingSnapshot(userId);
+    if (snapshot.subscription_status !== "active" || !snapshot.stripe_subscription_id) {
       return "skipped";
     }
     if (
       opts.onlyIfPastRenewal &&
-      (!profile.renews_at || new Date(profile.renews_at).getTime() > Date.now())
+      (!snapshot.renews_at || new Date(snapshot.renews_at).getTime() > Date.now())
     ) {
       return "skipped";
     }
 
-    const result = await refreshOwnedSubscription(userId, {
-      subscriptionId: profile.stripe_subscription_id,
-      customerId: profile.stripe_customer_id ?? null,
-      email,
-    });
+    const result = await refreshOwnedSubscription(userId, email, snapshot, stripe ?? getStripe());
     return result.kind;
   } catch (err) {
+    if (err instanceof ProfileChangedError) {
+      console.warn("healSubscription: profile changed meanwhile, write skipped", { userId });
+      return "conflict";
+    }
     console.error("healSubscription failed, showing the stored state", { userId }, err);
     return "failed";
   }
+}
+
+export type CancelOutcome =
+  /** Stripe now says what was asked (sent now, or already so). Profile synced. */
+  | "done"
+  /** Ended in Stripe already. Profile free, nothing sent. */
+  | "ended"
+  | "not_owned"
+  /** Nothing gives access, but something could still charge. Profile free. */
+  | "inactive"
+  | "no_subscription"
+  /** Lost to a newer write twice. The page shows what the profile says now. */
+  | "conflict";
+
+/**
+ * Settings' cancel and resume. Reads the profile, re-reads the subscription
+ * from Stripe (`refreshOwnedSubscription`, because the profile can be stale: a
+ * webhook that never arrived, or arrived out of order), sends the change only
+ * if Stripe doesn't already have it, and mirrors Stripe's answer onto the row
+ * the re-read wrote, compare-and-set. A lost write re-runs the whole cycle once;
+ * the second pass re-reads Stripe first, so it never sends the change twice. A
+ * second loss, or a second pass that finds the subscription gone from the
+ * profile (the deletion webhook cleared it meanwhile), returns `conflict`: the
+ * page shows the profile as it is now.
+ */
+export async function setCancelAtPeriodEnd(
+  userId: string,
+  email: string | null,
+  cancelAtPeriodEnd: boolean,
+  stripe: Stripe = getStripe()
+): Promise<CancelOutcome> {
+  try {
+    return await setCancelOnce(userId, email, cancelAtPeriodEnd, stripe, { rerun: false });
+  } catch (err) {
+    if (!(err instanceof ProfileChangedError)) throw err;
+    console.warn("setCancelAtPeriodEnd: billing write lost to a newer one; re-running once from fresh reads", { userId });
+  }
+  try {
+    return await setCancelOnce(userId, email, cancelAtPeriodEnd, stripe, { rerun: true });
+  } catch (err) {
+    if (!(err instanceof ProfileChangedError)) throw err;
+    console.warn("setCancelAtPeriodEnd: profile changed twice, showing its current state", { userId });
+    return "conflict";
+  }
+}
+
+async function setCancelOnce(
+  userId: string,
+  email: string | null,
+  cancelAtPeriodEnd: boolean,
+  stripe: Stripe,
+  opts: { rerun: boolean }
+): Promise<CancelOutcome> {
+  const snapshot = await readBillingSnapshot(userId);
+  if (!snapshot.stripe_subscription_id) return opts.rerun ? "conflict" : "no_subscription";
+
+  const now = await refreshOwnedSubscription(userId, email, snapshot, stripe);
+  // `replaced`: the profile moved to another live subscription of theirs; the
+  // page re-renders with its real state and nothing is sent.
+  if (now.kind !== "live") return now.kind === "replaced" ? "done" : now.kind;
+  if (now.sub.cancel_at_period_end === cancelAtPeriodEnd) return "done";
+
+  let updated: Stripe.Subscription;
+  try {
+    updated = await stripe.subscriptions.update(now.sub.id, {
+      cancel_at_period_end: cancelAtPeriodEnd,
+    });
+  } catch (err) {
+    // One more read tells a subscription that ended in between (cancelled in
+    // the dashboard while the screen was open) from a real failure.
+    let again: RefreshResult;
+    try {
+      const fresh = await readBillingSnapshot(userId);
+      if (!fresh.stripe_subscription_id) throw err;
+      again = await refreshOwnedSubscription(userId, email, fresh, stripe);
+    } catch (rereadErr) {
+      if (rereadErr instanceof ProfileChangedError) throw rereadErr;
+      if (rereadErr !== err) console.error("Re-read after a failed subscription update also failed", rereadErr);
+      throw err;
+    }
+    if (again.kind !== "ended") throw err;
+    return "ended";
+  }
+
+  // Only what Stripe confirmed in this response, onto the row the re-read wrote.
+  await landed(userId, syncSubscription(userId, updated, { snapshot: now.profile }));
+  return "done";
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -628,42 +803,38 @@ export async function closeOrphanedSubscription(
 }
 
 /**
- * The profile's current subscription id, and whether it is a different one
- * from `subscriptionId` that hasn't ended in Stripe. An id that exists only in
- * the other mode throws (logged), so Stripe retries and a person looks, rather
- * than a live payer being cleared by a test-mode event.
+ * Whether the profile's current subscription is a different one from the
+ * event's that hasn't ended in Stripe. An id that exists only in the other mode
+ * throws (logged), so Stripe retries and a person looks, rather than a live
+ * payer being cleared by a test-mode event. `strict` (deletion): any missing id
+ * throws, since a profile id this key can't see is a key or account mix-up.
  */
-async function profileSubscription(
+async function otherLiveSubscription(
   profileId: string,
-  subscriptionId: string,
-  stripe: Stripe
-): Promise<{ current: string | null; otherLive: boolean }> {
-  const { data, error } = await createAdminClient()
-    .from("profiles")
-    .select("stripe_subscription_id")
-    .eq("id", profileId)
-    .maybeSingle();
-  if (error) throw error;
-
-  const current = data?.stripe_subscription_id ?? null;
-  if (!current || current === subscriptionId) return { current, otherLive: false };
+  current: string | null,
+  eventSubscriptionId: string,
+  stripe: Stripe,
+  opts: { strict: boolean }
+): Promise<boolean> {
+  if (!current || current === eventSubscriptionId) return false;
 
   let sub: Stripe.Subscription | null;
   try {
     sub = await stripe.subscriptions.retrieve(current);
   } catch (err) {
     if (!isMissing(err)) throw err;
-    if (isOtherMode(err)) {
-      console.error("STRIPE MODE MISMATCH: profile's subscription is in the other mode, event not applied", {
+    if (opts.strict || isOtherMode(err)) {
+      console.error("STRIPE KEY MISMATCH: profile's subscription can't be read with this key, event not applied", {
         profileId,
         current,
-        event: subscriptionId,
+        event: eventSubscriptionId,
+        otherMode: isOtherMode(err),
       });
       throw err;
     }
     sub = null;
   }
-  return { current, otherLive: !!sub && !hasEnded(sub) };
+  return !!sub && !hasEnded(sub);
 }
 
 export type WebhookOutcome =
@@ -683,21 +854,23 @@ export type WebhookOutcome =
 async function settleWithoutAccess(
   profileId: string,
   sub: Stripe.Subscription,
-  cas: ExpectedSubscription,
+  snapshot: BillingSnapshot,
   stripe: Stripe,
-  free: () => Promise<boolean>
+  opts: { strict: boolean },
+  free: () => Promise<BillingSnapshot | null>
 ): Promise<WebhookOutcome> {
-  const owned = await ownedSubscriptions(stripe, profileId, {
-    email: null,
-    subscriptionId: null,
-    customerId: idOf(sub.customer),
-  });
+  const owned = await ownedSubscriptions(
+    stripe,
+    profileId,
+    { email: null, subscriptionId: null, customerId: idOf(sub.customer) },
+    opts
+  );
   if (owned.access) {
-    if (!(await syncSubscription(profileId, owned.access, cas))) throw new ProfileChangedError(profileId);
+    await landed(profileId, syncSubscription(profileId, owned.access, { snapshot }));
     console.warn(`Subscription ${sub.id} gives no access; profile moved to live ${owned.access.id}.`);
     return "synced_other";
   }
-  if (!(await free())) throw new ProfileChangedError(profileId);
+  await landed(profileId, free());
   return "cleared";
 }
 
@@ -715,43 +888,49 @@ async function settleWithoutAccess(
  * takes this one. `checkout.session.completed` has no such check: a finished
  * checkout always sets its subscription.
  *
- * Writes are compare-and-set on the id read here; losing to a newer write
- * throws, so the webhook answers 500 and Stripe retries with fresh reads.
+ * The profile is found from the event and its billing columns read before
+ * Stripe is; the write is compare-and-set on them. A lost write re-runs the
+ * whole cycle once; a second loss throws (500, Stripe retries).
  */
 export async function applySubscriptionUpdated(
   event: Stripe.Subscription,
   stripe: Stripe = getStripe()
 ): Promise<WebhookOutcome> {
-  const sub = await orWhenMissing(stripe.subscriptions.retrieve(event.id), null);
-  if (!sub) {
-    console.warn(`Subscription ${event.id} on update isn't in Stripe — skipping.`);
-    return "skipped_missing";
-  }
-
   const profileId = await findProfileId({
-    metadataUserId: sub.metadata?.supabase_user_id,
-    subscriptionId: sub.id,
-    customerId: idOf(sub.customer),
+    metadataUserId: event.metadata?.supabase_user_id,
+    subscriptionId: event.id,
+    customerId: idOf(event.customer),
   });
   if (!profileId) {
     // Can legitimately arrive before checkout.session.completed on a first
     // subscribe. That event will sync the same subscription moments later.
-    console.warn(`No profile matched subscription ${sub.id} on update — skipping.`);
+    console.warn(`No profile matched subscription ${event.id} on update — skipping.`);
     return "skipped_no_profile";
   }
 
-  const { current, otherLive } = await profileSubscription(profileId, sub.id, stripe);
-  if (otherLive) {
-    console.warn(`Subscription ${sub.id} updated, but the profile is on live ${current} — left alone.`);
-    return "skipped_other_live";
-  }
+  return rerunOnceOnConflict(profileId, async () => {
+    const snapshot = await readBillingSnapshot(profileId);
 
-  const cas = { expected: current };
-  if (!hasEnded(sub) && statusFromStripe(sub.status) === "active") {
-    if (!(await syncSubscription(profileId, sub, cas))) throw new ProfileChangedError(profileId);
-    return "synced";
-  }
-  return settleWithoutAccess(profileId, sub, cas, stripe, () => syncSubscription(profileId, sub, cas));
+    const sub = await orWhenMissing(stripe.subscriptions.retrieve(event.id), null);
+    if (!sub) {
+      console.warn(`Subscription ${event.id} on update isn't in Stripe — skipping.`);
+      return "skipped_missing";
+    }
+
+    const current = snapshot.stripe_subscription_id;
+    if (await otherLiveSubscription(profileId, current, sub.id, stripe, { strict: false })) {
+      console.warn(`Subscription ${sub.id} updated, but the profile is on live ${current} — left alone.`);
+      return "skipped_other_live";
+    }
+
+    if (!hasEnded(sub) && statusFromStripe(sub.status) === "active") {
+      await landed(profileId, syncSubscription(profileId, sub, { snapshot }));
+      return "synced";
+    }
+    return settleWithoutAccess(profileId, sub, snapshot, stripe, { strict: false }, () =>
+      syncSubscription(profileId, sub, { snapshot })
+    );
+  });
 }
 
 /**
@@ -759,57 +938,93 @@ export async function applySubscriptionUpdated(
  * is already on a different subscription that is still live (an old one
  * ending after a new checkout must not drop a paying player), or another of
  * the player's subscriptions still gives access (then the profile moves to it).
+ *
+ * Never on the event's word: the subscription is retrieved with this
+ * deployment's key every time, even when its id is the profile's, and only
+ * `canceled` or `incomplete_expired` is acted on. Ended subscriptions stay
+ * retrievable (even after their customer is deleted in the dashboard: the
+ * subscription and the customer's subscription list still read, checked in the
+ * sandbox), so a missing one, or a missing customer, or a profile subscription
+ * this key can't see, means the event came from another account or mode:
+ * logged, nothing written, and the webhook answers 500.
+ *
+ * Compare-and-set and re-run as in `applySubscriptionUpdated`.
  */
 export async function applySubscriptionDeleted(
-  sub: Stripe.Subscription,
+  event: Stripe.Subscription,
   stripe: Stripe = getStripe()
 ): Promise<WebhookOutcome> {
   const profileId = await findProfileId({
-    metadataUserId: sub.metadata?.supabase_user_id,
-    subscriptionId: sub.id,
-    customerId: idOf(sub.customer),
+    metadataUserId: event.metadata?.supabase_user_id,
+    subscriptionId: event.id,
+    customerId: idOf(event.customer),
   });
   if (!profileId) {
-    console.warn(`No profile matched subscription ${sub.id} on delete — skipping.`);
+    console.warn(`No profile matched subscription ${event.id} on delete — skipping.`);
     return "skipped_no_profile";
   }
 
-  const { current, otherLive } = await profileSubscription(profileId, sub.id, stripe);
-  if (otherLive) {
-    console.warn(`Subscription ${sub.id} deleted, but the profile is on live ${current} — left alone.`);
-    return "skipped_other_live";
-  }
+  return rerunOnceOnConflict(profileId, async () => {
+    const snapshot = await readBillingSnapshot(profileId);
 
-  const cas = { expected: current };
-  return settleWithoutAccess(profileId, sub, cas, stripe, () => clearSubscription(profileId, cas));
+    let sub: Stripe.Subscription;
+    try {
+      sub = await stripe.subscriptions.retrieve(event.id);
+    } catch (err) {
+      if (isMissing(err)) {
+        console.error("STRIPE KEY MISMATCH: deleted subscription isn't in this Stripe account or mode, nothing changed", {
+          profileId,
+          subscription: event.id,
+          otherMode: isOtherMode(err),
+        });
+      } else {
+        console.error("Deleted subscription couldn't be read from Stripe, nothing changed", {
+          profileId,
+          subscription: event.id,
+        });
+      }
+      throw err;
+    }
+    if (!hasEnded(sub)) {
+      console.error("Deleted event, but Stripe has the subscription live: nothing changed", {
+        profileId,
+        subscription: sub.id,
+        status: sub.status,
+      });
+      throw new Error(`Subscription ${sub.id} is ${sub.status} in Stripe, not ended`);
+    }
+
+    const current = snapshot.stripe_subscription_id;
+    if (await otherLiveSubscription(profileId, current, sub.id, stripe, { strict: true })) {
+      console.warn(`Subscription ${sub.id} deleted, but the profile is on live ${current} — left alone.`);
+      return "skipped_other_live";
+    }
+
+    return settleWithoutAccess(profileId, sub, snapshot, stripe, { strict: true }, () =>
+      clearSubscription(profileId, { snapshot })
+    );
+  });
 }
 
 /**
- * Subscription ended for good — drop to the free tier. Returns false only when
- * `opts.expected` no longer matched, so nothing was written.
+ * Subscription ended for good — drop to the free tier. Returns the row as
+ * written, or null when `opts.snapshot` no longer matched.
  */
 export async function clearSubscription(
   profileId: string,
-  opts?: ExpectedSubscription
-): Promise<boolean> {
-  const supabase = createAdminClient();
-
-  const { data, error } = await expecting(
-    supabase
-      .from("profiles")
-      .update({
-        subscription_status: "free",
-        plan_type: null,
-        renews_at: null,
-        cancel_at_period_end: false,
-        stripe_subscription_id: null,
-        // stripe_customer_id is deliberately kept: the same Customer should be
-        // reused if they resubscribe, so their billing history stays in one place.
-      })
-      .eq("id", profileId),
+  opts?: IfUnchanged
+): Promise<BillingSnapshot | null> {
+  return writeBilling(
+    profileId,
+    {
+      subscription_status: "free",
+      plan_type: null,
+      renews_at: null,
+      cancel_at_period_end: false,
+      stripe_subscription_id: null,
+      // stripe_customer_id is deliberately kept: the same Customer should be
+      // reused if they resubscribe, so their billing history stays in one place.
+    },
     opts
-  ).select("id");
-
-  if (error) throw error;
-  return (data?.length ?? 0) > 0;
+  );
 }
