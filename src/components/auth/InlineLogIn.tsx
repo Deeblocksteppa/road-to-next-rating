@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { CredentialFields } from "@/components/auth/CredentialFields";
 import { AUTH_ERRORS, authErrorCode } from "@/lib/auth-errors";
 import { emailSignupCode } from "@/lib/signup-code";
 import { createClient } from "@/lib/supabase/client";
@@ -32,7 +33,6 @@ export function InlineLogIn({
 }) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -77,7 +77,9 @@ export function InlineLogIn({
   }
 
   return (
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center gap-5 bg-background px-6 py-12 text-ink">
+    // Top-aligned, so the password and the button stay above the keyboard
+    // that the password's autofocus opens.
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-5 bg-background px-6 pb-12 pt-20 text-ink">
       <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
         Log in
       </h1>
@@ -93,47 +95,17 @@ export function InlineLogIn({
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="login-email" className="text-[15px] font-medium text-ink-2">
-            Email
-          </label>
-          <input
-            ref={emailRef}
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
+          {/* The save form's block, so the address carried over sits where it was typed. */}
+          <CredentialFields
+            idPrefix="login"
+            email={email}
+            onEmailChange={setEmail}
+            password={password}
+            onPasswordChange={setPassword}
+            passwordAutoComplete="current-password"
+            emailRef={emailRef}
+            passwordRef={passwordRef}
           />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="login-password" className="text-[15px] font-medium text-ink-2">
-            Password
-          </label>
-          {/* The ring goes on the row so it wraps the field and its toggle. */}
-          <div className="flex h-12 w-full items-center rounded-md border border-line-strong bg-surface pl-4 pr-1 has-[input:focus-visible]:border-line-hover has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-optic">
-            <input
-              ref={passwordRef}
-              id="login-password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-pressed={showPassword}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="flex h-10 shrink-0 items-center rounded-sm px-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-2 transition-colors hover:text-ink"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
           {/* Leaves the screen; the result stays on this device, and Home
               claims it once the new password signs the player in. */}
           <Link

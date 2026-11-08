@@ -135,26 +135,37 @@ export function CodeEntry({
     if (digits.length === CODE_LENGTH) void submit(digits);
   }
 
+  // The digits left in the field after a wrong code are the ones that just
+  // failed: sending them again isn't the way on, so no accent until they change.
+  const ready = code.length === CODE_LENGTH && !checking && error !== AUTH_ERRORS.code_failed;
+
   return (
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col justify-center gap-7 bg-background px-6 py-12 text-ink">
+    // Top-aligned, so the field and "Continue" stay above the keyboard the
+    // field's autofocus opens.
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-7 bg-background px-6 pb-12 pt-20 text-ink">
       <div className="flex flex-col gap-2.5">
         <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
           Enter the code we emailed
         </h1>
-        <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-          {/* The dot stays with the address, so a long one never wraps it to
-              the start of a line. */}
-          Sent to <span className="break-words font-medium text-ink">{email}</span>
-          &nbsp;·{" "}
+        <div className="flex flex-col items-start">
+          {/* The address is one unit: it moves to the next line whole when
+              it fits there, and breaks inside only when it is wider than the
+              screen. */}
+          <p className="text-[16px] leading-[1.55] text-ink-2">
+            Sent to{" "}
+            <span className="inline-block max-w-full font-medium text-ink [overflow-wrap:anywhere]">
+              {email}
+            </span>
+          </p>
           <button
             type="button"
             onClick={onChangeEmail}
             disabled={checking}
-            className="-my-2 py-2 text-ink-2 disabled:pointer-events-none disabled:opacity-60 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+            className="-mb-2.5 flex min-h-11 items-center text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
           >
             Change email
           </button>
-        </p>
+        </div>
       </div>
 
       <form
@@ -180,14 +191,12 @@ export function CodeEntry({
             value={code}
             onChange={handleChange}
             readOnly={checking}
-            className="h-14 w-full rounded-md border border-line-strong bg-surface px-4 font-mono text-[28px] tabular-nums tracking-[0.3em] text-ink focus:border-line-hover"
+            // The digits selected after a failed code are there to be typed
+            // over, not a highlight: a muted selection, not the accent.
+            className="h-14 w-full rounded-md border border-line-strong bg-surface px-4 font-mono text-[28px] tabular-nums tracking-[0.3em] text-ink selection:bg-white/20 selection:text-ink focus:border-line-hover"
           />
           {error && (
-            <p
-              id="code-error"
-              role="alert"
-              className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-[16px] leading-[1.5] text-danger"
-            >
+            <p id="code-error" role="alert" className="text-[16px] leading-[1.5] text-danger">
               {error}
             </p>
           )}
@@ -203,10 +212,17 @@ export function CodeEntry({
           />
         </div>
 
+        {/* The accent only once there is a whole code to send. Short of
+            that, and while checking, the disabled style. */}
         <button
           type="submit"
-          disabled={checking || code.length !== CODE_LENGTH}
-          className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+          disabled={!ready}
+          className={[
+            "flex h-[52px] w-full items-center justify-center rounded-lg text-[15px] font-semibold transition-colors",
+            ready
+              ? "bg-optic text-optic-ink hover:bg-optic-hover active:scale-[0.98]"
+              : "pointer-events-none border border-line bg-surface text-ink-3",
+          ].join(" ")}
         >
           {checking ? "Checking…" : "Continue"}
         </button>

@@ -57,10 +57,8 @@ export default function Start() {
   // Only changes the plan's line about accounts. The buttons ask again when tapped.
   const [signedIn, setSignedIn] = useState(false);
   // Why the save form is open: where the player goes once signed in ("Start
-  // session" to the session, anything else to the plan), and which view it
-  // opens on (the plan's "Already confirmed? Log in" opens the log-in).
+  // session" to the session, anything else to the plan), and its subtitle.
   const [gateReason, setGateReason] = useState<"save" | "session">("save");
-  const [gateView, setGateView] = useState<"form" | "login">("form");
   // The button waiting on the save, and the one whose save failed.
   const [saving, setSaving] = useState<"save" | "session" | null>(null);
   const [saveFailed, setSaveFailed] = useState<"save" | "session" | null>(null);
@@ -174,18 +172,16 @@ export default function Start() {
 
   function handleLeaveGate() {
     setGateReason("save");
-    setGateView("form");
     setPhase("saved");
     window.scrollTo(0, 0);
   }
 
   /**
-   * "Start session", "Save my plan", and the pending line's "Enter code" and
-   * "Log in": claim for a signed-in player, the save form for anyone else
-   * (the code screen while a sign-up is waiting; `view` "login" opens the
-   * log-in).
+   * "Start session", "Save my plan", and the pending line's "Enter code":
+   * claim for a signed-in player, the save form for anyone else (the code
+   * screen while a sign-up is waiting).
    */
-  async function saveResult(reason: "save" | "session", view: "form" | "login" = "form") {
+  async function saveResult(reason: "save" | "session") {
     if (!answers || !diagnosis || !roadmap || saving) return;
     setSaving(reason);
     setSaveFailed(null);
@@ -213,7 +209,6 @@ export default function Start() {
     }
     setSaving(null);
     setGateReason(reason);
-    setGateView(view);
     setPhase("savegate");
     window.scrollTo(0, 0);
   }
@@ -261,7 +256,6 @@ export default function Start() {
         pendingEmail={pendingEmail}
         onPendingChange={setPendingEmail}
         reason={gateReason}
-        initialView={gateView}
       />
     );
   }
@@ -289,12 +283,6 @@ export default function Start() {
               onStartSession: () => saveResult("session"),
               onSavePlan: () => saveResult("save"),
               onEnterCode: () => saveResult("save"),
-              onLogIn: () => saveResult("save", "login"),
-              onChangeEmail: () => {
-                clearSignupPending();
-                setPendingEmail(null);
-                saveResult("save");
-              },
               onReplay: () => setPhase("reveal"),
               onStartOver: handleStartOver,
             }}

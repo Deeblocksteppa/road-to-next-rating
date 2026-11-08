@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { ResendCode } from "@/components/auth/ResendCode";
 import { SkillTitle } from "@/components/diagnosis/SkillTitle";
 import { ShotDemo } from "@/components/session/ShotDemo";
 import { AUTH_ERRORS } from "@/lib/auth-errors";
@@ -33,12 +32,8 @@ interface AnonymousContext {
   onStartSession: () => void;
   /** "Save my plan": the same form, without the session line. Signed in: claims, then opens /plan. */
   onSavePlan: () => void;
-  /** Drop the pending sign-up and reopen the form. */
-  onChangeEmail: () => void;
-  /** The pending sign-up's code screen. */
+  /** The pending sign-up's code screen (which has resend, change email and log in). */
   onEnterCode: () => void;
-  /** The save form's log-in, for a sign-up confirmed elsewhere. */
-  onLogIn: () => void;
   onReplay: () => void;
   onStartOver: () => void;
 }
@@ -120,8 +115,6 @@ export function PlanView({
           busy={anon.saving !== null}
           failed={anon.saveFailed === "save"}
           onEnterCode={anon.onEnterCode}
-          onChangeEmail={anon.onChangeEmail}
-          onLogIn={anon.onLogIn}
         />
       )}
 
@@ -386,58 +379,44 @@ function DrillRow({
 /**
  * Sign-up pending: status, not a pitch. A player who has just made an
  * account sees where it stands, never the "create an account" block again.
+ * One line and one way on: resend, a different address and logging in all
+ * live on the code screen.
  */
 function PendingStatus({
   email,
   busy,
   failed,
   onEnterCode,
-  onChangeEmail,
-  onLogIn,
 }: {
   email: string;
   /** The result's save is in flight (any of the plan's buttons): nothing opens twice. */
   busy: boolean;
-  /** "Enter code" or "Log in" couldn't save the result first, so nothing opened. */
+  /** "Enter code" couldn't save the result first, so nothing opened. */
   failed: boolean;
   onEnterCode: () => void;
-  onChangeEmail: () => void;
-  onLogIn: () => void;
 }) {
-  const action =
-    "-my-2 py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60";
   return (
-    <div className="flex flex-col gap-2.5 border-y border-line py-4">
-      {/* The live region is the sentence only: the resend countdown below
-          ticks every second and must not be read out each time. */}
-      <p role="status" className="text-pretty text-[16px] leading-[1.5] text-ink">
-        Enter the code we sent to <span className="break-words font-semibold">{email}</span> to
-        finish saving your plan.
+    <div className="flex flex-col items-start gap-1 border-y border-line py-4">
+      <p role="status" className="text-[16px] leading-[1.5] text-ink">
+        Finish saving your plan: enter the code we sent to{" "}
+        {/* The address moves to the next line whole when it fits there. */}
+        <span className="inline-block max-w-full [overflow-wrap:anywhere]">
+          <span className="font-semibold">{email}</span>.
+        </span>
       </p>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-        <button type="button" onClick={onEnterCode} disabled={busy} className={action}>
-          Enter code
-        </button>
-        <ResendCode email={email} />
-        <button type="button" onClick={onChangeEmail} disabled={busy} className={action}>
-          Change email
-        </button>
-      </div>
-      {/* The way out when the link was opened on another device: this one
-          can't know that happened. Logging in here claims this device's
-          plan, as the code would have. */}
-      <p className="text-[16px] leading-[1.5] text-ink-2">
-        Already confirmed?{" "}
-        <button
-          type="button"
-          onClick={onLogIn}
-          disabled={busy}
-          className="-my-2 py-2 text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
-        >
-          Log in
-        </button>
-      </p>
-      {failed && <SaveError />}
+      <button
+        type="button"
+        onClick={onEnterCode}
+        disabled={busy}
+        className="-mb-2.5 flex min-h-11 items-center text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
+      >
+        Enter code
+      </button>
+      {failed && (
+        <div className="mt-4 self-stretch">
+          <SaveError />
+        </div>
+      )}
     </div>
   );
 }

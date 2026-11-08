@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { claimMySignup } from "@/app/auth/actions";
 import { CodeEntry } from "@/components/auth/CodeEntry";
+import { CredentialFields } from "@/components/auth/CredentialFields";
 import { InlineLogIn } from "@/components/auth/InlineLogIn";
 import { ConsentLine } from "@/components/legal/ConsentLine";
 import { AUTH_ERRORS, authErrorCode, isEmailIntervalLimit } from "@/lib/auth-errors";
@@ -20,16 +21,18 @@ const MIN_PASSWORD_LENGTH = 8;
  * Post-roadmap Save Gate. Creates an account, then claims the anonymous
  * assessment/diagnosis/plan rows into it.
  *
- * Three screens, never mixed:
+ * Three screens, never mixed, each top-aligned so the field and its button
+ * stay above the phone keyboard the autofocus opens:
  *
- *   - the form: a title, one line on what the account keeps, email and
- *     password in one block, "Create account", and "Not now" back to the plan;
+ *   - the form: a title, one line on what the account keeps (from "Start
+ *     session", that sessions need one), email and password in one block,
+ *     "Create account", and "Not now" back to the plan;
  *   - the code screen (`CodeEntry`), shown once a sign-up is waiting on the
  *     6-digit code it emailed. It replaces the form outright;
  *   - the log-in (`InlineLogIn`), for an address that already has an account
  *     ("Log in" at the form's top right or on its existing-account note, or
- *     "Already confirmed? Log in" on the code screen or the plan's pending
- *     line). Logging in claims the plan the same way.
+ *     "Already confirmed? Log in" on the code screen). Logging in claims the
+ *     plan the same way.
  *
  * Nothing is sent until the result's save (`saveResult`) has finished with
  * all three rows: the sign-up carries their ids, and a partial set is never
@@ -48,7 +51,6 @@ export function SaveGate({
   pendingEmail,
   onPendingChange,
   reason = "save",
-  initialView = "form",
 }: {
   /** The anonymous result's save (`saveAnonymousResult`): the complete set of ids, or a rejection. */
   saveResult: () => Promise<SavedIds>;
@@ -59,23 +61,17 @@ export function SaveGate({
   onPendingChange: (email: string | null) => void;
   /** Where the player goes once signed in: `session` from "Start session", the plan otherwise. */
   reason?: "save" | "session";
-  /** `login`: opened from the plan's "Already confirmed? Log in", straight to the log-in. */
-  initialView?: "form" | "login";
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // The address typed already has a confirmed account: the form says so and
   // offers the log-in in place of the sign-up. Editing the address clears it.
   const [existing, setExisting] = useState(false);
-  const [view, setView] = useState<"form" | "login">(initialView);
+  const [view, setView] = useState<"form" | "login">("form");
   // The address the log-in opens with.
-  const [loginEmail, setLoginEmail] = useState(initialView === "login" ? pendingEmail ?? "" : "");
-  // Where the log-in's Back goes: the plan when the gate opened on it, else
-  // back into the gate (the code screen while a sign-up waits, or the form).
-  const [loginFrom, setLoginFrom] = useState<"plan" | "gate">(initialView === "login" ? "plan" : "gate");
+  const [loginEmail, setLoginEmail] = useState("");
   const logInRef = useRef<HTMLButtonElement>(null);
 
   // The note's "Log in" is the way on now; left on the sign-up button, Enter
@@ -180,7 +176,6 @@ export function SaveGate({
 
   function openLogIn(address: string) {
     setLoginEmail(address);
-    setLoginFrom("gate");
     setError(null);
     setView("login");
     window.scrollTo(0, 0);
@@ -242,13 +237,8 @@ export function SaveGate({
           setView("form");
           window.scrollTo(0, 0);
         }}
-        // Back to where it opened from: the plan when it opened straight
-        // here, else the code screen while a sign-up is waiting, else the form.
+        // Back to the code screen while a sign-up is waiting, else the form.
         onBack={() => {
-          if (loginFrom === "plan") {
-            onSkip();
-            return;
-          }
           setView("form");
           window.scrollTo(0, 0);
         }}
@@ -277,7 +267,7 @@ export function SaveGate({
 
   /* ── The form ───────────────────────────────────────────────── */
   return (
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 py-8 text-ink">
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 pb-12 pt-8 text-ink">
       {/* An account already: the log-in, with whatever address is typed. */}
       <div className="flex justify-end pt-1">
         <button
@@ -290,13 +280,15 @@ export function SaveGate({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center gap-6 py-10">
+      <div className="flex flex-col gap-6 pt-6">
         <div className="flex flex-col gap-2.5">
           <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Save your plan
           </h1>
           <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-            Free account. Your plan and session numbers stay with you.
+            {reason === "session"
+              ? "Sessions need a free account. Your plan and session numbers stay with you."
+              : "Free account. Your plan and session numbers stay with you."}
           </p>
         </div>
 
@@ -310,64 +302,19 @@ export function SaveGate({
         )}
 
         <form onSubmit={handleEmailSignup} className="flex flex-col gap-4">
-          {/* One block, two rows. Each row keeps its label inside it, so the
-              label is still there once the field is filled: a placeholder-only
-              label disappears exactly when the player goes back to check what
-              they typed. The focus ring sits inside the row it belongs to. */}
-          <div className="flex flex-col rounded-md border border-line-strong bg-surface">
-            <div className="flex flex-col gap-0.5 rounded-t-md px-4 pb-1.5 pt-2.5 has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:-outline-offset-2 has-[input:focus-visible]:outline-optic">
-              <label
-                htmlFor="email"
-                className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setExisting(false);
-                }}
-                required
-                className="h-8 w-full bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
-              />
-            </div>
-            <div className="h-px bg-line" />
-            <div className="flex items-end gap-2 rounded-b-md pb-1.5 pl-4 pr-1 pt-2.5 has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:-outline-offset-2 has-[input:focus-visible]:outline-optic">
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <label
-                  htmlFor="password"
-                  className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  minLength={MIN_PASSWORD_LENGTH}
-                  placeholder={`${MIN_PASSWORD_LENGTH}+ characters`}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-8 w-full bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-pressed={showPassword}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="flex h-10 shrink-0 items-center rounded-sm px-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-2 transition-colors hover:text-ink"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-          </div>
+          <CredentialFields
+            idPrefix="signup"
+            email={email}
+            onEmailChange={(value) => {
+              setEmail(value);
+              setExisting(false);
+            }}
+            password={password}
+            onPasswordChange={setPassword}
+            passwordAutoComplete="new-password"
+            passwordPlaceholder={`${MIN_PASSWORD_LENGTH}+ characters`}
+            minLength={MIN_PASSWORD_LENGTH}
+          />
 
           {/* The address has an account already. The log-in takes the
               screen's one accent while this shows; the sign-up goes

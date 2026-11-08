@@ -316,7 +316,8 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 
 ### Save Gate (auth)
 - Top row: a small text link **"Log in"** at the right (opens the inline log-in view, address carried over).
-- Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you."
+- Top-aligned, like every view of the gate (code screen, inline log-in) and `/login`'s code screen: fixed top padding, never vertically centered, so the field and the primary button stay above the phone keyboard.
+- Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you." Opened from "Start session": "Sessions need a free account. Your plan and session numbers stay with you."
 - **One grouped field block** (`radius-md`, border `line-strong`, bg `surface`): Email row, hairline `line`, Password row with a mono Show/Hide. Each row keeps its mono uppercase label inside the block (EMAIL, PASSWORD), so it doesn't vanish when typed over. Inputs 16px; the password placeholder carries the rule ("8+ characters"). The focus ring sits inside the row.
 - Primary full-width **"Create account"** ("Creating account…" while busy) directly under the block → consent line → **"Not now"** as a quiet left-aligned text link.
 - **Existing account:** a sign-up with an address that already has a confirmed account shows a neutral note under the block (hairline above): "You already have an account with this email." with a primary **"Log in"**; "Create account" goes secondary while it shows, and editing the address hides it.
@@ -324,31 +325,31 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - *A **save** action, not a signup wall: it comes after value is delivered.*
 
 ### Code screen (sign-up)
-- Archivo 800 30px **"Enter the code we emailed"** → "Sent to {email} · Change email".
+- Archivo 800 30px **"Enter the code we emailed"** → "Sent to {email}" on its own line (the address moves down whole rather than breaking, and breaks inside only when wider than the screen) → **"Change email"** text link on the next line.
 - One 6-digit code field (mono, spaced digits; a pasted code with spaces is accepted) → resend line under it: "Resend code in Ns", then a **"Resend code"** text button, then "Code sent · resend in Ns". The countdown runs from the last send, stored, so a refresh keeps it.
-- Primary **"Continue"** ("Checking…") → "Already confirmed? Log in" (opens the inline log-in) → "Back to my plan" (save form only; not on `/login`).
-- Wrong or expired code: one alert, "That code didn't work or has expired.", with the code selected for retyping.
+- **"Continue"** ("Checking…"): the disabled style (bg `surface`, border `line`, text `ink-3`) until six digits are in and it can be sent (not while checking, and not while the field still holds the code that just failed), primary only then → "Already confirmed? Log in" (opens the inline log-in) → "Back to my plan" (save form only; not on `/login`).
+- Wrong or expired code: one alert as plain `danger` text under the field (no box, border or fill), "That code didn't work or has expired.", with the code selected for retyping. The selection inside the field is a muted white (`white/20`), not the accent.
 
 ### Inline log-in (save form)
-- Archivo 800 30px **"Log in"** → Email (filled in) → Password with Show/Hide → "Forgot password?" → primary **"Log in"** ("Logging in…") → "Back".
+- Archivo 800 30px **"Log in"** → the Save Gate's grouped field block (EMAIL filled in, hairline, PASSWORD with Show/Hide) → "Forgot password?" → primary **"Log in"** ("Logging in…") → "Back".
 - An account still waiting on its code gets a fresh one emailed and goes to the code screen.
 
 ### Pending sign-up (on the plan)
-- Between hairlines at the top of the plan: "Enter the code we sent to **{email}** to finish saving your plan." → text buttons **"Enter code"** (opens the code screen) · the resend countdown · **"Change email"** (back to the empty form) → "Already confirmed? Log in" (opens the inline log-in; Back returns to the plan).
+- Between hairlines at the top of the plan: "Finish saving your plan: enter the code we sent to **{email}**." → one text link, **"Enter code"** (opens the code screen, which has resend, Change email and "Already confirmed? Log in"). A failed save shows its alert inside the block.
 
 ### Log in (auth)
 - Logo + wordmark → Archivo 800 30px **"Welcome back."**
 - Email input → Password input (with mono "FORGOT?" inline) → primary **"Log in"** → ("OR" divider → "Continue with Google" only when the Google provider is on).
 - An unconfirmed account gets a fresh code and the code screen in place.
 - Footer, left-aligned: "New here? Take the assessment". *Two fields, one primary action.*
-- Player-facing wording is "Log in" everywhere (button, links, errors). Settings' "Sign out" is unchanged.
+- Player-facing wording is "Log in" everywhere (button, links, errors), and Settings says "Log out".
 
 ### Settings
 - Header: back button + Archivo 700 22px "Settings".
 - **ACCOUNT** group (surface card, dividers `line`): "Email → …", "Display name → … ›".
 - **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (accent text) + caption. *(Free users see "Free · Upgrade to unlock Progress" in the Plan row instead.)*
 - **NOTIFICATIONS** group: "Email me when my re-test opens" + accent toggle.
-- Footer: "Sign out" (secondary) + "Delete account" (`danger` text, hover `danger-hover`).
+- Footer: "Log out" (secondary) + "Delete account" (`danger` text, hover `danger-hover`).
 - *The plainest screen in the app. Accent appears only on the two things a person came here to do — Manage subscription / Upgrade. Manage and Delete are both one tap from the top, never buried.*
 
 ---

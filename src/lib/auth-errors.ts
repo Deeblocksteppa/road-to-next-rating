@@ -24,7 +24,7 @@ export const AUTH_ERRORS = {
   // Supabase answers a wrong code and an expired one with the same error, so
   // one message covers both. The Resend control sits right under it.
   code_failed: "That code didn't work or has expired.",
-  signin_failed: "Log-in couldn't be completed. Try again.",
+  signin_failed: "Couldn't log you in. Try again.",
   generic: "Something went wrong. Try again.",
 } as const;
 

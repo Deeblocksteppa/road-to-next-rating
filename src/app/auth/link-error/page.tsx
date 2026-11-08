@@ -45,7 +45,7 @@ export default function LinkErrorPage({
           </h1>
           <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
             {sent
-              ? "If that address has an account waiting to be confirmed, a new code and link are on their way. It can take a minute, and it may land in spam."
+              ? "If that address has an account waiting to be confirmed, a new code and link are on their way. It can take a minute, and it may land in spam. Open the link, or log in and enter the code."
               : explanation}
           </p>
         </div>
