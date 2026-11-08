@@ -130,6 +130,14 @@ async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelR
           "We couldn't match that subscription to your account, so nothing was changed. Email support@roadtonextrating.com and we'll sort it out.",
       };
     }
+    if (now.kind === "inactive") {
+      // Nothing gives access, but a subscription of theirs could still charge
+      // (incomplete or paused): not something to settle with a button.
+      return {
+        error:
+          "Your subscription isn't active in Stripe right now. Email support@roadtonextrating.com and we'll sort it out.",
+      };
+    }
     if (now.kind === "ended") {
       ended = { at: now.endedAt };
     } else if (now.kind === "live" && now.sub.cancel_at_period_end !== cancelAtPeriodEnd) {
@@ -138,10 +146,17 @@ async function setCancelAtPeriodEnd(cancelAtPeriodEnd: boolean): Promise<CancelR
           cancel_at_period_end: cancelAtPeriodEnd,
         });
         // Reflect only what Stripe confirmed in this response (service role:
-        // players can't write billing columns).
-        await syncSubscription(user.id, subscription);
+        // players can't write billing columns). Compare-and-set: if a webhook
+        // moved the profile meanwhile, its write (re-read from Stripe) stands.
+        await syncSubscription(user.id, subscription, { expected: now.sub.id });
       } catch (err) {
-        const again = await refreshOwnedSubscription(user.id, ids);
+        let again: Awaited<ReturnType<typeof refreshOwnedSubscription>>;
+        try {
+          again = await refreshOwnedSubscription(user.id, ids);
+        } catch (rereadErr) {
+          console.error("Re-read after a failed subscription update also failed", rereadErr);
+          throw err;
+        }
         if (again.kind !== "ended") throw err;
         ended = { at: again.endedAt };
       }

@@ -13,17 +13,34 @@ import { createClient } from "@/lib/supabase/server";
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/** `on` from the URL as a past date, or null (then the line has no date). */
+function endedOn(on: string | undefined): string | null {
+  if (!on || !ISO_DAY.test(on)) return null;
+  const iso = `${on}T00:00:00Z`;
+  const time = new Date(iso).getTime();
+  return Number.isNaN(time) || time > Date.now() ? null : iso;
+}
+
 /**
  * The line Settings shows after a subscription turned out to have ended in
  * Stripe already: from Manage subscription (`?billing=`), or found on this load.
+ * A URL alone only counts for a player who has had a subscription.
  */
-function endedNotice(billing: string | undefined, on: string | undefined, healed: boolean) {
+function endedNotice(
+  billing: string | undefined,
+  on: string | undefined,
+  healed: boolean,
+  hadSubscription: boolean
+) {
+  if (healed) return "Your subscription had already ended. Nothing more will be charged.";
+  if (!hadSubscription) return null;
   if (billing === "resume_ended") {
-    return on && ISO_DAY.test(on)
-      ? `Your subscription ended on ${monthYear(`${on}T00:00:00Z`)}, so it can't be resumed. You're on the free plan now.`
+    const date = endedOn(on);
+    return date
+      ? `Your subscription ended on ${monthYear(date)}, so it can't be resumed. You're on the free plan now.`
       : "Your subscription has ended, so it can't be resumed. You're on the free plan now.";
   }
-  if (billing === "ended" || healed) {
+  if (billing === "ended") {
     return "Your subscription had already ended. Nothing more will be charged.";
   }
   return null;
@@ -50,7 +67,7 @@ export default async function SettingsPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("email, display_name, subscription_status, retest_reminder_enabled")
+    .select("email, display_name, subscription_status, retest_reminder_enabled, stripe_customer_id")
     .eq("id", user.id)
     .single();
 
@@ -76,7 +93,7 @@ export default async function SettingsPage({
   const isPaid = profile?.subscription_status === "active";
   // Only ever on the free state, so a stale or hand-typed URL can't contradict
   // a live subscription.
-  const notice = isPaid ? null : endedNotice(searchParams.billing, searchParams.on, healed);
+  const notice = isPaid ? null : endedNotice(searchParams.billing, searchParams.on, healed, !!profile?.stripe_customer_id);
   const planLabel = plan?.plan_type === "monthly" ? "Monthly" : "Annual";
 
   return (
