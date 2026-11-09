@@ -8,6 +8,7 @@ import { RetestReminderToggle } from "@/components/settings/RetestReminderToggle
 import { healSubscription } from "@/lib/billing";
 import { SUPPORT_MAILTO } from "@/lib/contact";
 import { monthYear } from "@/lib/date-format";
+import { hasCompletedRetest } from "@/lib/retest-gate";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,6 +78,19 @@ export default async function SettingsPage({
     : drillPref?.drill_reminder_enabled ?? true;
 
   const isPaid = profile?.subscription_status === "active";
+  // Nothing is offered before there's a re-test to show: a free player sees
+  // the upgrade only after their first one. Asked only when it matters. A
+  // failed read hides the upgrade rather than taking Settings down: here a
+  // wrong "no" only drops an offer (Progress throws instead, since a wrong
+  // "no" there would hide a subscriber's data).
+  let offerUpgrade = false;
+  if (!isPaid) {
+    try {
+      offerUpgrade = await hasCompletedRetest(supabase, user.id);
+    } catch (error) {
+      console.error("settings: hasCompletedRetest failed", error);
+    }
+  }
   // Only ever on the free state, so a stale or hand-typed URL can't contradict
   // a live subscription.
   const notice = isPaid ? null : endedNotice(searchParams.billing, healed, !!profile?.stripe_customer_id);
@@ -137,6 +151,8 @@ export default async function SettingsPage({
                 <span className="text-ink-3">›</span>
               </Link>
             </>
+          ) : !offerUpgrade ? (
+            <Row label="Plan" value="Free" />
           ) : (
             <Link
               href="/paywall?from=/settings"

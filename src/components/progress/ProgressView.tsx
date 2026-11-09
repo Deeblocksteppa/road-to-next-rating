@@ -35,6 +35,19 @@ export type ProgressViewData =
       } | null;
       bottleneckPhrase: string;
       sessionsDone: number;
+      /**
+       * Diagnoses on the account. Above 1 means a signed-in retake with no
+       * re-test yet: the baseline isn't the only reading, so the line doesn't
+       * say "one point" or "second reading".
+       */
+      readingCount: number;
+      /**
+       * Subscribers only (null for free): weeks with both sessions, live
+       * before any re-test. Its presence also adds the readiness and history
+       * empty states. Free players get Day One alone: nothing is offered
+       * before there is a re-test to show.
+       */
+      paidStreak: StreakData | null;
     }
   | ({ kind: "full"; history: HistoryRow[]; streak: StreakData } & ChartData)
   | {
@@ -128,25 +141,82 @@ function DayOneState({
         {retest && <Reading label="Into the plan" value={`Day ${retest.daysElapsed}`} divided />}
       </dl>
 
-      {/*
-        One reading exists (the baseline), and a line needs a second one. The
-        copy says that and only that; the small mark is the chart's first point.
-      */}
-      <div className="flex items-start gap-4">
-        <svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true" className="shrink-0">
-          <line x1="4" y1="12" x2="36" y2="12" stroke="#2E2E33" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="4" cy="12" r="3.5" fill="#80807B" />
-        </svg>
-        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-          One point so far: your baseline.{" "}
-          {retestOpen
-            ? "Your re-test, open now, adds the second reading."
-            : retest
-              ? `Your first re-test on ${retest.dateLabel} adds the second reading.`
-              : "Your first re-test adds the second reading."}
-        </p>
-      </div>
+      {data.paidStreak ? (
+        <PaidBeforeRetest streak={data.paidStreak} retest={retest} />
+      ) : (
+        /*
+          One reading exists (the baseline), and a line needs a second one. The
+          copy says that and only that; the small mark is the chart's first point.
+        */
+        <div className="flex items-start gap-4">
+          <BaselineMark />
+          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+            {data.readingCount > 1 ? (
+              retestOpen
+                ? "Your re-test, open now, adds the next reading."
+                : retest
+                  ? `Your first re-test on ${retest.dateLabel} adds the next reading.`
+                  : "Your first re-test adds the next reading."
+            ) : (
+              <>
+                One point so far: your baseline.{" "}
+                {retestOpen
+                  ? "Your re-test, open now, adds the second reading."
+                  : retest
+                    ? `Your first re-test on ${retest.dateLabel} adds the second reading.`
+                    : "Your first re-test adds the second reading."}
+              </>
+            )}
+          </p>
+        </div>
+      )}
     </>
+  );
+}
+
+/** The chart's first point: the baseline, with nothing after it yet. */
+function BaselineMark() {
+  return (
+    <svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true" className="shrink-0">
+      <line x1="4" y1="12" x2="36" y2="12" stroke="#2E2E33" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="4" cy="12" r="3.5" fill="#80807B" />
+    </svg>
+  );
+}
+
+/**
+ * A subscriber before their first re-test: what they pay for, unlocked. Weeks
+ * with both sessions is live; readiness and re-test history (each row of
+ * which opens that re-test's breakdown) need a re-test, so they say when they
+ * fill in. Neutral, no lock: nothing here is withheld.
+ */
+function PaidBeforeRetest({
+  streak,
+  retest,
+}: {
+  streak: StreakData;
+  retest: Extract<ProgressViewData, { kind: "day-one" }>["retest"];
+}) {
+  // Open: the re-test block above already says so, so no date and no "open".
+  const fillsIn = !retest
+    ? "Fills in after your first re-test."
+    : retest.daysUntilRetest <= 0
+      ? "Fills in after your re-test."
+      : `Fills in after your re-test on ${retest.dateLabel}.`;
+  return (
+    <div className="flex flex-col">
+      {/* Bare: the readings strip's bottom hairline already sits above it. */}
+      <Section label="Readiness" bare>
+        <div className="mt-3 flex items-start gap-4">
+          <BaselineMark />
+          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">{fillsIn}</p>
+        </div>
+      </Section>
+      <Section label="Re-test history">
+        <p className="mt-2 text-pretty text-[16px] leading-[1.6] text-ink-2">{fillsIn}</p>
+      </Section>
+      <StreakContent streak={streak} />
+    </div>
   );
 }
 
@@ -293,9 +363,18 @@ function ChangeText({ change }: { change: number }) {
 
 /* ── Full-state sections ──────────────────────────────────────── */
 /** A section under the readiness block: a hairline, a mono label, its content. */
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({
+  label,
+  children,
+  bare = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  /** No top hairline, for a section that sits right under another rule. */
+  bare?: boolean;
+}) {
   return (
-    <section className="flex flex-col border-t border-line py-6">
+    <section className={`flex flex-col ${bare ? "pb-6" : "border-t border-line py-6"}`}>
       <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{label}</p>
       {children}
     </section>

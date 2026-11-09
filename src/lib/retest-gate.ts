@@ -31,6 +31,29 @@ export async function openRetestPlan(
     : null;
 }
 
+/**
+ * Whether the player has finished a re-test: they own a plan a re-test made
+ * (`source_plan_id` set). `saveRetest` writes that plan last, so a re-test
+ * counts once it is complete, never while open or half saved. Counting
+ * diagnoses doesn't work: a signed-in retake on /start adds one with no
+ * re-test.
+ *
+ * Decides what Progress and Settings offer: nothing is sold before the first
+ * re-test. Server only. Throws on error rather than guessing either way,
+ * including on a database without migration 20261029120000 (no
+ * `source_plan_id`), which `saveRetest` tolerates but this can't answer.
+ */
+export async function hasCompletedRetest(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("plans")
+    .select("id")
+    .eq("user_id", userId)
+    .not("source_plan_id", "is", null)
+    .limit(1);
+  if (error) throw error;
+  return (data?.length ?? 0) > 0;
+}
+
 export async function isRetestOpen(supabase: SupabaseClient, userId: string): Promise<boolean> {
   return (await openRetestPlan(supabase, userId)) !== null;
 }

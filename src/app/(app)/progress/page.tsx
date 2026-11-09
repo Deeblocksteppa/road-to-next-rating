@@ -15,6 +15,7 @@ import { DRILLS } from "@/lib/drills";
 import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { readinessOfRow } from "@/lib/readiness";
+import { hasCompletedRetest } from "@/lib/retest-gate";
 import {
   buildHistoryRows,
   buildReadinessSeries,
@@ -27,12 +28,16 @@ import { createClient } from "@/lib/supabase/server";
 import type { SkillId } from "@/lib/types";
 
 /**
- * Progress — three states driven by real data:
- *   • no diagnosis at all      → prompt to take the assessment
- *   • exactly one diagnosis    → Day One (no re-test history yet)
- *   • 2+ diagnoses + free      → Locked (placeholder only; paid data never loaded)
- *   • 2+ diagnoses + paid      → Full
- * Each re-test inserts a new `diagnoses` row, so row count IS the re-test history.
+ * Progress, by whether the player has finished a re-test (`hasCompletedRetest`:
+ * a plan a re-test made), not by how many diagnoses they have, since a
+ * signed-in retake on /start adds one with no re-test:
+ *   • no diagnosis at all       → prompt to take the assessment
+ *   • no completed re-test      → Day One. Nothing is sold before there is a
+ *                                 re-test to show: free sees Day One alone;
+ *                                 paid also gets readiness and history empty
+ *                                 states and live weeks with both sessions.
+ *   • completed re-test + free  → Locked (placeholder only; paid data never loaded)
+ *   • completed re-test + paid  → Full
  */
 export default async function ProgressPage() {
   const supabase = await createClient();
@@ -44,7 +49,7 @@ export default async function ProgressPage() {
     redirect("/login?next=/progress");
   }
 
-  const [diagnosesRes, planRes, profileRes] = await Promise.all([
+  const [diagnosesRes, planRes, profileRes, retestDone] = await Promise.all([
     supabase
       .from("diagnoses")
       .select("id, readiness, skill_scores, bottleneck, created_at")
@@ -62,7 +67,9 @@ export default async function ProgressPage() {
       .select("subscription_status")
       .eq("id", user.id)
       .maybeSingle(),
+    hasCompletedRetest(supabase, user.id),
   ]);
+  const isPaid = profileRes.data?.subscription_status === "active";
 
   // Readiness from each row's skill levels, on the current 0–100 scale, so
   // rows saved under the old 40–85 formula line up with new ones.
@@ -84,8 +91,9 @@ export default async function ProgressPage() {
 
   if (diags.length === 0) {
     viewData = { kind: "empty" };
-  } else if (diags.length < 2) {
-    // ── State 1: Day One — baseline only, no re-test yet.
+  } else if (!retestDone) {
+    // ── State 1: Day One, before the first re-test. A retake can mean more
+    // than one diagnosis here; the latest one is this plan's baseline.
     const bottleneck = diags[diags.length - 1].bottleneck as SkillId;
     const timeline =
       plan?.retest_date && plan.created_at
@@ -106,8 +114,13 @@ export default async function ProgressPage() {
           : null,
       bottleneckPhrase: SKILL_LABELS[bottleneck] ?? "your bottleneck",
       sessionsDone,
+      readingCount: diags.length,
+      // A subscriber's weeks with both sessions are live from the start; the
+      // chart, history and logged-sessions series need a re-test and are not
+      // read here, so nothing sits in the page under the empty states.
+      paidStreak: isPaid ? await getWeeklyStreak(supabase, drillsPerSession) : null,
     };
-  } else if (profileRes.data?.subscription_status !== "active") {
+  } else if (!isPaid) {
     // ── State 2: Locked (free). Only what the free tier shows is read and
     // sent: the current number, the change since the first reading, and how
     // many readings exist (the shape of the placeholder). The chart series,

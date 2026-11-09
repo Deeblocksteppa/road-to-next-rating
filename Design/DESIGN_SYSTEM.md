@@ -288,14 +288,17 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - **Streak** card: eyebrow `STREAK` + "5 weeks hitting target" + filled/empty 12px squares.
 
 ### Progress — Day One (empty)
-- Callout card (accent border, bg `rgba(216,227,76,0.05)`): eyebrow `YOUR FIRST RE-TEST` → Archivo 800 40px date → mono "IN 13 DAYS · WEEK 3 OF 3" → explainer.
-- Two stat cards: "SESSIONS DONE / 4", "INTO THE PLAN / Day 8".
-- Empty-chart placeholder (dashed border): tiny flat-line SVG + honest copy ("Your readiness line starts on …"). **No fake chart.**
+- No card, no accent (unless the re-test is open, when the re-test block above takes it): mono `FIRST RE-TEST` → Archivo 800 56px date → mono "IN 13 DAYS · WEEK 1 OF 3" → explainer ("This is the day you find out if {skill} moved."). No date: "Not scheduled" (32px) and nothing more.
+- A strip of two readings between hairlines: "SESSIONS DONE / 4", "INTO THE PLAN / Day 8".
+- The one-point line: a tiny flat-line mark (the baseline dot) + "One point so far: your baseline. Your first re-test on Nov 29 adds the second reading." **No fake chart.** After a signed-in retake (two or more diagnoses, no re-test) it drops the count: "Your first re-test on Nov 29 adds the next reading."
+- **Shown until the first completed re-test** (`hasCompletedRetest`, `src/lib/retest-gate.ts`: the player owns a plan a re-test made), not until a second diagnosis: a retake adds a diagnosis without a re-test. Nothing is sold here: no locked cards, no upgrade, for any tier.
+- **Subscriber variant:** the one-point line is replaced by what they pay for, unlocked and neutral (no lock, no blur, no accent), in hairline sections: `READINESS` (no top rule, the strip's sits above it; the one-point mark + "Fills in after your re-test on Nov 29."), `RE-TEST HISTORY` (the same sentence; it also stands in for the per-re-test breakdown each row opens), then "Weeks with both sessions" with live data. With the re-test open: "Fills in after your re-test." (the block above says it's open); with no date: "Fills in after your first re-test." The chart, history and logged-sessions series aren't loaded in this state.
 
 ### Progress — locked (FREE)
-- Readiness-now card (unblurred): eyebrow `READINESS NOW` → Archivo 800 40px number + accent "+16 SINCE START".
-- Two blurred + scrimmed cards ("Your readiness line, over time" / "Re-test history & streaks") with lock icons + teasers.
-- Primary button **"Unlock Progress — $79/year"**.
+- Only after the first completed re-test; before it, Day One.
+- Readiness now, set on the page (no card): mono `READINESS NOW` → Archivo 800 72px number → mono "SINCE START 52 → 58 +6" (change in ink, `danger` when down, NO CHANGE neutral) → "A score from your answers, not a DUPR estimate."
+- Two locked cards (flat cover, no gradient; see Locked / blur treatment) with lock icons + teasers: "Your readiness line across every re-test, whichever way it went." / "Re-test history, with how every skill moved each time."
+- Primary button **"Unlock Progress"** (no price on an entry point; secondary while the re-test is open).
 
 ### Re-test Delta — PAID (`reveal-bg`)
 - Eyebrow `RE-TEST COMPLETE` → Archivo 800 34px **"Your drop moved."**
@@ -351,7 +354,7 @@ Applies to the Save Gate and its views (form, existing-account note, code screen
 ### Settings
 - Header: back button + Archivo 700 22px "Settings".
 - **ACCOUNT** group (surface card, dividers `line`): "Email → …", "Display name → … ›".
-- **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (accent text) + caption. *(Free users see "Free · Upgrade to unlock Progress" in the Plan row instead.)*
+- **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (accent text) + caption. *(Free users see "Plan · Upgrade to unlock Progress ›" instead, a link to the paywall, but only after their first completed re-test. Before it, a static "Plan · Free" row: no link, no chevron.)*
 - **Subscription already ended in Stripe** (a Cancel or "Keep my subscription" tap on a subscription that had ended, or found when Manage or Settings re-reads Stripe on load): Settings in its free state, with one line under the SUBSCRIPTION group: Body 16px, `ink-2`, `role="status"`, no accent, left-aligned. Cancel or found on load: "Your subscription had already ended. Nothing more will be charged." Keep: "Your subscription has ended, so it can't be resumed. You're on the free plan now." (no date). Never shown while the profile is paid.
 - **Manage subscription error:** "Something went wrong. Email support@… and we'll sort it out." in `danger`, left-aligned, under the button.
 - **NOTIFICATIONS** group: "Email me when my re-test opens" + accent toggle.
