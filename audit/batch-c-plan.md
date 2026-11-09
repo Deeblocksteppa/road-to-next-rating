@@ -265,6 +265,8 @@ from (
 ) c;
 ```
 
+**Result (owner, production, 2026-11-08): `players = 2`**, `73f35f36…` and `7bede4e3…`. Both are old dev test accounts (the two whose baseline `created_at` was moved by hand, also found by the `20261029120000` pre-check), not real players. **Decision: no backfill.** The preview and the fix below were not run.
+
 **One-time fix (only if `players` is above zero).** Per player, it sets `source_plan_id` on one plan: the first plan created after their newest `completed` plan, pointing at that plan. That is the re-test's real source, since the old action completed every older plan before inserting the new one. One row per player, so the unique index `(user_id, source_plan_id)` can't conflict. It touches no other column.
 
 One case it can get wrong (reviewer): a pre-migration re-test that retired the old plans but whose plan insert failed, followed later by a signed-in retake. The retake's plan is "created after a completed plan", so it would be marked as the re-test. The data can't tell these apart: no column records when a plan was retired, and a retake's rows look like a re-test's. The preview shows the target's `diagnosis_id`, the source plan's `retest_date` and `days_after_source` so each row can be checked by hand (a re-test usually lands near or after its source's re-test date; a retake can come at any time). If a row looks like a retake, don't run step 2: send the row to Claude, and the fix gets an exclusion for that player first. A wrong mark has low impact: that player is treated as having re-tested, so a free player sees the existing upgrade entries.
