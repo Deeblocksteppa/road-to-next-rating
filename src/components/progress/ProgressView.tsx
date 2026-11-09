@@ -136,13 +136,20 @@ function DayOneState({
         </section>
       )}
 
-      <dl className={`grid border-y border-line ${retest ? "grid-cols-2" : "grid-cols-1"}`}>
+      {/* With the re-test open, the block above ends in a hairline: the strip
+          sits right under it (cancelling the screen's gap) instead of drawing
+          a second rule 32px lower. */}
+      <dl
+        className={`grid border-line ${retestOpen ? "-mt-8 border-b" : "border-y"} ${
+          retest ? "grid-cols-2" : "grid-cols-1"
+        }`}
+      >
         <Reading label="Sessions done" value={String(data.sessionsDone)} />
         {retest && <Reading label="Into the plan" value={`Day ${retest.daysElapsed}`} divided />}
       </dl>
 
       {data.paidStreak ? (
-        <PaidBeforeRetest streak={data.paidStreak} retest={retest} />
+        <PaidBeforeRetest streak={data.paidStreak} retest={retest} readingCount={data.readingCount} />
       ) : (
         /*
           One reading exists (the baseline), and a line needs a second one. The
@@ -187,33 +194,40 @@ function BaselineMark() {
 /**
  * A subscriber before their first re-test: what they pay for, unlocked. Weeks
  * with both sessions is live; readiness and re-test history (each row of
- * which opens that re-test's breakdown) need a re-test, so they say when they
- * fill in. Neutral, no lock: nothing here is withheld.
+ * which opens that re-test's breakdown) need a re-test, so each says what it
+ * gets from it and when. Neutral, no lock: nothing here is withheld.
  */
 function PaidBeforeRetest({
   streak,
   retest,
+  readingCount,
 }: {
   streak: StreakData;
   retest: Extract<ProgressViewData, { kind: "day-one" }>["retest"];
+  /** Above 1 after a signed-in retake: the re-test is not the second reading. */
+  readingCount: number;
 }) {
-  // Open: the re-test block above already says so, so no date and no "open".
-  const fillsIn = !retest
-    ? "Fills in after your first re-test."
-    : retest.daysUntilRetest <= 0
-      ? "Fills in after your re-test."
-      : `Fills in after your re-test on ${retest.dateLabel}.`;
+  // A date only while it is ahead. Open (today or past) or unscheduled, the
+  // line names the re-test instead; the block above says it is open.
+  const when = retest && retest.daysUntilRetest > 0 ? retest.dateLabel : null;
+  const reading = readingCount > 1 ? "next" : "second";
+  const readinessLine = when
+    ? `Your ${reading} reading lands ${when}.`
+    : `Your ${reading} reading comes from your re-test.`;
+  const historyLine = when
+    ? `Your first entry lands ${when}.`
+    : "Your first entry comes from your re-test.";
   return (
     <div className="flex flex-col">
       {/* Bare: the readings strip's bottom hairline already sits above it. */}
       <Section label="Readiness" bare>
         <div className="mt-3 flex items-start gap-4">
           <BaselineMark />
-          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">{fillsIn}</p>
+          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">{readinessLine}</p>
         </div>
       </Section>
       <Section label="Re-test history">
-        <p className="mt-2 text-pretty text-[16px] leading-[1.6] text-ink-2">{fillsIn}</p>
+        <p className="mt-2 text-pretty text-[16px] leading-[1.6] text-ink-2">{historyLine}</p>
       </Section>
       <StreakContent streak={streak} />
     </div>
