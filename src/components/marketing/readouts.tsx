@@ -1,5 +1,4 @@
-import { DrillBriefContent } from "@/components/session/DrillBrief";
-import { ShotDemo } from "@/components/session/ShotDemo";
+import { DrillPageBody } from "@/components/session/DrillPage";
 import { SKILL_TITLES } from "@/lib/diagnoses";
 import { toGuidedDrill } from "@/lib/drill-lookup";
 import { generateRoadmap } from "@/lib/roadmap";
@@ -520,11 +519,10 @@ function examplePlan() {
 }
 
 /**
- * The example plan's first drill, rendered with the guided session's own brief
- * component and shot diagram, fed straight from `drills.ts` through the same
- * prescription the app uses (the example player has no drilling partner, so
- * this is the solo version). The brief's re-test footnote is left off: the
- * page has no plan beside it to point to.
+ * The example plan's first drill, rendered with the guided session's own drill
+ * page (diagram, the drill in a sentence, its facts, the scoring rule), fed
+ * straight from `drills.ts` through the same prescription the app uses (the
+ * example player has no drilling partner, so this is the solo version).
  */
 export function SessionBriefReadout() {
   const roadmap = examplePlan();
@@ -540,12 +538,9 @@ export function SessionBriefReadout() {
       </div>
       <Panel>
         <div className="flex flex-col gap-5 px-5 py-6 md:px-7 md:py-7">
-          <Unit>
-            Drill 1 of {roadmap.weeklyDrills.length} · {drill.duration} · {drill.setup}
-          </Unit>
+          <Unit>Drill 1 of {roadmap.weeklyDrills.length}</Unit>
           <div className="flex flex-col gap-5">
-            <DrillBriefContent drill={drill} retestMetric={null} as="h3" textSize="page" />
-            <ShotDemo drillId={drill.id} setup={drill.setup} />
+            <DrillPageBody drill={drill} as="h3" />
           </div>
         </div>
       </Panel>

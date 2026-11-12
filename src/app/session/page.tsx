@@ -24,13 +24,13 @@ import { createClient } from "@/lib/supabase/server";
 import type { SkillId } from "@/lib/types";
 
 /**
- * Guided session flow (brief → timer → log → confirmation).
+ * Guided session flow (drill page → timer → log → confirmation).
  *
  * Lives outside the (app) route group deliberately: this is a focused,
  * one-way flow, so it gets no tab bar — same reasoning as /settings.
  *
  * A session is every drill on the plan, same day (`session-plan.ts`), so this
- * route runs them all, in plan order, one brief → timer → log loop per drill.
+ * route runs them all, in plan order, one page → timer → log loop per drill.
  * It used to open only the first drill not yet logged this week, under a Home
  * button that promised the combined length of both. Drills already logged
  * today are skipped, so leaving halfway and coming back resumes the session
@@ -53,7 +53,7 @@ export default async function SessionPage({
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, drill_ids, diagnosis_id, retest_metric, retest_date, created_at")
+    .select("id, drill_ids, diagnosis_id, retest_date, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -63,8 +63,8 @@ export default async function SessionPage({
     redirect("/home");
   }
 
-  // As prescribed: the solo version for a player without a partner. The brief,
-  // the timer cue and the log question all come from this.
+  // As prescribed: the solo version for a player without a partner. The drill
+  // page, the timer cue and the log question all come from this.
   const planDrills = await loadPlanDrills(supabase, plan);
 
   // The recap's inputs come with the page so the screen is ready the moment
@@ -145,7 +145,6 @@ export default async function SessionPage({
         doneToday: completedToday.has(d.id),
       }))}
       drills={remaining.map(toGuidedDrill)}
-      retestMetric={(plan.retest_metric as string | null) ?? null}
       fallbackWeekly={weekly}
       recap={recap}
       next={next}

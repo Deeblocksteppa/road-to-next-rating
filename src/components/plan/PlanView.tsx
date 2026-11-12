@@ -347,7 +347,7 @@ function DrillRow({
                 When the timer ends
               </p>
               <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-                <span className="font-semibold text-ink">{drill.logProtocol}</span> {drill.counts}
+                <span className="font-semibold text-ink">Log: {drill.logProtocol.toLowerCase()}.</span> {drill.counts}
               </p>
               <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-2">
                 Practice target <span className="text-ink">{drill.practiceTarget}</span>

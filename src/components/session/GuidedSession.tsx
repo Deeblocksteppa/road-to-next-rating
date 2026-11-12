@@ -6,29 +6,23 @@ import { useEffect, useRef, useState } from "react";
 import { logGuidedSession } from "@/app/(app)/plan/actions";
 import type { WeeklyProgress } from "@/lib/drill-sessions";
 import { practiceTargetCount, type RecapRow } from "@/lib/session-recap";
-import { DrillBriefContent } from "@/components/session/DrillBrief";
+import {
+  DrillPageBody,
+  DrillPageHeader,
+  NextDrillLine,
+  type DrillPageDrill,
+} from "@/components/session/DrillPage";
 import { RetestOpen } from "@/components/retest/RetestOpen";
-import { ShotDemo } from "@/components/session/ShotDemo";
+import { scoringRule } from "@/lib/drills";
 
 type Step = "brief" | "active" | "log";
 
-/** One drill of the session, as the flow needs it. */
-export interface GuidedDrill {
-  id: string;
-  name: string;
-  /** Full technique instructions — behind "View instructions" on the timer. */
+/** One drill of the session, as the flow needs it: its page, plus the timer and log screens. */
+export interface GuidedDrill extends DrillPageDrill {
+  /** Full technique instructions, behind "View instructions" on the timer. */
   instructions: string;
-  /** "Partner" / "Wall" / "Solo". */
-  setup: string;
   /** One technique cue for the timer screen. */
   cue: string;
-  /** What to log when the timer ends. */
-  logProtocol: string;
-  /** What counts as a success. */
-  counts: string;
-  /** "7 of 10". */
-  practiceTarget: string;
-  duration: string;
   durationMinutes: number;
   logPrompt: string;
 }
@@ -62,8 +56,6 @@ export interface GuidedSessionProps {
   outline: OutlineItem[];
   /** The drills still to run today, in order. */
   drills: GuidedDrill[];
-  /** The plan's match re-test target sentence, shown beside the practice target. */
-  retestMetric: string | null;
   /** Weekly count as of page load, shown if the log write returns nothing. */
   fallbackWeekly: WeeklyProgress;
   /** Every plan drill as the recap shows it, with today's results as of page load. */
@@ -146,7 +138,6 @@ export function GuidedSession(props: GuidedSessionProps) {
           position={position}
           total={outline.length}
           next={next}
-          retestMetric={props.retestMetric}
           onBegin={() => setStep("active")}
         />
       )}
@@ -198,59 +189,30 @@ export function GuidedSession(props: GuidedSessionProps) {
   );
 }
 
-/* ── Screen 1 — Brief ───────────────────────────────────────────── */
+/* ── Screen 1: the drill page ───────────────────────────────────── */
 /**
- * Drill n of m · duration · setup, the title, the instructions, the logging
- * protocol, the diagram, Begin. What is NOT here any more: the session's
- * total, the skill category, and an outline that repeated the title and
- * duration — the next drill is one small line at the bottom instead.
+ * The drill's page (`DrillPage`: diagram, name, one sentence, its facts, the
+ * scoring rule), then Begin and the next drill. The same page a plan row
+ * opens read-only; here it has the one button that starts the clock.
  */
 function BriefScreen({
   drill,
   position,
   total,
   next,
-  retestMetric,
   onBegin,
 }: {
   drill: GuidedDrill;
   position: number;
   total: number;
   next: OutlineItem | null;
-  retestMetric: string | null;
   onBegin: () => void;
 }) {
   return (
     <>
-      <header className="flex items-center justify-between pt-4">
-        <Link
-          href="/plan"
-          aria-label="Back to my plan"
-          className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M15 5l-7 7 7 7"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Link>
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
-          Drill {position} of {total} · {drill.duration} · {drill.setup}
-        </span>
-      </header>
+      <DrillPageHeader backHref="/plan" backLabel="Back to my plan" position={position} total={total} />
 
-      <DrillBriefContent drill={drill} retestMetric={retestMetric} />
-
-      <div className="flex-1" />
-
-      {/* Shot demo sits centered in the empty space. It renders nothing for
-          drills whose animation isn't built yet, in which case the two
-          spacers simply collapse into one. */}
-      <ShotDemo drillId={drill.id} setup={drill.setup} />
+      <DrillPageBody drill={drill} />
 
       <div className="flex-1" />
 
@@ -259,13 +221,9 @@ function BriefScreen({
           onClick={onBegin}
           className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
         >
-          {position === 1 ? "Begin" : `Begin drill ${position}`}
+          Begin
         </button>
-        {next && (
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3">
-            Next: {next.name} · {next.duration}
-          </p>
-        )}
+        <NextDrillLine next={next} />
       </div>
     </>
   );
@@ -337,14 +295,13 @@ function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () =>
         </div>
       </div>
 
-      {/* One cue and the measurement reminder — not the paragraph again. */}
+      {/* One cue and the scoring rule, not the paragraph again. */}
       <div className="flex flex-col gap-3">
         <p className="font-display text-[20px] font-bold leading-[1.3] tracking-[-0.01em]">
           {drill.cue}
         </p>
         <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-          {drill.logProtocol} When the clock hits zero, stop where you are and log it. Falling
-          short of {drill.practiceTarget} still counts.
+          {scoringRule(drill.unit)} Falling short of {drill.practiceTarget} still counts.
         </p>
         <button
           type="button"

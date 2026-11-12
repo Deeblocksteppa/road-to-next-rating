@@ -154,7 +154,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 - **Canvas / phone frame:** `375 × 812px`. The whole system is specified at **375px width only**.
 - **Card internal padding:** `20px` default (variants: `18px 20px`, `20px 22px`, `22px`, `24px`); child gap `6–14px`.
 - **Vertical rhythm inside screens:** stacks `gap: 12–16px`; hero / centered blocks `gap: 20–28px`.
-- **Button → caption:** 14px gap; caption is mono 11px `ink-3`, centered.
+- **Button → caption:** 14px gap; caption is mono 11px `ink-3`, left-aligned (nothing is centered except the reveal).
 - **Section gaps (design canvas only):** 56px between major sections, 24px between cards in a row.
 
 ---
@@ -351,6 +351,15 @@ Applies to the Save Gate and its views (form, existing-account note, code screen
 - An unconfirmed account gets a fresh code and the code screen in place.
 - Footer, left-aligned: "New here? Take the assessment". *Two fields, one primary action.*
 - Player-facing wording is "Log in" everywhere (button, links, errors), and Settings says "Log out".
+
+### Drill page (guided session, plan rows, landing example)
+One component (`DrillPage`), three places: the guided session's first screen, the read-only page a plan row opens, and the landing's example drill.
+- Header: back button (36×36, `radius-md`) + mono `DRILL 1 OF 2` beside it.
+- Diagram (side view: the shot's court diagram, or the shared wall template with per-drill labels for a drill prescribed at a wall) → Archivo 700 24px drill name → one sentence (the drill's `task`, 16px `ink`).
+- Rows between hairlines, mono label and a 16px body-font value: `TIME` "15 min" · `WHO` "Partner" / "Solo" / "Solo, at a wall" · `COUNTS` (the "counts if" sentence) · `LOG` "Your last set of 10 drops" · `TARGET` "7 of 10". Times come from the drill, never fixed text.
+- The scoring rule, 16px `ink-2`: "When the timer ends, finish the {set / rep / exchange / rally} you're on and log it." (the drill's own word). Also on the timer, followed by "Falling short of 7 of 10 still counts."; not on the log screen. The full description is behind "View instructions" on the timer.
+- In a session: primary **"Begin"**, then mono `NEXT: {DRILL} · {MIN}` left-aligned. Read-only (from a plan row): no button and no NEXT line, back arrow only.
+- No card, no "When the timer ends" box.
 
 ### Settings
 - Header: back button + Archivo 700 22px "Settings".

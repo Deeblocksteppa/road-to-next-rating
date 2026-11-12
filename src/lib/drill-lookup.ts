@@ -22,18 +22,20 @@ export function parseDurationMinutes(duration: string, fallback = 10): number {
 }
 
 /**
- * A drill as the guided session's brief renders it. One mapping, used by the
- * /session route and by the marketing page's live preview, so the two can't
- * disagree about what a drill's brief says.
+ * A drill as the guided session renders it. One mapping, used by the /session
+ * route, the read-only drill page and the marketing page's live preview, so
+ * they can't disagree about what a drill's page says.
  */
 export function toGuidedDrill(d: Drill): GuidedDrill {
   return {
     id: d.id,
     name: d.name,
+    task: d.task,
     instructions: d.description,
     setup: d.setup,
     cue: d.cue,
     logProtocol: d.logProtocol,
+    unit: d.unit,
     counts: d.counts,
     practiceTarget: d.practiceTarget,
     duration: d.duration,

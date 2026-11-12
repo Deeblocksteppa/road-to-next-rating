@@ -320,7 +320,7 @@ export function Plan() {
         </RiseIn>
 
         {/* The example plan's first drill, rendered live with the guided
-            session's own brief and shot diagram. */}
+            session's own drill page. */}
         <RiseIn delay={100} className="w-full">
           <SessionBriefReadout />
         </RiseIn>

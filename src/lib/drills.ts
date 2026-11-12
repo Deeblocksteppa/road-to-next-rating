@@ -1,14 +1,26 @@
 import { SkillId } from "./types";
 
+/**
+ * What a player is in the middle of when the timer ends: the word the scoring
+ * rule uses ("finish the rally you're on"). Not always what gets logged: a
+ * wall rally is finished, and its last ten volleys are what is counted.
+ */
+export type DrillUnit = "set" | "rep" | "exchange" | "rally";
+
+/** The one scoring rule, on the drill page and the timer, in the drill's own word. */
+export function scoringRule(unit: DrillUnit): string {
+  return `When the timer ends, finish the ${unit} you're on and log it.`;
+}
+
 export interface Drill {
   id: string;
   name: string;
-  /** Full technique instructions — the guided session's brief screen. */
+  /** Full technique instructions: behind "View instructions" on the timer. */
   description: string;
   /**
-   * One plain sentence saying what the drill is, for list cards (Plan tab,
-   * plan preview). The technique lives in `description`; this is the line a
-   * player scans to decide whether to tap in.
+   * One plain sentence saying what the drill is: the drill page's sentence
+   * (the guided session's first screen, and what a plan row opens). The
+   * technique lives in `description`.
    */
   task: string;
   /** Who or what it needs, as a two- or three-word mono label: "Partner", "Wall", "Solo". */
@@ -16,11 +28,14 @@ export interface Drill {
   /** One technique cue for the timer screen — the thing to hold in mind while it runs. */
   cue: string;
   /**
-   * What gets logged, stated before the timer starts. One protocol for every
-   * drill: the last set of ten, so a 15-minute drill with many sets has one
-   * unambiguous number at the end.
+   * What gets logged, as the drill page's LOG row reads it ("Your last set of
+   * 10 drops"): always the last ten of something, so a 15-minute drill has
+   * one unambiguous number at the end. No verb and no full stop; the row's
+   * label says "Log".
    */
   logProtocol: string;
+  /** The scoring rule's word for this drill (`scoringRule`). */
+  unit: DrillUnit;
   /** What counts as a success, observable without a coach — the definition behind `logPrompt`. */
   counts: string;
   /** "7 of 10" — the practice target for this drill. Distinct from the plan's match re-test target. */
@@ -59,7 +74,7 @@ export interface Drill {
  */
 export type SoloVersion = Pick<Drill, "description" | "task" | "setup"> &
   Partial<
-    Pick<Drill, "name" | "cue" | "logProtocol" | "counts" | "practiceTarget" | "logPrompt">
+    Pick<Drill, "name" | "cue" | "logProtocol" | "unit" | "counts" | "practiceTarget" | "logPrompt">
   >;
 
 export const DRILLS: Record<SkillId, Drill[]> = {
@@ -72,7 +87,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Reset your partner's drives soft into the kitchen, counting clean ones in a row.",
       setup: "Partner",
       cue: "Paddle out front, soft grip. Absorb the pace, don't swing.",
-      logProtocol: "Log your last set of 10.",
+      logProtocol: "Your last set of 10 resets",
+      unit: "set",
       counts: "A reset counts if it lands in the kitchen and stays below net height after the bounce.",
       practiceTarget: "7 of 10",
       duration: "15 min",
@@ -97,7 +113,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Drive into a wall and reset your own return softly, over and over.",
       setup: "Wall",
       cue: "Let the ball come to you. Block, don't hit.",
-      logProtocol: "Log your last set of 10.",
+      logProtocol: "Your last set of 10 resets",
+      unit: "set",
       counts: "A reset counts if it comes back off the wall at knee height or lower.",
       practiceTarget: "7 of 10",
       duration: "10 min",
@@ -114,7 +131,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Self-feed third-shot drops from the baseline and count how many land soft.",
       setup: "Solo",
       cue: "Contact low and out front, lift gently. Arc, not power.",
-      logProtocol: "Log your last set of 10.",
+      logProtocol: "Your last set of 10 drops",
+      unit: "set",
       counts: "A drop counts if it lands in the kitchen and bounces below net height.",
       practiceTarget: "7 of 10",
       duration: "15 min",
@@ -129,7 +147,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Serve, return, then go for the drop under real game pressure.",
       setup: "Partner",
       cue: "Commit to the drop every time, even the ugly ones.",
-      logProtocol: "Log your last set of 10.",
+      logProtocol: "Your last set of 10 drops",
+      unit: "set",
       counts: "A drop counts if it lands in the kitchen and your partner can't attack it.",
       practiceTarget: "6 of 10",
       duration: "15 min",
@@ -143,7 +162,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
         task: "Toss a deep ball, hit the drop, then move in and split-step before it lands.",
         setup: "Solo",
         cue: "Hit, then go. Split-step before it lands.",
-        logProtocol: "Log your last 10 reps.",
+        logProtocol: "Your last 10 reps",
+        unit: "rep",
         counts: "A rep counts if the drop lands in the kitchen and you're set before it bounces.",
         logPrompt: "Out of 10, how many drops landed in the kitchen with you set in time?",
       },
@@ -158,7 +178,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Block your partner's speed-ups at the kitchen without backing up.",
       setup: "Partner",
       cue: "Paddle up and in front. Block first, offense second.",
-      logProtocol: "Log the last 10 balls of your final set.",
+      logProtocol: "The last 10 balls of your final set",
+      unit: "set",
       counts: "A ball counts if it goes back over the net and the point continues.",
       practiceTarget: "7 of 10",
       duration: "15 min",
@@ -171,7 +192,7 @@ export const DRILLS: Record<SkillId, Drill[]> = {
         task: "Hit firm into a wall from 6–7 feet and block the return soft so it drops low.",
         setup: "Wall",
         cue: "Absorb it. Soft grip, let it die.",
-        logProtocol: "Log your last set of 10.",
+        logProtocol: "Your last set of 10 blocks",
         counts: "A block counts if it comes back off the wall low and soft.",
         logPrompt: "Of your last 10 blocks, how many came back low and soft?",
       },
@@ -184,7 +205,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Both at the kitchen, speed up freely. First to pop it up loses.",
       setup: "Partner",
       cue: "Short strokes, stay compact. The first pop-up loses.",
-      logProtocol: "Log your last 10 exchanges.",
+      logProtocol: "Your last 10 exchanges",
+      unit: "exchange",
       counts: "An exchange is won if your opponent pops it up or misses first.",
       practiceTarget: "6 of 10",
       duration: "10 min",
@@ -196,7 +218,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
         task: "Volley firm against a wall from 4–5 feet, alternating forehand and backhand every ball.",
         setup: "Wall",
         cue: "Short strokes. Forehand, backhand, repeat.",
-        logProtocol: "Log your last 10 volleys.",
+        logProtocol: "Your last 10 volleys",
+        unit: "rally",
         counts: "A volley counts if it's on the right side and under control, with no mishit or pop-up.",
         practiceTarget: "7 of 10",
         logPrompt: "Of 10 alternating volleys, how many stayed controlled?",
@@ -212,7 +235,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Reach 50 dinks in a row with your partner, no speed-ups allowed.",
       setup: "Partner",
       cue: "Contact out front, soft wrist. Every ball lands in the kitchen.",
-      logProtocol: "Log your last 10 rallies.",
+      logProtocol: "Your last 10 rallies",
+      unit: "rally",
       counts: "A rally counts as patient if it ends on their error or reaches the target without you speeding up.",
       practiceTarget: "8 of 10",
       duration: "10 min",
@@ -224,7 +248,7 @@ export const DRILLS: Record<SkillId, Drill[]> = {
         task: "Dink against a wall at kitchen distance, counting out loud to 30 in a row.",
         setup: "Wall",
         cue: "Soft wrist, contact out front. Keep it at net height.",
-        logProtocol: "Log your last 10 dinks.",
+        logProtocol: "Your last 10 dinks",
         counts: "A dink counts if it comes back around net height and you keep the rally going.",
         logPrompt: "Of your last 10 dinks, how many stayed at net height?",
       },
@@ -237,7 +261,8 @@ export const DRILLS: Record<SkillId, Drill[]> = {
       task: "Dink rally where you may only speed up on a ball above the net and out front.",
       setup: "Partner",
       cue: "Only above the net AND out in front. Everything else resets.",
-      logProtocol: "Log your last 10 attackable balls.",
+      logProtocol: "Your last 10 attackable balls",
+      unit: "rally",
       counts: "A read counts if you attacked a ball above the net and out front, or reset one that wasn't.",
       practiceTarget: "8 of 10",
       duration: "15 min",
@@ -251,7 +276,7 @@ export const DRILLS: Record<SkillId, Drill[]> = {
         task: "Dink against a wall with tape at net height, hitting firm only on a ball above the tape and out front.",
         setup: "Wall",
         cue: "Only above the tape AND out in front. Everything else is a dink.",
-        logProtocol: "Log your last 10 balls.",
+        logProtocol: "Your last 10 balls",
         counts: "A ball counts if you played it by the rule: firm above the tape and out front, a dink otherwise.",
         logPrompt: "Of 10 balls, how many did you play by the rule?",
       },
