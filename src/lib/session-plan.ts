@@ -27,6 +27,10 @@ import type { Drill } from "@/lib/drills";
  */
 export const SESSIONS_PER_WEEK = 2;
 
+/** How long a plan runs, and so how many sessions it asks for in all. */
+export const PLAN_WEEKS = 3;
+export const PLAN_SESSIONS = PLAN_WEEKS * SESSIONS_PER_WEEK;
+
 /** Whole minutes from a drill's duration string ("15 min" → 15). */
 function minutesOf(duration: string): number {
   const n = parseInt(duration, 10);

@@ -2,6 +2,7 @@ import { Diagnosis, AnswerMap, SkillId } from "./types";
 import { DRILLS, Drill } from "./drills";
 import { SKILL_LABELS } from "./diagnoses";
 import { QUESTIONS } from "./questions";
+import { PLAN_WEEKS } from "./session-plan";
 
 export interface Roadmap {
   goalLabel: string;
@@ -105,6 +106,6 @@ export function generateRoadmap(diagnosis: Diagnosis, answers: AnswerMap): Roadm
     hasPartner,
     inGameRule: IN_GAME_RULES[diagnosis.bottleneck],
     retestMetric: retestMetricFor(diagnosis.bottleneck, answers),
-    weeksTarget: 3,
+    weeksTarget: PLAN_WEEKS,
   };
 }

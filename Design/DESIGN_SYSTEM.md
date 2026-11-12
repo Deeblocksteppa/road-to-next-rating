@@ -287,16 +287,18 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - **Re-test history** card: rows (name / date → score, accent deltas, `SCHEDULED` badge for future).
 - **Streak** card: eyebrow `STREAK` + "5 weeks hitting target" + filled/empty 12px squares.
 
-### Progress — Day One (empty)
-- No card, no accent (unless the re-test is open, when the re-test block above takes it): mono `FIRST RE-TEST` → Archivo 800 56px date → mono "IN 13 DAYS · WEEK 1 OF 3" → explainer ("This is the day you find out if {skill} moved."). No date: "Not scheduled" (32px) and nothing more.
-- A strip of two readings between hairlines: "SESSIONS DONE / 4", "INTO THE PLAN / Day 8".
-- The one-point line: a tiny flat-line mark (the baseline dot) + "One point so far: your baseline. Your first re-test on Nov 29 adds the second reading." **No fake chart.** After a signed-in retake (two or more diagnoses, no re-test) it drops the count: "Your first re-test on Nov 29 adds the next reading."
-- **Re-test open:** the re-test block leads the screen and its bottom hairline is the readings strip's top rule (one hairline, not two 32px apart).
+### Progress — before the first re-test
 - **Shown until the first completed re-test** (`hasCompletedRetest`, `src/lib/retest-gate.ts`: the player owns a plan a re-test made), not until a second diagnosis: a retake adds a diagnosis without a re-test. Nothing is sold here: no locked cards, no upgrade, for any tier.
-- **Subscriber variant:** the one-point line is replaced by what they pay for, unlocked and neutral (no lock, no blur, no accent), in hairline sections: `READINESS` (no top rule, the strip's sits above it; the one-point mark + "Your second reading lands Nov 29."), `RE-TEST HISTORY` ("Your first entry lands Nov 29."; it also stands in for the per-re-test breakdown each row opens), then "Weeks with both sessions" with live data. With the re-test open or no date: "Your second reading comes from your re-test." / "Your first entry comes from your re-test." After a signed-in retake, "second" reads "next". The chart, history and logged-sessions series aren't loaded in this state.
+- **Hero, set on the page (no card):** mono `SESSIONS DONE` → Archivo 800 56px "3" with " of 6" at 24px `ink-3` → a row of six plain segments (6px, `radius-full`), completed ones in `optic`, not grouped by week. The count is this plan's completed sessions only (a retake starts again at 0) and holds at "6 of 6" past six. The lit segments are the screen's one accent.
+- **`READINESS` row** (hairline above): mono label left, Archivo 800 32px "45" with mono "/100" in `ink-3` right, then "A score from your answers, not a DUPR estimate." The baseline: the reading this plan was built from, free for every tier.
+- **`RE-TEST` row:** mono label left, "Nov 29 · in 13 days" (16px, 600) right, then one sentence, the same for everyone: "Your re-test gives you a new score to compare with this one." No date: "Not scheduled", sentence kept.
+- **Re-test open:** the re-test block leads the screen and holds the accent, so the lit segments go neutral (`ink-2`) and the `RE-TEST` row is hidden.
+- Not here: a large date, a week or day count, "This is the day you find out…", or a chart mark.
+- **Subscriber variant:** the same top block, then what they pay for, unlocked and neutral (no lock, no blur, no accent), in hairline sections: `RE-TEST HISTORY` ("Your first entry lands Nov 29."; with the re-test open or no date, "Your first entry comes from your re-test."), then "Weeks with both sessions" with live data. The chart, history and logged-sessions series aren't loaded in this state.
+- **What the page is handed:** the session count, the one readiness number and the re-test date. Never the diagnoses or plans themselves, so no earlier reading, re-test history or logged result reaches a browser in this state.
 
 ### Progress — locked (FREE)
-- Only after the first completed re-test; before it, Day One.
+- Only after the first completed re-test; before it, the screen above.
 - Readiness now, set on the page (no card): mono `READINESS NOW` → Archivo 800 72px number → mono "SINCE START 52 → 58 +6" (change in ink, `danger` when down, NO CHANGE neutral) → "A score from your answers, not a DUPR estimate."
 - Two locked cards (flat cover, no gradient; see Locked / blur treatment) with lock icons + teasers: "Your readiness line across every re-test, whichever way it went." / "Re-test history, with how every skill moved each time."
 - Primary button **"Unlock Progress"** (no price on an entry point; secondary while the re-test is open).

@@ -7,8 +7,8 @@ import {
 import { SKILL_LABELS } from "@/lib/diagnoses";
 import { findDrillById } from "@/lib/drill-lookup";
 import {
+  getPlanSessions,
   getScoredSessionsByDrill,
-  getTotalSessions,
   getWeeklyStreak,
 } from "@/lib/drill-sessions";
 import { DRILLS } from "@/lib/drills";
@@ -16,6 +16,7 @@ import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { readinessOfRow } from "@/lib/readiness";
 import { hasCompletedRetest } from "@/lib/retest-gate";
+import { PLAN_SESSIONS } from "@/lib/session-plan";
 import {
   buildHistoryRows,
   buildReadinessSeries,
@@ -32,10 +33,12 @@ import type { SkillId } from "@/lib/types";
  * a plan a re-test made), not by how many diagnoses they have, since a
  * signed-in retake on /start adds one with no re-test:
  *   • no diagnosis at all       → prompt to take the assessment
- *   • no completed re-test      → Day One. Nothing is sold before there is a
- *                                 re-test to show: free sees Day One alone;
- *                                 paid also gets readiness and history empty
- *                                 states and live weeks with both sessions.
+ *   • no completed re-test      → Before the first re-test: this plan's
+ *                                 sessions out of six, the baseline readiness
+ *                                 and the re-test date. Nothing is sold before
+ *                                 there is a re-test to show. Subscribers also
+ *                                 get the history empty state and live weeks
+ *                                 with both sessions.
  *   • completed re-test + free  → Locked (placeholder only; paid data never loaded)
  *   • completed re-test + paid  → Full
  */
@@ -83,38 +86,40 @@ export default async function ProgressPage() {
         Boolean(findDrillById(id))
       ).length
     : 0;
-  // Completed sessions, not logged drills: this used to be a raw row count,
-  // which read "4 sessions done" after two visits of two drills each.
-  const sessionsDone = await getTotalSessions(supabase, drillsPerSession);
 
   let viewData: ProgressViewData;
 
   if (diags.length === 0) {
     viewData = { kind: "empty" };
   } else if (!retestDone) {
-    // ── State 1: Day One, before the first re-test. A retake can mean more
-    // than one diagnosis here; the latest one is this plan's baseline.
-    const bottleneck = diags[diags.length - 1].bottleneck as SkillId;
+    // ── State 1: before the first re-test. A retake can mean more than one
+    // diagnosis here; the latest one is this plan's baseline.
     const timeline =
       plan?.retest_date && plan.created_at
         ? getPlanTimeline(plan.created_at, plan.retest_date)
         : null;
 
+    // Free and paid: one count, one number, one date. The view is handed these
+    // and nothing else: never the diagnoses or plans themselves, so no earlier
+    // reading, no re-test history and no logged result can reach the browser.
     viewData = {
       kind: "day-one",
+      // This plan's sessions only (completed ones: both drills, one sitting).
+      sessionsDone: plan ? await getPlanSessions(supabase, plan.id, drillsPerSession) : 0,
+      sessionsTotal: PLAN_SESSIONS,
+      // The reading this plan was built from: the plan's own diagnosis, and
+      // the newest only if the plan has no link. (They differ when a re-test
+      // saved its diagnosis and then failed to save its plan.) Free for
+      // everyone: it is the number the reveal showed, with no tier check.
+      baselineReadiness: (diags.find((d) => d.id === plan?.diagnosis_id) ?? diags[diags.length - 1])
+        .readiness,
       retest:
         plan?.retest_date && timeline
           ? {
               dateLabel: monthDay(plan.retest_date),
               daysUntilRetest: timeline.daysUntilRetest,
-              weekNumber: timeline.weekNumber,
-              weeksTarget: timeline.weeksTarget,
-              daysElapsed: timeline.daysElapsed,
             }
           : null,
-      bottleneckPhrase: SKILL_LABELS[bottleneck] ?? "your bottleneck",
-      sessionsDone,
-      readingCount: diags.length,
       // A subscriber's weeks with both sessions are live from the start; the
       // chart, history and logged-sessions series need a re-test and are not
       // read here, so nothing sits in the page under the empty states.

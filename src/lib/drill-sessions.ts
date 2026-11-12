@@ -211,17 +211,20 @@ export async function getWeeklyProgress(
 }
 
 /**
- * Every session the caller has ever completed, across plans (RLS scopes the
- * read). The Progress screen's "sessions done" stat — it used to be a raw row
- * count, which is drills, not sessions.
+ * Sessions completed on one plan, over its whole run. Progress's "n of 6"
+ * before the first re-test: the plan's own sessions, so a player who retook
+ * the assessment starts the new plan at 0 rather than with the old plan's
+ * sessions already counted toward it.
  */
-export async function getTotalSessions(
+export async function getPlanSessions(
   supabase: SupabaseClient,
+  planId: string,
   drillsPerSession: number
 ): Promise<number> {
   const { data, error } = await supabase
     .from("drill_sessions")
-    .select("plan_id, drill_id, completed_at");
+    .select("plan_id, drill_id, completed_at")
+    .eq("plan_id", planId);
   if (error) throw error;
   return countSessions(toLogged(data), drillsPerSession);
 }

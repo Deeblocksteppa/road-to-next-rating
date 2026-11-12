@@ -371,9 +371,10 @@ export function Progress() {
  *     runs out.
  *   – The Delta screen shows the headline score change (old → new, +N) and
  *     the trained skill's before and after to everyone, and locks only the
- *     other skills' rows. Progress shows the current
- *     readiness and "+N since start" to everyone once there is a re-test, and
- *     locks the chart, the history list and the streak card.
+ *     other skills' rows. Progress shows the baseline readiness to
+ *     everyone from the first day, and the current readiness and "+N since
+ *     start" to everyone once there is a re-test; it locks the chart, the
+ *     history list and the streak card.
  *   – The next bottleneck is diagnosed and planned for on every re-test
  *     regardless of tier, so it is not a paid feature and is not listed as
  *     one.
