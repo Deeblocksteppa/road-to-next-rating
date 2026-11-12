@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { shotTypeForDrill, type ShotType } from "@/lib/drill-shot";
+import { shotTypeForDrill, wallLabelsForDrill, type ShotType, type WallLabels } from "@/lib/drill-shot";
 
 /**
  * A small side-view diagram of the drill's shot, shown on the Brief screen so a
@@ -25,6 +25,12 @@ import { shotTypeForDrill, type ShotType } from "@/lib/drill-shot";
  * Motion is SMIL-driven (reliable for path following in mobile Safari/Chrome);
  * prefers-reduced-motion swaps the moving ball for the static dotted arc plus a
  * ball resting at the shot's end point.
+ *
+ * A drill prescribed at a wall isn't played over a net, so it gets the wall
+ * template instead: one drawing shared by every wall version (a wall, where
+ * the player stands, the ball out and back), with labels per drill saying how
+ * far to stand and what the return should do. The picture is the same for all
+ * of them; the labels carry what differs.
  */
 
 const COURT = "#4A4A50"; // line-hover — muted but legible court lines
@@ -42,15 +48,20 @@ export function ShotDemo({
   forceStatic = false,
 }: {
   drillId: string;
-  /** The prescribed version's setup. A wall drill isn't played over a net, so it gets no court. */
+  /** The prescribed version's setup. A wall drill isn't played over a net: it gets the wall template. */
   setup?: string;
   /** Render the reduced-motion state regardless of the OS setting (previews, fixtures). */
   forceStatic?: boolean;
 }) {
   const reduced = usePrefersReducedMotion() || forceStatic;
 
+  if (setup === "Wall") {
+    const labels = wallLabelsForDrill(drillId);
+    return labels ? <WallDemo labels={labels} reduced={reduced} /> : null;
+  }
+
   const type = shotTypeForDrill(drillId);
-  if (!type || setup === "Wall") return null;
+  if (!type) return null;
   const demo = DEMOS[type];
 
   return (
@@ -91,11 +102,91 @@ export function ShotDemo({
       </svg>
       {/* Under reduced motion the ball is parked at the landing point and the
           arc carries the shape, so the picture is complete without playing. */}
-      {reduced && (
-        <p className="mt-1 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
-          Dotted line: the ball&apos;s path · ball: where it lands
-        </p>
-      )}
+      {reduced && <StaticCaption ball="where it lands" />}
+    </div>
+  );
+}
+
+/** What the still picture shows, since nothing moves: the path, and where the ball is parked. */
+function StaticCaption({ ball }: { ball: string }) {
+  return (
+    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
+      Dotted line: the ball&apos;s path · ball: {ball}
+    </p>
+  );
+}
+
+/* ── The wall template ──────────────────────────────────────────── */
+
+const WALL_X = 272;
+/** Net height on the wall, on the court diagrams' scale (ground 120, net top 88). */
+const WALL_LINE_Y = NET_TOP;
+const STAND_X = 78;
+
+/** Out to the wall, back to the player: one path for every wall drill. */
+const WALL_MOTION: Motion = {
+  // The outgoing leg stops with the ball's edge on the wall's face (radius 4.5).
+  path: `M${STAND_X + 8} 96 Q 180 70 ${WALL_X - 6} 82 Q 186 88 ${STAND_X + 22} 106`,
+  dur: "2.8s",
+  // out → the briefest contact with the wall → back → rest. The wall is at
+  // 0.52 of the path's length (the two legs are not equal), so that is
+  // where the ball holds.
+  keyTimes: "0;0.42;0.46;0.88;1",
+  keyPoints: "0;0.52;0.52;1;1",
+  keySplines: "0.3 0 0.7 1;0 0 1 1;0.3 0 0.6 1;0 0 1 1",
+  opacity: { keyTimes: "0;0.05;0.86;0.94;1", values: "0;1;1;0;0" },
+  rest: [STAND_X + 22, 106],
+};
+
+function WallDemo({ labels, reduced }: { labels: WallLabels; reduced: boolean }) {
+  return (
+    <div role="img" aria-label={labels.aria} className="w-full">
+      <svg viewBox="0 52 320 88" className="h-auto w-full" aria-hidden="true">
+        <line x1="12" y1={GROUND} x2={WALL_X} y2={GROUND} stroke={COURT} strokeWidth="1" />
+        {/* The wall: heavier than a court line, so it reads as a surface. */}
+        <line x1={WALL_X} y1={GROUND} x2={WALL_X} y2="58" stroke={COURT} strokeWidth="3" strokeLinecap="round" />
+        {/* Where the player stands. Unlabelled when the drill names no distance. */}
+        <Tick x={STAND_X} top={108} />
+
+        {/* A height on the wall, for the drills that name one (net height, the tape). */}
+        {labels.line !== undefined && (
+          <>
+            <line
+              x1={WALL_X - 34}
+              y1={WALL_LINE_Y}
+              x2={WALL_X - 3}
+              y2={WALL_LINE_Y}
+              stroke={COURT}
+              strokeWidth="1.5"
+              strokeDasharray="3 3"
+              strokeLinecap="round"
+            />
+            {labels.line && (
+              // Under the line, by the wall: the ball's path runs above it.
+              <text x={WALL_X - 6} y={WALL_LINE_Y + 12} fill={LABEL} fontSize="7" letterSpacing="0.1em" textAnchor="end" fontFamily="var(--font-mono), monospace">
+                {labels.line}
+              </text>
+            )}
+          </>
+        )}
+
+        <path
+          d={WALL_MOTION.path}
+          fill="none"
+          stroke={OPTIC}
+          strokeOpacity={reduced ? "0.8" : "0.5"}
+          strokeWidth="1.5"
+          strokeDasharray="0.5 5"
+          strokeLinecap="round"
+        />
+
+        {labels.stand && <CourtLabel x={STAND_X}>{labels.stand}</CourtLabel>}
+        <CourtLabel x={178}>{labels.back}</CourtLabel>
+        <CourtLabel x={WALL_X - 10}>WALL</CourtLabel>
+        <Ball reduced={reduced} motion={WALL_MOTION} />
+      </svg>
+      {/* Parked on its way back to the player, not at a landing point. */}
+      {reduced && <StaticCaption ball="back to you" />}
     </div>
   );
 }

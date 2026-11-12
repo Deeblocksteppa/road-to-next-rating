@@ -258,3 +258,24 @@ export const DRILLS: Record<SkillId, Drill[]> = {
     },
   ],
 };
+
+/**
+ * Who a drill needs, from the prescribed version's `setup`. Not from
+ * `requiresPartner`: a solo version is spread over the partner drill and keeps
+ * that flag, so it says "partner" about a drill done alone.
+ */
+export function isSoloSetup(setup: string): boolean {
+  return setup !== "Partner";
+}
+
+/** The mono reading beside a drill's time on plan and Home rows: "PARTNER", "SOLO", "SOLO · WALL". */
+export function setupRowLabel(setup: string): string {
+  if (!isSoloSetup(setup)) return "PARTNER";
+  return setup === "Wall" ? "SOLO · WALL" : "SOLO";
+}
+
+/** The drill page's WHO value: "Partner", "Solo", "Solo, at a wall". */
+export function setupWho(setup: string): string {
+  if (!isSoloSetup(setup)) return "Partner";
+  return setup === "Wall" ? "Solo, at a wall" : "Solo";
+}
