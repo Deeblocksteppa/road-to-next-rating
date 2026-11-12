@@ -254,6 +254,20 @@ export async function getCompletedTodayDrillIds(
 export interface TodayLogEntry {
   drillId: string;
   result: number | null;
+  /** ISO timestamp. The sitting can reach back past midnight UTC, so this isn't always today. */
+  completedAt: string;
+}
+
+/**
+ * Whether anything in the sitting's log falls on the current UTC day. A drill
+ * can be logged once per UTC day, so when this is true no further session can
+ * be completed today; when the sitting's logs are all from before midnight
+ * UTC, today is still open. Lines about "the week's last day" need this, not
+ * just "the sitting is done".
+ */
+export function loggedThisUtcDay(entries: Pick<TodayLogEntry, "completedAt">[], now: Date = new Date()): boolean {
+  const today = startOfTodayUTC(now).getTime();
+  return entries.some((e) => new Date(e.completedAt).getTime() >= today);
 }
 
 /**
@@ -267,13 +281,14 @@ export async function getTodayLog(
   const since = startOfSittingUTC();
   const { data, error } = await supabase
     .from("drill_sessions")
-    .select("drill_id, result_value")
+    .select("drill_id, result_value, completed_at")
     .eq("plan_id", planId)
     .gte("completed_at", since.toISOString());
   if (error) throw error;
   return (data ?? []).map((row) => ({
     drillId: row.drill_id as string,
     result: (row.result_value as number | null) ?? null,
+    completedAt: row.completed_at as string,
   }));
 }
 

@@ -14,60 +14,68 @@ export interface Roadmap {
   weeksTarget: number;
 }
 
+/**
+ * "In your games": the one thing to do in open play while the drills do their
+ * work. One sentence per skill.
+ */
 const IN_GAME_RULES: Record<SkillId, string> = {
-  reset:
-    "When you're caught mid-court, reset soft instead of attacking, even if you lose the point. You're trading this week's games for next month's level.",
-  third_shot_drop:
-    "Commit to the drop on every third shot this week, even when it fails. You need the reps more than the wins right now.",
-  net_defense:
-    "When someone speeds up at you, your first job is to stay in the point, not counter-attack. Block first, look for offense second.",
-  dink_patience:
-    "In every dink rally, wait for a ball that is above net height AND out in front before you speed up. Reset everything else, no exceptions.",
+  reset: "When you're caught mid-court, reset soft instead of attacking, even if it costs the point.",
+  third_shot_drop: "Go for the drop on every third shot, even when it fails.",
+  net_defense: "When someone speeds up at you, block first and look for offense second.",
+  dink_patience: "In every dink rally, speed up only on a ball above net height and out in front.",
 };
 
-const RETEST_METRICS: Record<Exclude<SkillId, "third_shot_drop">, string> = {
-  reset:
-    "Can you reset a hard ball at your feet from mid-court without it floating up? Count 10 attempts. Aim for 6+ clean.",
-  net_defense:
-    "When someone speeds up at your body, can you block it back and stay in the point? Aim for 6 of 10.",
-  dink_patience:
-    "In your next 3 games, count how many times you speed up on a ball that wasn't actually attackable. Aim for fewer than 3 per game.",
+const RETEST_GOALS: Record<Exclude<SkillId, "third_shot_drop">, string> = {
+  reset: "Cleanly reset 6 of 10 hard balls at your feet from mid-court.",
+  net_defense: "Block back 6 of 10 speed-ups at your body and stay in the point.",
+  dink_patience: "In your next 3 games, speed up on an unattackable ball fewer than 3 times a game.",
 };
 
 /**
- * The third-shot drop's re-test target, set from where the player started.
+ * The third-shot drop's re-test goal, set from where the player started.
  *
  * It is the one skill the assessment asks about as a count out of ten, so it
- * is the one target that can be stated against a starting point. The start
- * is the range they chose (never a single number nobody collected), and the
- * target is one the re-test can actually register: the re-test asks the same
- * question with the same four ranges (0, 1–3, 4–6, 7–10).
+ * is the one goal that can be stated against a starting point. The start is
+ * the range they chose (never a single number nobody collected), and the goal
+ * is one the re-test can register: the re-test asks the same question with
+ * the same four ranges (0, 1–3, 4–6, 7–10).
  *
- *   - started at 0 or 1–3 → "Target: 5+" (lands in the next range up);
- *   - started at 4–6, already around five → "Target: 7+", the next range;
- *   - started at 7–10 → nothing higher to aim at, so hold it under pressure.
- *
- * This used to read "Aim for 5+ (up from where you started)" for everyone,
- * including a player who had answered 4–6.
+ *   - started at 1–3 → 5 or more, "up from 1–3";
+ *   - started at 4–6 → 7 or more, "up from 4–6";
+ *   - started at 7–10 → nothing higher to aim at, so keep landing them;
+ *   - started at 0 ("none land, or I usually just drive"), or no readable
+ *     answer → 5 or more, with no "up from": that answer covers a player who
+ *     doesn't attempt the drop, and "up from 0" would say they had tried.
  */
-function thirdShotRetestMetric(answers: AnswerMap): string {
-  const measure =
-    "Out of 10 drops in a real game, count how many land soft without getting attacked.";
+function thirdShotRetestGoal(answers: AnswerMap | null): string {
   const option = QUESTIONS.find((q) => q.id === "third_shot")?.options?.find(
-    (o) => o.id === answers["third_shot"]
+    (o) => o.id === answers?.["third_shot"]
   );
+  const level = option?.skillLevel ?? 0;
   const range = option?.short;
-  if (!option || !range) return `${measure} Target: 5+.`;
-
-  const level = option.skillLevel ?? 0;
-  if (level >= 3) return `${measure} You started at ${range}. Hold 7+ under game pressure.`;
-  return `${measure} You started at ${range}. Target: ${level >= 2 ? "7+" : "5+"}.`;
+  if (!option || !range || level <= 0) {
+    return "In a real game, land 5 or more of 10 drops without getting attacked.";
+  }
+  if (level >= 3) return "Keep landing 7 or more of 10 drops without getting attacked in real games.";
+  return `In a real game, land ${level >= 2 ? 7 : 5} or more of 10 drops without getting attacked, up from ${range}.`;
 }
 
-function retestMetricFor(bottleneck: SkillId, answers: AnswerMap): string {
-  return bottleneck === "third_shot_drop"
-    ? thirdShotRetestMetric(answers)
-    : RETEST_METRICS[bottleneck];
+/** "In your games" for a skill. Pure, so a saved plan's page can render it without reading the row. */
+export function inGameRuleFor(bottleneck: SkillId): string {
+  return IN_GAME_RULES[bottleneck];
+}
+
+/**
+ * "Re-test goal" for a skill, from the answers behind the diagnosis (only the
+ * third-shot drop's goal reads them; null gets its no-answer wording).
+ *
+ * Both sentences are rendered from here wherever a plan is shown, not read
+ * back from the plan row, so a plan made before a wording change shows the
+ * same sentence as one made after. The row still records what was written
+ * when the plan was made.
+ */
+export function retestGoalFor(bottleneck: SkillId, answers: AnswerMap | null): string {
+  return bottleneck === "third_shot_drop" ? thirdShotRetestGoal(answers) : RETEST_GOALS[bottleneck];
 }
 
 /**
@@ -104,8 +112,8 @@ export function generateRoadmap(diagnosis: Diagnosis, answers: AnswerMap): Roadm
     bottleneckLabel: SKILL_LABELS[diagnosis.bottleneck],
     weeklyDrills,
     hasPartner,
-    inGameRule: IN_GAME_RULES[diagnosis.bottleneck],
-    retestMetric: retestMetricFor(diagnosis.bottleneck, answers),
+    inGameRule: inGameRuleFor(diagnosis.bottleneck),
+    retestMetric: retestGoalFor(diagnosis.bottleneck, answers),
     weeksTarget: PLAN_WEEKS,
   };
 }

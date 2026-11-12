@@ -4,33 +4,31 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { SkillTitle } from "@/components/diagnosis/SkillTitle";
-import { ShotDemo } from "@/components/session/ShotDemo";
+import { ReadingRows } from "@/components/ui/reading-rows";
 import { AUTH_ERRORS } from "@/lib/auth-errors";
 import { SKILL_TITLES } from "@/lib/diagnoses";
-import type { Drill } from "@/lib/drills";
+import { setupRowLabel, type Drill } from "@/lib/drills";
 import type { TodayLogEntry, WeeklyProgress } from "@/lib/drill-sessions";
 import { SESSIONS_PER_WEEK, sessionMinutes } from "@/lib/session-plan";
 import type { SkillId } from "@/lib/types";
+import { planStatusLine, type WeekContext } from "@/lib/week-status";
 
 /** The anonymous player on /start: the plan lives on this device until they sign up. */
 interface AnonymousContext {
   kind: "anonymous";
-  /** The reveal's verdict clause and the answer behind it (`focusReason`). */
-  focusReason: string;
   /** The address a sign-up on this device is waiting on, if any. */
   pendingEmail: string | null;
   /** Retaking while signed in: no account to pitch, and the plan isn't on it yet. */
   signedIn: boolean;
   /**
-   * The button waiting on the result's save before the form opens or, signed
-   * in, the claim (it reads "Saving…" and both are disabled), and the one whose
-   * save failed.
+   * "Save my plan" (or the pending line's "Enter code") is waiting on the
+   * result's save before the form opens or, signed in, the claim. The button
+   * reads "Saving…" and nothing opens twice.
    */
-  saving: "save" | "session" | null;
-  saveFailed: "save" | "session" | null;
-  /** "Start session": sessions need an account, so this opens the save form saying so. Signed in: claims, then opens the session. */
-  onStartSession: () => void;
-  /** "Save my plan": the same form, without the session line. Signed in: claims, then opens /plan. */
+  saving: boolean;
+  /** That save failed, so nothing opened. */
+  saveFailed: boolean;
+  /** Opens the save form. Signed in: claims the result for the account instead. */
   onSavePlan: () => void;
   /** The pending sign-up's code screen (which has resend, change email and log in). */
   onEnterCode: () => void;
@@ -41,52 +39,59 @@ interface AnonymousContext {
 /** The signed-in player on /plan. */
 interface MemberContext {
   kind: "member";
-  weekNumber: number | null;
   todayLog: TodayLogEntry[];
   weekly: WeeklyProgress;
-  /** The re-test is open: it takes the screen's accent, and every Start goes secondary. */
-  retestOpen: boolean;
+  /**
+   * Where today sits in the week and the plan, for the status line. With
+   * `week.retestOpen` the re-test's banner above this view takes the screen's
+   * accent, and Start session goes secondary.
+   */
+  week: WeekContext;
+  /** Something in `todayLog` was logged on the current UTC day (`loggedThisUtcDay`). */
+  loggedToday: boolean;
 }
 
 /**
  * The plan, one way everywhere: the anonymous result on /start and the Plan
- * tab. It replaced the plan preview (shown once after the reveal), the saved
- * result and the Plan tab's own body, which told the same plan in three
- * designs and three sets of names.
+ * tab.
  *
- * Top to bottom: the skill as the title, the session's shape, the drills as
- * numbered hairline rows, then three quiet readings under hairlines (In your
- * games, Re-test goal, Readiness). No cards. One accent per screen: the next
- * drill's Start (member), Start session (anonymous), or, when the re-test is
- * open, the re-test above this view.
+ * Top to bottom: the skill as the title; the plan's shape as label and value
+ * rows; the drills, each a row that opens its page; one action; then the two
+ * sentences that go with the drills (In your games, Re-test goal). No cards.
  *
- * Anonymous only: the sign-up status, the reason for the focus, Replay, the
- * account block and Start over. Starting a session needs an account (that is
- * where the counts are kept), so both of the anonymous buttons open the save
- * form, or save straight to the account of a signed-in player retaking.
- * Nothing opens the form by itself.
+ * One action, one accent:
+ *   - anonymous: "Save my plan", the only way into the save form (signed in
+ *     and retaking, it saves straight to the account);
+ *   - signed in with a session to do: "Start session" ("Continue session"
+ *     when today's is half done), secondary while an open re-test holds the
+ *     accent above this view;
+ *   - signed in with nothing to start: a status line and no button.
+ *
+ * A drill row never starts anything: it opens the drill's page, read-only.
+ * Sessions start here or on Home, and always at the first drill not yet
+ * logged today.
  */
 export function PlanView({
   skill,
   drills,
+  drillBase,
   inGameRule,
-  retestMetric,
-  retestStart,
+  retestGoal,
   retestWhen,
-  readiness,
   weeksTarget,
   context,
 }: {
   skill: SkillId;
   /** As prescribed: the solo versions for a player without a partner. */
   drills: Drill[];
+  /** The page showing this plan ("/start", "/plan"): a row opens `{drillBase}?drill={id}`. */
+  drillBase: string;
+  /** One sentence, from `inGameRuleFor`. */
   inGameRule: string | null;
-  retestMetric: string | null;
-  /** "You started at: “…”." for skills answered in words (`retestStart`). */
-  retestStart: string | null;
-  /** When the re-test opens, as a short mono reading: "In 3 weeks", "Oct 30". */
+  /** One sentence, from `retestGoalFor`. */
+  retestGoal: string | null;
+  /** When the re-test opens, as the RE-TEST row reads it: "In 3 weeks", "Oct 30", "Open now". */
   retestWhen: string;
-  readiness: number | null;
   weeksTarget: number;
   context: AnonymousContext | MemberContext;
 }) {
@@ -98,22 +103,28 @@ export function PlanView({
   const todayComplete = drills.length > 0 && remainingToday.length === 0;
   const inProgress = !todayComplete && remainingToday.length < drills.length;
   const weekComplete = member ? member.weekly.total > 0 && member.weekly.completed >= member.weekly.total : false;
-  const nextId = remainingToday[0]?.id ?? null;
+  // A session half done today is worth finishing even with the week's two in.
+  const canStart = member !== null && drills.length > 0 && !todayComplete && (!weekComplete || inProgress);
 
-  // Anonymous: the plan is saved when the assessment ends, but the device keeps
-  // no start date, so it has no week to name.
-  const weekLine =
-    member?.weekNumber != null
-      ? `Week ${member.weekNumber} of ${weeksTarget} · Same drills each week. Beat your last numbers.`
-      : `${weeksTarget} weeks · Same drills each week. Beat your last numbers.`;
+  const rows = [
+    { label: "Plan", value: `${weeksTarget} weeks · ${SESSIONS_PER_WEEK} sessions a week` },
+    {
+      label: "Session",
+      value: `${sessionMinutes(drills)} min · ${drills.length === 2 ? "both" : "all"} drills`,
+    },
+    ...(member
+      ? [{ label: "This week", value: `${member.weekly.completed} of ${member.weekly.total} sessions` }]
+      : []),
+    { label: "Re-test", value: retestWhen },
+  ];
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {anon?.pendingEmail && (
         <PendingStatus
           email={anon.pendingEmail}
-          busy={anon.saving !== null}
-          failed={anon.saveFailed === "save"}
+          busy={anon.saving}
+          failed={anon.saveFailed}
           onEnterCode={anon.onEnterCode}
         />
       )}
@@ -125,14 +136,6 @@ export function PlanView({
           <SkillTitle title={SKILL_TITLES[skill]} />
         </h1>
         {anon && (
-          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">{anon.focusReason}</p>
-        )}
-        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-          {SESSIONS_PER_WEEK} sessions a week, {sessionMinutes(drills)} minutes each. Each session is{" "}
-          {drills.length === 2 ? "both" : "all"} drills, back to back.
-        </p>
-        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">{weekLine}</p>
-        {anon && (
           <button
             type="button"
             onClick={anon.onReplay}
@@ -143,127 +146,78 @@ export function PlanView({
         )}
       </header>
 
-      {/* ── The drills ── */}
-      <section className="flex flex-col gap-4">
-        {member && (
-          <div className="flex items-baseline justify-between">
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">This week</p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.1em] tabular-nums text-ink-2">
-              {member.weekly.completed} of {member.weekly.total} sessions
-            </p>
-          </div>
-        )}
-        {member && todayComplete && (
-          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-            Today&apos;s session complete.{" "}
-            {weekComplete
-              ? "Both sessions done this week. Next week starts Monday."
-              : `Next session: any other day this week (${member.weekly.total - member.weekly.completed} to go).`}
-          </p>
-        )}
+      {/* ── The plan's shape ── */}
+      <ReadingRows rows={rows} />
 
-        {drills.length === 0 ? (
-          <p className="text-[16px] text-ink-2">No drills on this plan.</p>
-        ) : (
-          <ol className="border-b border-line">
-            {drills.map((drill, i) => (
-              <DrillRow
-                key={drill.id}
-                drill={drill}
-                index={i}
-                status={
-                  !member
-                    ? null
-                    : logged.has(drill.id)
-                      ? { kind: "logged", result: logged.get(drill.id) ?? null }
-                      : inProgress
-                        ? { kind: "due" }
-                        : null
-                }
-                start={
-                  member && !logged.has(drill.id)
-                    ? {
-                        primary: drill.id === nextId && !member.retestOpen,
-                        label: drill.id === nextId && inProgress ? "Continue session" : "Start drill",
-                      }
-                    : null
-                }
-              />
-            ))}
-          </ol>
-        )}
+      {/* ── The drills: each row opens its page ── */}
+      {drills.length === 0 ? (
+        <p className="text-[16px] text-ink-2">No drills on this plan.</p>
+      ) : (
+        <ol className="border-b border-line">
+          {drills.map((drill) => (
+            <DrillRow
+              key={drill.id}
+              drill={drill}
+              href={`${drillBase}?drill=${encodeURIComponent(drill.id)}`}
+              loggedToday={logged.has(drill.id) ? { result: logged.get(drill.id) ?? null } : null}
+            />
+          ))}
+        </ol>
+      )}
 
-        {anon && (
-          <button
-            type="button"
-            onClick={anon.onStartSession}
-            disabled={anon.saving !== null}
-            className="mt-2 flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
-          >
-            {anon.saving === "session" ? "Saving…" : "Start session"}
-          </button>
-        )}
-        {anon?.saveFailed === "session" && <SaveError />}
-      </section>
-
-      {/* ── Three readings, quiet, under hairlines ── */}
-      <dl className="border-b border-line">
-        {inGameRule && (
-          <div className="flex flex-col gap-2 border-t border-line py-5">
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
-              In your games
-            </dt>
-            <dd className="text-pretty text-[16px] leading-[1.6] text-ink">{inGameRule}</dd>
-          </div>
-        )}
-        {retestMetric && (
-          <div className="flex flex-col gap-2 border-t border-line py-5">
-            <dt className="flex items-baseline justify-between gap-4 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
-              <span>Re-test goal</span>
-              <span className="tabular-nums tracking-[0.1em]">{retestWhen}</span>
-            </dt>
-            <dd className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-              {retestStart && <span className="text-ink">{retestStart} </span>}
-              {retestMetric}
-            </dd>
-          </div>
-        )}
-        {readiness !== null && (
-          <div className="flex flex-col gap-2 border-t border-line py-5">
-            <dt className="flex items-baseline justify-between gap-4">
-              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
-                Readiness
-              </span>
-              <span className="font-display text-[18px] font-semibold tabular-nums text-ink">
-                {readiness}
-                <span className="font-mono text-[11px] font-normal tracking-[0.1em] text-ink-3"> /100</span>
-              </span>
-            </dt>
-            <dd className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-              A score from your answers, not a DUPR estimate.
-            </dd>
-          </div>
-        )}
-      </dl>
-
+      {/* ── One action ── */}
       {anon && !anon.pendingEmail && (
         <section className="flex flex-col gap-4">
           <p className="text-pretty text-[16px] leading-[1.6] text-ink">
             {anon.signedIn
-              ? "This plan isn't on your account yet. Saving it, or starting a session, makes it your current plan."
-              : "Your plan is saved on this device. A free account runs your sessions, keeps what you log, and opens your plan on any device."}
+              ? "This plan isn't on your account yet. Saving it makes it your current plan."
+              : "A free account keeps your plan and lets you start your sessions."}
           </p>
-          {/* Secondary: Start session is the screen's main action, and it saves the same way. */}
           <button
             type="button"
             onClick={anon.onSavePlan}
-            disabled={anon.saving !== null}
-            className="flex h-[52px] w-full items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-[15px] font-semibold text-ink transition-colors hover:border-line-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+            disabled={anon.saving}
+            className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
           >
-            {anon.saving === "save" ? "Saving…" : "Save my plan"}
+            {anon.saving ? "Saving…" : "Save my plan"}
           </button>
-          {anon.saveFailed === "save" && <SaveError />}
+          {anon.saveFailed && <SaveError />}
         </section>
+      )}
+      {member && canStart && (
+        <Link
+          href="/session"
+          className={`flex h-[52px] w-full items-center justify-center rounded-lg text-[15px] font-semibold transition-colors active:scale-[0.98] ${
+            member.week.retestOpen
+              ? "border border-line-strong bg-surface-2 text-ink hover:border-line-hover"
+              : "bg-optic text-optic-ink hover:bg-optic-hover"
+          }`}
+        >
+          {inProgress ? "Continue session" : "Start session"}
+        </Link>
+      )}
+      {member && !canStart && drills.length > 0 && (
+        <p role="status" className="text-pretty text-[16px] leading-[1.6] text-ink">
+          {planStatusLine(member.week, member.weekly, todayComplete, member.loggedToday)}
+        </p>
+      )}
+
+      {/* ── What goes with the drills: one sentence each ── */}
+      {(inGameRule || retestGoal) && (
+        <dl className="border-b border-line">
+          {inGameRule && (
+            <div className="flex flex-col gap-2 border-t border-line py-5">
+              <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">In your games</dt>
+              <dd className="text-pretty text-[16px] leading-[1.6] text-ink">{inGameRule}</dd>
+            </div>
+          )}
+          {retestGoal && (
+            <div className="flex flex-col gap-2 border-t border-line py-5">
+              <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Re-test goal</dt>
+              <dd className="text-pretty text-[16px] leading-[1.6] text-ink">{retestGoal}</dd>
+            </div>
+          )}
+        </dl>
       )}
 
       {anon && <StartOver onStartOver={anon.onStartOver} />}
@@ -280,95 +234,46 @@ function SaveError() {
   );
 }
 
-type DrillStatus = { kind: "logged"; result: number | null } | { kind: "due" } | null;
-
 /**
- * One drill: index, name, setup, the task in one sentence, and the full
- * brief on demand (technique, the shot diagram, what gets logged: the same
- * fields the guided session's brief shows). The guided session is the only
- * way to log, so there is no checkbox: a casual tap can't create a result.
+ * One drill: its name, its time and who it needs, and a chevron. The whole
+ * row opens the drill's page; nothing is described inline and nothing starts
+ * here. A drill logged today reads "TODAY · 7/10" in place of its time, so a
+ * half-done session shows on the plan.
  */
 function DrillRow({
   drill,
-  index,
-  status,
-  start,
+  href,
+  loggedToday,
 }: {
   drill: Drill;
-  index: number;
-  status: DrillStatus;
-  /** Member only: into the guided session. Primary on the next drill, unless the re-test is open. */
-  start: { primary: boolean; label: string } | null;
+  href: string;
+  loggedToday: { result: number | null } | null;
 }) {
-  const [open, setOpen] = useState(false);
-  const panelId = `drill-${drill.id}-brief`;
-
   return (
-    <li className="flex gap-4 border-t border-line py-5">
-      <span className="w-5 shrink-0 pt-[3px] font-mono text-[11px] tabular-nums text-ink-3">
-        {String(index + 1).padStart(2, "0")}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="font-display text-[18px] font-semibold leading-[1.3] text-ink">{drill.name}</h3>
-          {status?.kind === "logged" && (
-            <span className="shrink-0 rounded-xs bg-surface-2 px-[9px] py-[5px] font-mono text-[10px] leading-none tracking-[0.1em] tabular-nums text-ink">
-              {status.result === null ? "LOGGED" : `LOGGED · ${status.result}/10`}
-            </span>
-          )}
-          {status?.kind === "due" && (
-            <span className="shrink-0 rounded-xs bg-warn/[0.12] px-[9px] py-[5px] font-mono text-[10px] leading-none tracking-[0.1em] text-warn">
-              DUE TODAY
-            </span>
-          )}
-        </div>
-        <p className="mt-1.5 font-mono text-[11px] uppercase leading-[1.5] tracking-[0.1em] text-ink-3">
-          {drill.duration} · {drill.setup}
-        </p>
-        {/* The task is the instructions in one line; with the brief open it would say it twice. */}
-        {!open && <p className="mt-2.5 text-pretty text-[16px] leading-[1.6] text-ink-2">{drill.task}</p>}
-
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls={panelId}
-          className="mt-2 self-start py-1 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+    <li className="border-t border-line">
+      <Link
+        href={href}
+        className="group flex min-h-[64px] items-center justify-between gap-4 py-4 transition-colors"
+      >
+        <span className="flex min-w-0 flex-col gap-1.5">
+          <span className="font-display text-[18px] font-semibold leading-[1.3] text-ink">{drill.name}</span>
+          <span className="font-mono text-[11px] uppercase leading-[1.5] tracking-[0.1em] tabular-nums text-ink-3">
+            {loggedToday
+              ? `Today · ${loggedToday.result === null ? "logged" : `${loggedToday.result}/10`}`
+              : `${drill.duration} · ${setupRowLabel(drill.setup)}`}
+          </span>
+        </span>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className="shrink-0 text-ink-3 transition-colors group-hover:text-ink"
         >
-          {open ? "Hide instructions" : "View instructions"}
-        </button>
-
-        {open && (
-          <div id={panelId} className="mt-3 flex flex-col gap-4">
-            <p className="text-pretty text-[16px] leading-[1.6] text-ink">{drill.description}</p>
-            <ShotDemo drillId={drill.id} setup={drill.setup} />
-            <div className="flex flex-col gap-1.5 border-t border-line pt-4">
-              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
-                When the timer ends
-              </p>
-              <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-                <span className="font-semibold text-ink">Log: {drill.logProtocol.toLowerCase()}.</span> {drill.counts}
-              </p>
-              <p className="font-mono text-[11px] uppercase leading-[1.6] tracking-[0.1em] text-ink-2">
-                Practice target <span className="text-ink">{drill.practiceTarget}</span>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {start && (
-          <Link
-            href={`/session?drill=${encodeURIComponent(drill.id)}`}
-            className={`mt-4 inline-flex h-11 items-center justify-center self-start rounded-lg px-5 text-[15px] font-semibold transition-colors active:scale-[0.98] ${
-              start.primary
-                ? "bg-optic text-optic-ink hover:bg-optic-hover"
-                : "border border-line-strong bg-surface-2 text-ink hover:border-line-hover"
-            }`}
-          >
-            {start.label}
-          </Link>
-        )}
-      </div>
+          <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </Link>
     </li>
   );
 }
@@ -386,7 +291,7 @@ function PendingStatus({
   onEnterCode,
 }: {
   email: string;
-  /** The result's save is in flight (any of the plan's buttons): nothing opens twice. */
+  /** The result's save is in flight: nothing opens twice. */
   busy: boolean;
   /** "Enter code" couldn't save the result first, so nothing opened. */
   failed: boolean;

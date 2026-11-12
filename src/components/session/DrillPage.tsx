@@ -73,17 +73,25 @@ export function DrillPageHeader({
   backLabel,
   position,
   total,
+  replace = false,
 }: {
   backHref: string;
   /** For screen readers: where the arrow goes ("Back to my plan"). */
   backLabel: string;
   position: number;
   total: number;
+  /**
+   * Replace the history entry, not push one: for the read-only page, which a
+   * plan row pushed. Otherwise the phone's back gesture, after the arrow,
+   * reopens the drill.
+   */
+  replace?: boolean;
 }) {
   return (
     <header className="flex items-center gap-4 pt-4">
       <Link
         href={backHref}
+        replace={replace}
         aria-label={backLabel}
         className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line-strong text-ink-2 transition-colors after:absolute after:-inset-1 after:content-[''] hover:border-line-hover hover:text-ink"
       >
@@ -127,7 +135,13 @@ export function DrillPageReadOnly({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <DrillPageHeader backHref={backHref} backLabel="Back to my plan" position={position} total={total} />
+      <DrillPageHeader
+        backHref={backHref}
+        backLabel="Back to my plan"
+        position={position}
+        total={total}
+        replace
+      />
       <DrillPageBody drill={drill} />
     </div>
   );

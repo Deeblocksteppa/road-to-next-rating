@@ -274,12 +274,18 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - **Two-stat row:** *Readiness* card (flex 1.2) Archivo 44px number + 4px accent bar; *Sessions this week* card "2/3" + 3 dots (filled = accent).
 - Spacer → primary button h56 **"Start today's session"** + mono "18 MIN" suffix → mono caption "RE-TEST OPENS IN 13 DAYS".
 
-### My Plan (tab bar PLAN active)
-- Header: eyebrow `WEEK 2 OF 3` → Archivo 700 24px week title; right: accent mono "2/3 SESSIONS".
-- **Completed task** card: accent 26px check + strikethrough title `ink-3` + detail.
-- **Due task** card (hover `line-hover`): empty checkbox + title + detail + `DUE TODAY` badge.
-- **In-game rule** card (accent border, bg `rgba(216,227,76,0.04)`): eyebrow accent `IN-GAME RULE — THIS WEEK` + rule text.
-- **Re-test metric** card: eyebrow `RE-TEST METRIC` + target with current progress inline.
+### My Plan (tab bar PLAN active) and the anonymous plan on `/start`
+One component (`PlanView`) for both. No cards; hairlines only. Top to bottom:
+- Mono `YOUR FOCUS` → Archivo 800 32px skill title. On `/start` only: "Replay your diagnosis" text link.
+- **Rows** between hairlines, mono label and a 16px body-font value: `PLAN` "3 weeks · 2 sessions a week" · `SESSION` "25 min · both drills" (minutes summed from the drills, never fixed text) · `THIS WEEK` "1 of 2 sessions" (signed in only) · `RE-TEST` "Nov 29" / "Open now" / "Not scheduled" / "In 3 weeks" (anonymous).
+- **Two drill rows:** Archivo 600 18px name, mono "15 MIN · SOLO" / "15 MIN · PARTNER" / "10 MIN · SOLO · WALL" under it, a chevron at the right. The whole row opens the drill's page, read-only (`?drill=<id>` on the same route). No inline description, no fold-out, no per-drill button. A drill logged today reads "TODAY · 7/10" in place of its time ("TODAY · LOGGED" when it was logged without a number).
+- **One action slot, the screen's one accent:**
+  - anonymous: "A free account keeps your plan and lets you start your sessions." + primary **"Save my plan"** (the only way into the save form; signed in and retaking, the line is "This plan isn't on your account yet. Saving it makes it your current plan.");
+  - signed in with a session to do: primary **"Start session"** ("Continue session" when today's is half done), secondary while an open re-test's banner holds the accent;
+  - signed in with nothing to start: a status line, no button. "Today's session complete. 1 to go this week." · "Today's session complete. Both sessions done this week." · on the week's last day, "Today's session complete. Next week's sessions open Monday." · both done earlier, "Both sessions done this week. Next week's open Monday." In the plan's final week (the re-test date is on or before next Monday) a line that would point to Monday points to the re-test instead: "… Your re-test opens Dec 2." With the re-test open the banner above says so, and the lines stop at "Today's session complete." / "Both sessions done this week."
+- `IN YOUR GAMES` (one sentence), then `RE-TEST GOAL` (one sentence): mono label, 16px `ink` text, hairline above each. Both are rendered from code by skill (the third-shot goal from the starting answer), not read from the plan row.
+- On `/start` only: "Start over with a new assessment" (text link, confirmed before it runs).
+- Not here: a quote of the player's answer, "Same drills each week…", a paragraph about the device, Readiness (on Progress), a pinned button.
 
 ### Progress — full (PAID) (tab bar PROGRESS active)
 - Title Archivo 700 24px "Progress".

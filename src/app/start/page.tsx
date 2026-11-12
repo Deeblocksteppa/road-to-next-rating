@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Assessment } from "@/components/assessment/Assessment";
 import { Computing } from "@/components/assessment/Computing";
 import { Reveal } from "@/components/diagnosis/Reveal";
 import { SaveGate } from "@/components/auth/SaveGate";
 import { EXPIRED_BUTTON, ExpiredResult } from "@/components/plan/ExpiredResult";
 import { PlanView } from "@/components/plan/PlanView";
+import { DrillPageReadOnly } from "@/components/session/DrillPage";
+import { toGuidedDrill } from "@/lib/drill-lookup";
 import { diagnose } from "@/lib/engine";
 import { clearLocalResult, loadLocalResult, saveLocalResult } from "@/lib/local-result";
 import { clearSignupPending, loadSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 import { generateRoadmap } from "@/lib/roadmap";
-import { focusReason, retestStart } from "@/lib/result-copy";
 import { AnswerMap } from "@/lib/types";
 import {
   attachLocalResult,
@@ -49,7 +51,21 @@ import {
  */
 type Phase = "loading" | "expired" | "assessment" | "computing" | "reveal" | "savegate" | "saved";
 
-export default function Start() {
+export default function StartPage() {
+  // `useSearchParams` needs a boundary above it in a page that is otherwise
+  // static. The fallback is the same blank frame the first render shows.
+  return (
+    <Suspense fallback={<main className="min-h-app w-full bg-background" />}>
+      <Start />
+    </Suspense>
+  );
+}
+
+function Start() {
+  // A drill row on the plan links to `/start?drill=<id>`: that drill's page,
+  // read-only, drawn from the plan already on this device. No fetch, no rows.
+  const openDrillId = useSearchParams().get("drill");
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
   const [answers, setAnswers] = useState<AnswerMap | null>(null);
   // The address a sign-up on this device is waiting on (`signup-pending.ts`).
@@ -171,6 +187,9 @@ export default function Start() {
     saveLocalResult(ans);
     // A new result: ids from an earlier run must not mix into its set.
     clearPendingIds();
+    // Nor a drill left in the URL (a restored tab, an old link): the reveal
+    // ends on the new plan, not on one of its drills.
+    if (openDrillId) router.replace("/start");
     setAnswers(ans);
     setPhase("computing");
 
@@ -247,6 +266,7 @@ export default function Start() {
     setPendingEmail(null);
     setAnswers(null);
     setSaveFailed(null);
+    if (openDrillId) router.replace("/start");
     setPhase("assessment");
     window.scrollTo(0, 0);
   }
@@ -288,26 +308,39 @@ export default function Start() {
   }
 
   if (phase === "saved" && diagnosis && roadmap && answers) {
+    const openIndex = openDrillId ? roadmap.weeklyDrills.findIndex((d) => d.id === openDrillId) : -1;
+    if (openIndex >= 0) {
+      return (
+        <main className="min-h-app w-full bg-background text-ink">
+          <div className="mx-auto w-full max-w-md px-6 py-8">
+            <DrillPageReadOnly
+              drill={toGuidedDrill(roadmap.weeklyDrills[openIndex])}
+              position={openIndex + 1}
+              total={roadmap.weeklyDrills.length}
+              backHref="/start"
+            />
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="min-h-app w-full bg-background text-ink">
         <div className="mx-auto w-full max-w-[600px] px-6 py-12 md:py-16">
           <PlanView
             skill={diagnosis.bottleneck}
             drills={roadmap.weeklyDrills}
+            drillBase="/start"
             inGameRule={roadmap.inGameRule}
-            retestMetric={roadmap.retestMetric}
-            retestStart={retestStart(diagnosis.bottleneck, answers)}
+            retestGoal={roadmap.retestMetric}
             retestWhen={`In ${roadmap.weeksTarget} weeks`}
-            readiness={diagnosis.readiness}
             weeksTarget={roadmap.weeksTarget}
             context={{
               kind: "anonymous",
-              focusReason: focusReason(diagnosis, answers),
               pendingEmail,
               signedIn,
-              saving,
-              saveFailed,
-              onStartSession: () => saveResult("session"),
+              saving: saving !== null,
+              saveFailed: saveFailed !== null,
               onSavePlan: () => saveResult("save"),
               onEnterCode: () => saveResult("save"),
               onReplay: () => setPhase("reveal"),

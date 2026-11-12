@@ -1,5 +1,6 @@
 import type { GuidedDrill } from "@/components/session/GuidedSession";
 import { DRILLS, type Drill } from "@/lib/drills";
+import type { SkillId } from "@/lib/types";
 
 /** Find a drill definition by its id across all skill buckets. */
 export function findDrillById(id: string): Drill | undefined {
@@ -42,4 +43,16 @@ export function toGuidedDrill(d: Drill): GuidedDrill {
     durationMinutes: parseDurationMinutes(d.duration),
     logPrompt: d.logPrompt,
   };
+}
+
+/**
+ * The skill a set of drill ids trains: drills live under their skill in
+ * `DRILLS`, so a plan's drills say which skill it is for without reading its
+ * diagnosis. Null when no id resolves.
+ */
+export function skillForDrills(drillIds: string[]): SkillId | null {
+  for (const skill of Object.keys(DRILLS) as SkillId[]) {
+    if (DRILLS[skill].some((d) => drillIds.includes(d.id))) return skill;
+  }
+  return null;
 }

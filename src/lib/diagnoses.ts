@@ -73,7 +73,7 @@ export interface StoryCopy {
   /**
    * Reveal beat 2, after `VERDICT_OPENER` — why this shot, from their answers.
    * Kept apart from the opener because the saved-result page shows the same
-   * sentence on its own (`focusReason`).
+   * sentence on its own.
    */
   verdictClause: Line;
   bottleneckText: Line;    // deeper version, used later in the roadmap
