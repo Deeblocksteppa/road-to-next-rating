@@ -20,7 +20,7 @@ Judge every screen on all ten. Each finding names the criteria it falls under.
 6. **Accuracy.** Every claim matches what the code does: engine routing and story lines (CLAUDE.md rule 5), readiness, the session definition, what is free and paid. Nothing overclaims.
 7. **Flow.** The player can always find the next step; no dead ends; gates say honestly what they need.
 8. **Landing consistency.** The app keeps the landing page's promises and matches its visual language.
-9. **Readability.** Body at least 16px, contrast tokens, clean wraps at 375, mono caps kept short.
+9. **Readability.** Body at least 16px (legal fine print under a button may be 14px), contrast tokens, clean wraps at 375, mono caps kept short.
 10. **Paid value.** The free and paid split matches PRODUCT.md; the paywall sits at peak motivation; desire, not resentment; no pressure moments.
 
 ## Method

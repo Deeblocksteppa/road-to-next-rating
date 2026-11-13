@@ -13,7 +13,7 @@
    - **Archivo** (heavy, expanded for the wordmark, tabular for numbers) = **verdicts & metrics**. Stadium-signage authority.
    - **Instrument Sans** = the **coach's speaking voice**: body, explanations, buttons.
    - **IBM Plex Mono** = the **instrument**: every label, unit, and countdown is mono smallcaps. This is what makes the UI feel *calibrated* rather than styled.
-   - No font is ever italic. **Nothing is ever centered except the reveal.**
+   - No font is ever italic. **Nothing is ever centered except the reveal.** (A form may be centered vertically at 768px and wider; top-aligned below that.)
 3. **Logo — "the plateau, broken."** Two strokes on a 32px grid: a flat gray plateau line (the rating you've been stuck on) and an accent line breaking upward off its end. 3px weight, round caps. The plateau is always `ink-3` (muted); the break is always accent — the mark never appears in a single color. Legible to 16px minimum. Doubles as the Progress chart motif (the chart is the logo happening slowly).
 
 ---
@@ -49,7 +49,6 @@
 | `rgba(216,227,76,0.12)` | `optic-dim` — ON TRACK / PAID badges, dim swatch |
 | `rgba(216,227,76,0.08)` | Selected option-button fill |
 | `rgba(216,227,76,0.05)` | Paywall plan card / progress-empty callout / progress-locked callout |
-| `rgba(216,227,76,0.04)` | "In-game rule" card fill |
 | `rgba(227,184,76,0.12)` | `warn` badge fill (DUE TODAY) |
 | `rgba(227,101,76,0.12)` | `danger` badge fill (PLATEAU) |
 
@@ -168,7 +167,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 | **Primary** | bg `optic`, text `optic-ink`, weight 600 | bg `optic-hover` | active `scale(0.98)` |
 | **Secondary** | bg `surface-2`, border `line-strong`, text `ink`, weight 600 | border → `line-hover` | — |
 | **Ghost / tertiary** | h44, no bg, text `ink-2`, weight 500, 14px | text → `ink` | — |
-| **Disabled / done** | bg `surface`, border `line`, text `ink-3` | — | e.g. "Session logged today · done" |
+| **Disabled / done** | bg `surface`, border `line`, text `ink-3` | — | e.g. Home's "Today's session done" |
 | **Primary + meta** | h56; adds mono 11px `opacity:0.75` suffix (e.g. "18 MIN") | bg `optic-hover` | Home CTA |
 
 ### Option-select button — min-height 64px · `radius-xl` (16) · font 15px · LH 1.4–1.45
@@ -185,7 +184,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 ### Card — `radius-2xl` (20) · padding 20px
 
 - bg `surface`, border `line`. Eyebrow = mono 10px, tracking 0.14–0.16em, `ink-3`. Title = Archivo 700, 20px.
-- **Accent-tinted variant:** border `optic` + bg `rgba(216,227,76,0.04–0.05)` (in-game rule; "your first re-test" callout).
+- **Accent-tinted variant:** border `optic` + bg `rgba(216,227,76,0.05)` (the paywall's selected plan). The plan screen has no cards: "In your games" is a mono label and a sentence under a hairline.
 
 ### Progress bar
 
@@ -213,7 +212,6 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 ### Other elements
 
 - **Toggle (settings):** 44×26px pill, `radius-full`. On = `optic` with a 20×20 knob `optic-ink`, inset top/right 3px.
-- **Checkbox (plan task):** 26×26px, `radius-sm` (8, snapped from 9). Done = `optic` fill + `optic-ink` check. Todo = 1.5px `line-hover` border, transparent.
 - **Back / icon button:** 36×36px, `radius-md` (12), border `line-strong`, glyph `ink-2`; hover border `line-hover`.
 - **Story-progress ticks (reveal):** 5 equal bars, height 2px, `radius-full`. Filled = `ink`, empty = `line-strong`.
 - **Locked / blur treatment:** a placeholder of the real structure (never the paid values) at `filter: blur(6–7px); opacity: 0.45–0.5`, under a flat cover `rgba(19,19,21,0.6)` (no gradient), a lock icon, and a one-line teaser naming what's underneath. **The current number always stays visible** — desire, not resentment. Never a hard empty box.
@@ -382,12 +380,12 @@ One component (`DrillPage`), three places: the guided session's first screen, th
 ### Settings
 - Header: back button + Archivo 700 22px "Settings".
 - **ACCOUNT** group (surface card, dividers `line`): "Email → …", "Display name → … ›".
-- **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (accent text) + caption. *(Free users see "Plan · Upgrade to unlock Progress ›" instead, a link to the paywall, but only after their first completed re-test. Before it, a static "Plan · Free" row: no link, no chevron.)*
+- **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (neutral) + caption. *(Free users see "Plan · Upgrade to unlock Progress ›" instead, a link to the paywall, but only after their first completed re-test. Before it, a static "Plan · Free" row: no link, no chevron.)*
 - **Subscription already ended in Stripe** (a Cancel or "Keep my subscription" tap on a subscription that had ended, or found when Manage or Settings re-reads Stripe on load): Settings in its free state, with one line under the SUBSCRIPTION group: Body 16px, `ink-2`, `role="status"`, no accent, left-aligned. Cancel or found on load: "Your subscription had already ended. Nothing more will be charged." Keep: "Your subscription has ended, so it can't be resumed. You're on the free plan now." (no date). Never shown while the profile is paid.
 - **Manage subscription error:** "Something went wrong. Email support@… and we'll sort it out." in `danger`, left-aligned, under the button.
-- **NOTIFICATIONS** group: "Email me when my re-test opens" + accent toggle.
+- **NOTIFICATIONS** group: "Email me when my re-test opens" + accent toggle; "Session reminders" + accent toggle, with one `ink-2` line under the label stating the cadence as it is: "One email a day while a session is left this week. Stops at your re-test."
 - Footer: "Log out" (secondary) + "Delete account" (`danger` text, hover `danger-hover`).
-- *The plainest screen in the app. Accent appears only on the two things a person came here to do — Manage subscription / Upgrade. Manage and Delete are both one tap from the top, never buried.*
+- *The plainest screen in the app. The accent appears only on the two toggles. Manage and Delete are both one tap from the top, never buried.*
 
 ---
 

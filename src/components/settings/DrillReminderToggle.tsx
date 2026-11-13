@@ -9,7 +9,14 @@ import { setDrillReminder } from "@/app/settings/actions";
  * RetestReminderToggle — a separate control because drill and re-test reminders
  * are opted into independently.
  */
-export function DrillReminderToggle({ initialEnabled }: { initialEnabled: boolean }) {
+export function DrillReminderToggle({
+  initialEnabled,
+  describedBy,
+}: {
+  initialEnabled: boolean;
+  /** The id of the line that states the cadence, read out with the switch. */
+  describedBy?: string;
+}) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [, startTransition] = useTransition();
 
@@ -26,7 +33,8 @@ export function DrillReminderToggle({ initialEnabled }: { initialEnabled: boolea
       type="button"
       role="switch"
       aria-checked={enabled}
-      aria-label="Email me while a session is still due"
+      aria-label="Session reminders"
+      aria-describedby={describedBy}
       onClick={handleToggle}
       className={[
         "relative h-[26px] w-11 shrink-0 rounded-full transition-colors",

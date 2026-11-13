@@ -283,7 +283,7 @@ This is a deliberate rejection of two adjacent registers: the AI-dev-tool blue/n
 - Monochrome-plus-one: every screen is near-black neutrals; optic yellow-green appears in exactly one place at a time.
 - Flat by construction: no shadows, no gradients; depth is tonal layering only.
 - Three voices, one job each: Archivo for verdicts, Instrument Sans for the coach's speaking voice, IBM Plex Mono for the instrument reading.
-- Nothing is centered except the reveal — the one screen where the whole UI stops and looks straight at the player.
+- Nothing is centered except the reveal — the one screen where the whole UI stops and looks straight at the player. (A form may sit vertically centered on the screen at 768px and wider; see Layout.)
 - The break (accent) is earned, not decorative: CTA, one data line, one selected state — never a background, never a heading.
 
 ## Colors
@@ -291,7 +291,7 @@ This is a deliberate rejection of two adjacent registers: the AI-dev-tool blue/n
 True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entire interface; one accent does all the pointing.
 
 ### Primary
-- **Optic** (`#D8E34C`): the single accent — optic yellow-green, the color of the ball. Marks exactly one thing per screen: one CTA, one data line, one selected state. Never a background, never a heading. Hover state **Optic Hover** (`#E6EF7A`). Text/icon sitting *on* optic fields uses **Optic Ink** (`#131408`). Dim fills and badges use **Optic Dim** (`rgba(216,227,76,0.12)`) at 12%, with 8%/5%/4% variants for selected-option fills, paywall/callout cards, and in-game-rule cards respectively.
+- **Optic** (`#D8E34C`): the single accent — optic yellow-green, the color of the ball. Marks exactly one thing per screen: one CTA, one data line, one selected state. Never a background, never a heading. Hover state **Optic Hover** (`#E6EF7A`). Text/icon sitting *on* optic fields uses **Optic Ink** (`#131408`). Dim fills and badges use **Optic Dim** (`rgba(216,227,76,0.12)`) at 12%, with 8% and 5% variants for selected-option fills and paywall/callout cards respectively.
 
 ### Secondary (state colors — same lightness/chroma family as Optic, so states read as "the instrument changing its reading," not new colors arriving)
 - **Warn** (`#E3B84C`): "due today" states.
@@ -340,7 +340,8 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 - **H2** (600, 17–18px → 20px): card titles, section headers.
 - **Body** (400, 16px, LH 1.6 → 1.7 desktop, color `ink-2`): explanations, descriptions, every sentence a player reads: paragraphs, helper text, captions, error messages, teasers, caveats. 16px at every width, matching the landing page. This supersedes the 15px mobile body in `Design/DESIGN_SYSTEM.md` §2.
 - **Small** (400, 15px, LH 1.5, color `ink-2`): a secondary single line that is not a sentence: a row date, a "· 3-week plan" fragment, a form label, a price term. A sentence is Body, at 16px.
-- **Small UI** (400–500, 15px, LH 1.5): the ghost/tertiary button and text-link label (Components, Buttons). Was 14px; raised with Small so no sans text in the app runs under 15px. `marketing-small` (14px) is the landing's own step and unchanged.
+- **Fine print** (400, 14px, LH 1.5, color `ink-2`): legal text under a button, and nowhere else: the save form's consent line. The one place a sentence runs under 16px. Marked `data-fine-print` so `/verify` knows it.
+- **Small UI** (400–500, 15px, LH 1.5): the ghost/tertiary button and text-link label (Components, Buttons). Was 14px; raised with Small so no sans text in the app runs under 15px, except Fine print. `marketing-small` (14px) is the landing's own step and unchanged.
 - **Eyebrow / Badge** (400, 10px, uppercase, tracking +0.16em / +0.10em, IBM Plex Mono): the label step *inside* a card or pill, one notch below the standalone Label. Already specified under Components (Cards, Badges) and used in 46 places across the app; recorded here so the ramp is complete rather than split between the token list and the prose.
 - **Label** (400/500, 11px, uppercase, tracking +0.14em, IBM Plex Mono): every standalone eyebrow, unit, and countdown that is not inside a card or badge. Tracking widens for emphasis (0.22em on reveal eyebrows, 0.42em on the "RATING" wordmark subtitle) and narrows for density (0.10–0.12em on nav/counters/badges).
 
@@ -354,6 +355,10 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 ## Layout
 
 Mobile-first, specified natively at **375×812px**; desktop only has hinted type-scale targets (display 38→64px, H1 24→32px, H2 17/18→20px, body 15→16px), so desktop layout composition is an open implementation decision, not yet specified.
+
+**Forms: top-aligned on a phone, centered at 768px and wider.** Below 768px a form starts near the top of the screen, so its fields and primary button stay above the phone keyboard. At 768px and wider no keyboard covers the screen, and the form may sit vertically centered in the space it has. Its text stays left-aligned at every width.
+
+**Label and value rows.** A fact with a short name (PLAN, SESSION, TIME, COUNTS, RE-TEST) is a row between hairlines: the name as a mono label, the value in the body font at 16px. The value is never mono, because most run past three words (Uppercase-Mono Rule).
 
 Screen padding is **24px** on all sides (`box-sizing: border-box`), with header rows adding **16–20px** top padding. Card internal padding defaults to **20px** (variants: 18/20, 20/22, 22, 24px), with **6–14px** child gaps. Vertical rhythm inside a screen stacks at **12–16px** gaps; hero/centered blocks use **20–28px**. A button sits **14px** above its caption. On the design canvas (not implementation) sections are separated by 56px, cards-in-a-row by 24px.
 
@@ -390,7 +395,7 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 - **Secondary:** bg `surface-2`, border `line-strong`, text `ink`, weight 600. Hover → border `line-hover`.
 - **Ghost/Tertiary:** height 44px, no background, text `ink-2` weight 500 at 15px. Hover → text `ink`.
 - **Text link:** `underline underline-offset-4`, 15px, `ink-2` or the surrounding color. Inline in a sentence it takes the sentence's 16px.
-- **Disabled/Done:** bg `surface`, border `line`, text `ink-3` (e.g. "Session logged today · done").
+- **Disabled/Done:** bg `surface`, border `line`, text `ink-3` (e.g. Home's "Today's session done").
 
 ### Cards / Containers
 - **Corner style:** `radius-2xl` (20px).
@@ -398,7 +403,7 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 - **Shadow strategy:** none — see Elevation & Depth.
 - **Internal padding:** 20px default.
 - **Eyebrow:** mono 10px, tracking 0.14–0.16em, `ink-3`. **Title:** Archivo 700, 20px.
-- **Accent-tinted variant:** border `optic` + bg tint at `rgba(216,227,76,0.04–0.05)` — used for the in-game-rule card and first-re-test callouts, i.e. moments the product wants to gently point at without a full CTA.
+- **Accent-tinted variant:** border `optic` + bg tint at `rgba(216,227,76,0.05)` — the paywall's selected plan. The plan screen no longer uses it: "In your games" is a mono label and a sentence under a hairline.
 
 ### Inputs / Fields
 - **Style:** height 48px, `radius-md` (12px), bg `surface`, border `line-strong`, padding 0 16px, 16px font, placeholder `ink-3`. 16px also stops iOS Safari zooming the page when a field is focused.
@@ -433,6 +438,6 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 ### Don't:
 - **Don't** use a gradient anywhere in UI chrome — it reads as marketing, and specifically as "AI dev tool" in this palette.
 - **Don't** add a `box-shadow` to anything; depth comes from tonal layering and border weight only.
-- **Don't** italicize any text, or center any layout other than the reveal sequence.
+- **Don't** italicize any text, or center any layout other than the reveal sequence. (A form's vertical position at 768px and wider is not centering in this sense: see Layout.)
 - **Don't** let the accent touch a background fill behind body copy or become a heading color — it marks a point, it never paints a surface.
 - **Don't** introduce a second accent hue for a new state; new states (warn, danger) must share the accent's lightness/chroma family so they read as "the same instrument, different reading."

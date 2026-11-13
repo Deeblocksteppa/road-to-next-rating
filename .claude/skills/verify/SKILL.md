@@ -77,6 +77,11 @@ Check script (paste as is):
     // Mono labels and data readouts (font-mono = IBM Plex Mono, DESIGN.md Typography): exempt.
     if (/IBM[ _]Plex[ _]Mono|monospace/i.test(cs.fontFamily)) continue;
     const size = parseFloat(cs.fontSize);
+    // Legal fine print under a button (`data-fine-print`, DESIGN.md Typography): 14px allowed.
+    if (el.closest("[data-fine-print]")) {
+      if (size < 14) add(r.small, cs.fontSize, own);
+      continue;
+    }
     const host = el.closest("a, button, [role=button]");
     const words = own.split(/\s+/).length;
     if (host && control.test(host.className.toString())) {
@@ -96,6 +101,7 @@ What `small` and `smallControls` mean:
 
 - **Exempt from 16px:** text inside an `a`, `button` or `[role=button]` whose classes mark it as a button or text link (`h-[52px]`, `h-14`, `h-11`, `h-[44px]`, `min-h-11`, `underline`). DESIGN.md sets those labels at 15px. They are still reported under `smallControls` when below 15px.
 - **Everything else is running text:** any sentence, or any line of six or more words, under 16px goes in `small`, and so does any other sans line under 15px. A link or button without those classes (a whole tappable row, a drill card, a banner) is not exempt: its sentences are running text.
+- **Legal fine print is exempt down to 14px:** text inside `[data-fine-print]` (the save form's consent line). Nothing else may use the marker.
 - **The wordmark is exempt:** "ROAD TO NEXT" / "RATING" in the header is the logo (`brand/Logo.tsx`, marked `data-wordmark`), not copy.
 - **Mono is exempt throughout:** anything whose computed font is IBM Plex Mono (`font-mono`), meaning labels, units, badges, counters, the countdown and mono data readouts like "6/10" or "1/3 → 2/3".
 
@@ -105,7 +111,7 @@ Gradients are allowed only on the landing's closing section. Focus rings are fil
 
 On each screenshot, check against CLAUDE.md's hard rules and DESIGN.md:
 
-- one accent meaning per screen; nothing centered except the reveal;
+- one accent meaning per screen; nothing centered except the reveal (a form may sit vertically centered at 768px and wider, top-aligned below that; its text is still left-aligned);
 - text wraps cleanly at 375 (no mid-word breaks on big titles, no orphaned single words in headlines);
 - one dominant element; nothing clipped, overlapping, or cut off by the tab bar;
 - copy: no em dashes, one name per concept, example data on the landing has its `ExampleTag` beside it;
