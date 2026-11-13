@@ -29,13 +29,13 @@ const MIN_PASSWORD_LENGTH = 8;
  * Three screens, never mixed, each top-aligned so the field and its button
  * stay above the phone keyboard the autofocus opens:
  *
- *   - the form: a title, one line on what the account keeps (from "Start
- *     session", that sessions need one), email and password in one block,
- *     "Create account", and "Not now" back to the plan;
+ *   - the form: a title, one line on what the account keeps, email and
+ *     password in one block, "Create account", and "Back to my plan";
  *   - the code screen (`CodeEntry`), shown once a sign-up is waiting on the
  *     6-digit code it emailed. It replaces the form outright;
  *   - the log-in (`InlineLogIn`), for an address that already has an account
- *     ("Log in" at the form's top right or on its existing-account note, or
+ *     ("Already have an account? Log in" at the form's top right, "Log in" on
+ *     its existing-account note, or
  *     "Already confirmed? Log in" on the code screen). Logging in claims the
  *     plan the same way.
  *
@@ -47,15 +47,17 @@ const MIN_PASSWORD_LENGTH = 8;
  * - Confirmation ON → no session yet. The plan stays on this device (nothing
  *   is cleared) and the device remembers the pending sign-up. The code typed
  *   here signs the player in on this screen, which claims the plan and goes
- *   on to the session or the plan (`handleVerified`). The emailed link does
- *   the same from any device, landing on Home (/auth/confirm).
+ *   to Home (`handleVerified`), where "Plan saved" confirms it. The emailed
+ *   link does the same from any device, landing on Home too (/auth/confirm).
+ *
+ * Every way through this form ends on Home: the plan's "Save my plan" is the
+ * only way in, and sessions start from Home or the Plan tab.
  */
 export function SaveGate({
   saveResult,
   onSkip,
   pendingEmail,
   onPendingChange,
-  reason = "save",
 }: {
   /** The anonymous result's save (`saveAnonymousResult`): the complete set of ids, or a rejection. */
   saveResult: () => Promise<SavedIds>;
@@ -64,8 +66,6 @@ export function SaveGate({
   /** The address a sign-up on this device is waiting on, if any. */
   pendingEmail: string | null;
   onPendingChange: (email: string | null) => void;
-  /** Where the player goes once signed in: `session` from "Start session", the plan otherwise. */
-  reason?: "save" | "session";
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -192,10 +192,10 @@ export function SaveGate({
   /**
    * Signed in by the code, by the link in another tab, or by logging in.
    * Claims the rows named in the sign-up's metadata (none, for an account
-   * that confirmed long ago), then this device's own set, then goes where the
-   * player was heading. If the device claim fails, the player is still signed
-   * in and the device keeps its result: Home's claim tries again and says
-   * "Plan saved" once it lands.
+   * that confirmed long ago), then this device's own set, then goes to Home,
+   * which says "Plan saved" (`?saved=1`) when a claim went through. If the
+   * device claim fails, the player is still signed in and the device keeps
+   * its result: Home's claim tries again and says "Plan saved" once it lands.
    *
    * A typed code or a log-in here is the player choosing this account
    * (owner, 2026-11-07), confirmed or not: the result goes to it even when
@@ -250,7 +250,11 @@ export function SaveGate({
     } else {
       await dropNote();
     }
-    window.location.assign(reason === "session" ? "/session" : "/plan");
+    // Home, with "Plan saved" when rows were claimed here: this device's set
+    // just now, or the sign-up's own set above. With nothing claimed (an
+    // account that had its plan already), Home with no flag.
+    const saved = deviceHasResult || claim === "claimed";
+    window.location.assign(saved ? "/home?saved=1" : "/home");
   }
 
   /* ── The log-in ───────────────────────────────────────────── */
@@ -264,7 +268,9 @@ export function SaveGate({
           setView("form");
           window.scrollTo(0, 0);
         }}
-        // Back to the code screen while a sign-up is waiting, else the form.
+        // Back to the code screen while a sign-up is waiting, else the form:
+        // the label only names the form when that is where it goes.
+        backLabel={pendingEmail ? "Back" : "Back to save your plan"}
         onBack={() => {
           setView("form");
           window.scrollTo(0, 0);
@@ -296,16 +302,19 @@ export function SaveGate({
   return (
     <main className="mx-auto flex min-h-app w-full max-w-md flex-col bg-background px-6 pb-12 pt-8 text-ink">
       {/* An account already: the log-in, with whatever address is typed. */}
-      <div className="flex justify-end pt-1">
-        <button
-          type="button"
-          onClick={() => openLogIn(email.trim())}
-          disabled={loading}
-          className="-my-2.5 py-2.5 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
-        >
-          Log in
-        </button>
-      </div>
+      <p className="flex justify-end pt-1 text-[16px] leading-[1.5] text-ink-2">
+        <span>
+          Already have an account?{" "}
+          <button
+            type="button"
+            onClick={() => openLogIn(email.trim())}
+            disabled={loading}
+            className="-my-2.5 py-2.5 text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
+          >
+            Log in
+          </button>
+        </span>
+      </p>
 
       <div className="flex flex-col gap-6 pt-6">
         <div className="flex flex-col gap-2.5">
@@ -313,9 +322,7 @@ export function SaveGate({
             Save your plan
           </h1>
           <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-            {reason === "session"
-              ? "Sessions need a free account. Your plan and session numbers stay with you."
-              : "Free account. Your plan and session numbers stay with you."}
+            Free account. Your plan and session numbers stay with you.
           </p>
         </div>
 
@@ -378,7 +385,7 @@ export function SaveGate({
           onClick={onSkip}
           className="-my-2 self-start py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
         >
-          Not now
+          Back to my plan
         </button>
       </div>
     </main>

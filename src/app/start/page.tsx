@@ -36,15 +36,18 @@ import {
  * /start opens on for anyone with a result on this device, so a returning
  * player sees their diagnosis and plan instead of question one.
  *
- * Nothing opens the save form by itself: only "Start session" and "Save my
- * plan" do, and every way out of it ("Not now", "Back to my plan") returns
- * to the plan. Replaying the diagnosis also returns there.
+ * Nothing opens the save form by itself: only "Save my plan" does (and the
+ * pending line's "Enter code"), and every way out of it ("Back to my plan")
+ * returns to the plan. Replaying the diagnosis also returns there. A drill
+ * row opens that drill's page, read-only; nothing here starts a session.
+ * Sessions start from Home and the Plan tab, once the plan is on an account,
+ * and every way through the form ends on Home.
  *
- * A signed-in player retaking the assessment never sees the form: the same two
- * buttons save and claim the new result, then go to the session or /plan.
+ * A signed-in player retaking the assessment never sees the form: "Save my
+ * plan" saves and claims the new result, then goes to Home.
  *
  * The result (assessment, diagnosis, plan) is saved once, starting when the
- * assessment ends, through `saveAnonymousResult`. Both buttons wait for that
+ * assessment ends, through `saveAnonymousResult`. The button waits for that
  * save to finish before opening the form, so a sign-up always carries the
  * complete set of ids. If it still fails after its retries, the form does
  * not open and the plan says so; the next tap tries again.
@@ -74,12 +77,9 @@ function Start() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   // Only changes the plan's line about accounts. The buttons ask again when tapped.
   const [signedIn, setSignedIn] = useState(false);
-  // Why the save form is open: where the player goes once signed in ("Start
-  // session" to the session, anything else to the plan), and its subtitle.
-  const [gateReason, setGateReason] = useState<"save" | "session">("save");
-  // The button waiting on the save, and the one whose save failed.
-  const [saving, setSaving] = useState<"save" | "session" | null>(null);
-  const [saveFailed, setSaveFailed] = useState<"save" | "session" | null>(null);
+  // "Save my plan" (or "Enter code") is waiting on the save, and whether it failed.
+  const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   // localStorage is only readable after mount, so the first render is a blank
   // "loading" frame rather than question one flashing before the saved result.
@@ -206,20 +206,19 @@ function Start() {
   }
 
   function handleLeaveGate() {
-    setGateReason("save");
     setPhase("saved");
     window.scrollTo(0, 0);
   }
 
   /**
-   * "Start session", "Save my plan", and the pending line's "Enter code":
-   * claim for a signed-in player, the save form for anyone else (the code
-   * screen while a sign-up is waiting).
+   * "Save my plan" and the pending line's "Enter code": claim for a signed-in
+   * player, the save form for anyone else (the code screen while a sign-up
+   * is waiting).
    */
-  async function saveResult(reason: "save" | "session") {
+  async function saveResult() {
     if (!answers || !diagnosis || !roadmap || saving) return;
-    setSaving(reason);
-    setSaveFailed(null);
+    setSaving(true);
+    setSaveFailed(false);
     try {
       await saveAnonymousResult(answers, diagnosis, roadmap);
 
@@ -232,29 +231,28 @@ function Start() {
         // Throws unless the caller ended up with all three rows.
         // Clears the pending note itself once claimed.
         await attachLocalResult(answers, diagnosis, roadmap);
-        window.location.assign(reason === "session" ? "/session" : "/plan");
+        // Home, like every saved plan: it says "Plan saved" once.
+        window.location.assign("/home?saved=1");
         return;
       }
     } catch (err) {
       // Signed in as someone else while a sign-up waits here ("Enter code",
-      // or either button): nothing was claimed. The gate opens on that
+      // or the button): nothing was claimed. The gate opens on that
       // sign-up's code screen, which is how the result gets saved.
       if (err instanceof PendingOtherAccountError) {
-        setSaving(null);
+        setSaving(false);
         setPendingEmail(loadSignupPending()?.email ?? null);
-        setGateReason(reason);
         setPhase("savegate");
         window.scrollTo(0, 0);
         return;
       }
       // Retried already. The form needs all three ids, so it stays closed.
       console.error("Failed to save the result:", err);
-      setSaving(null);
-      setSaveFailed(reason);
+      setSaving(false);
+      setSaveFailed(true);
       return;
     }
-    setSaving(null);
-    setGateReason(reason);
+    setSaving(false);
     setPhase("savegate");
     window.scrollTo(0, 0);
   }
@@ -265,7 +263,7 @@ function Start() {
     clearSignupPending();
     setPendingEmail(null);
     setAnswers(null);
-    setSaveFailed(null);
+    setSaveFailed(false);
     if (openDrillId) router.replace("/start");
     setPhase("assessment");
     window.scrollTo(0, 0);
@@ -302,7 +300,6 @@ function Start() {
         onSkip={handleLeaveGate}
         pendingEmail={pendingEmail}
         onPendingChange={setPendingEmail}
-        reason={gateReason}
       />
     );
   }
@@ -339,10 +336,10 @@ function Start() {
               kind: "anonymous",
               pendingEmail,
               signedIn,
-              saving: saving !== null,
-              saveFailed: saveFailed !== null,
-              onSavePlan: () => saveResult("save"),
-              onEnterCode: () => saveResult("save"),
+              saving,
+              saveFailed,
+              onSavePlan: () => saveResult(),
+              onEnterCode: () => saveResult(),
               onReplay: () => setPhase("reveal"),
               onStartOver: handleStartOver,
             }}

@@ -329,15 +329,16 @@ One component (`PlanView`) for both. No cards; hairlines only. Top to bottom:
 ### Auth screens (all of them)
 Applies to the Save Gate and its views (form, existing-account note, code screen, inline log-in), `/login` (form and code screen), `/forgot-password`, `/reset-password` and `/auth/link-error`.
 - **Top-aligned:** the heading about 80px from the top of the screen (88px on the pages with a logo, 20px under it), never vertically centered, so the field and the primary button stay above the phone keyboard.
-- **Errors:** plain `danger` text, 16px, directly under the field or button it belongs to, `role="alert"`; no box, border or fill. An error the page arrives with (after a redirect, e.g. an expired reset link) sits there too, and its field points at it (`aria-invalid`, `aria-describedby`), since a screen reader may not read out an alert that was already on the page. The plan's Start session, Save my plan and pending line follow the same rule.
+- **Errors:** plain `danger` text, 16px, directly under the field or button it belongs to, `role="alert"`; no box, border or fill. An error the page arrives with (after a redirect, e.g. an expired reset link) sits there too, and its field points at it (`aria-invalid`, `aria-describedby`), since a screen reader may not read out an alert that was already on the page. The plan's Save my plan and pending line follow the same rule.
 
 ### Save Gate (auth)
-- Top row: a small text link **"Log in"** at the right (opens the inline log-in view, address carried over).
-- Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you." Opened from "Start session": "Sessions need a free account. Your plan and session numbers stay with you."
+- The plan's **"Save my plan"** is the only way in (and the pending line's "Enter code", to its code screen). Every way through it ends on Home, which says "Plan saved" once: the typed code, the inline log-in, the emailed link.
+- Top row, at the right: "Already have an account? **Log in**" (16px, the two words underlined; opens the inline log-in view, address carried over).
+- Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you."
 - **One grouped field block** (`radius-md`, border `line-strong`, bg `surface`): Email row, hairline `line`, Password row with a mono Show/Hide. Each row keeps its mono uppercase label inside the block (EMAIL, PASSWORD), so it doesn't vanish when typed over. Inputs 16px; the password placeholder carries the rule ("8+ characters"). Focus on either field turns the whole block's border `optic` (focus-within), so the rounded corners stay intact.
-- Primary full-width **"Create account"** ("Creating account…" while busy) directly under the block → consent line → **"Not now"** as a quiet left-aligned text link.
+- Primary full-width **"Create account"** ("Creating account…" while busy) directly under the block → consent line (legal fine print, 14px `ink-2`) → **"Back to my plan"** as a quiet left-aligned text link.
 - **Existing account:** a sign-up with an address that already has a confirmed account shows a neutral note under the block (hairline above): "You already have an account with this email." with a primary **"Log in"**; "Create account" goes secondary while it shows, and editing the address hides it.
-- No eyebrow, no "Your plan" card, no reason paragraph, no Google button (the flag is off), no bottom "Already have an account?" line.
+- No eyebrow, no "Your plan" card, no reason paragraph, no Google button (the flag is off), no second log-in line at the bottom.
 - *A **save** action, not a signup wall: it comes after value is delivered.*
 
 ### Code screen (sign-up)
@@ -347,11 +348,11 @@ Applies to the Save Gate and its views (form, existing-account note, code screen
 - Wrong or expired code: one alert as plain `danger` text under the field (no box, border or fill), "That code didn't work or has expired.", with the code selected for retyping. The selection inside the field is a muted white (`white/20`), not the accent.
 
 ### Inline log-in (save form)
-- Archivo 800 30px **"Log in"** → the Save Gate's grouped field block (EMAIL filled in, hairline, PASSWORD with Show/Hide) → "Forgot password?" → primary **"Log in"** ("Logging in…") → "Back".
+- Archivo 800 30px **"Log in"** → the Save Gate's grouped field block (EMAIL filled in, hairline, PASSWORD with Show/Hide) → "Forgot password?" → primary **"Log in"** ("Logging in…") → "Back to save your plan" (plain "Back" when it was opened from the code screen, since that is where it returns).
 - An account still waiting on its code gets a fresh one emailed and goes to the code screen.
 
 ### Pending sign-up (on the plan)
-- Between hairlines at the top of the plan: "Finish saving your plan: enter the code we sent to **{email}**." → one text link, **"Enter code"** (opens the code screen, which has resend, Change email and "Already confirmed? Log in"). A failed save shows its alert inside the block.
+- Between hairlines at the top of the plan: "Finish saving your plan: enter the code we sent to **{email}**." → one text link, **"Enter code"** (opens the code screen, which has resend, Change email and "Already confirmed? Log in"; the code lands on Home). A failed save shows its alert inside the block.
 
 ### Log in (auth)
 - Logo + wordmark → Archivo 800 30px **"Welcome back."**

@@ -23,6 +23,7 @@ export function InlineLogIn({
   onSignedIn,
   onUnconfirmed,
   onBack,
+  backLabel,
 }: {
   initialEmail: string;
   /** Signed in now: claim the plan and leave the screen. */
@@ -30,6 +31,8 @@ export function InlineLogIn({
   /** A code went to this address (or one did under a minute ago). */
   onUnconfirmed: (email: string) => void;
   onBack: () => void;
+  /** Names where Back goes: the save form, or plain "Back" to the code screen. */
+  backLabel: string;
 }) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -128,7 +131,7 @@ export function InlineLogIn({
         disabled={busy}
         className="-my-2 self-start py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
       >
-        Back
+        {backLabel}
       </button>
     </main>
   );
