@@ -107,3 +107,37 @@ export function recapSupportLine(ctx: WeekContext, weekly: WeekCount, loggedToda
   }
   return "Next session: any other day this week.";
 }
+
+/**
+ * Home's line under the session button: what comes next, when it isn't the
+ * button itself. Null when nothing needs saying: a session to start with no
+ * re-test date has the button, and an open re-test has its own block. The
+ * one line that still shows beside an open re-test is "1 more session this
+ * week…" on a day with today's done: it is about sessions, not the re-test.
+ */
+export function homeCaption(
+  ctx: WeekContext,
+  weekly: WeekCount,
+  today: { todayDone: boolean; allDone: boolean },
+  daysUntilRetest: number | null,
+  loggedToday: boolean
+): string | null {
+  const retest = retestNext(ctx);
+  if (today.todayDone && !weekDone(weekly)) {
+    if (ctx.lastDay && loggedToday) {
+      if (ctx.retestOpen) return null;
+      return retest
+        ? `This week ends today. Your re-test opens ${retest}.`
+        : `This week ends today. Next week's sessions open ${ctx.nextWeekLabel}.`;
+    }
+    const left = Math.max(0, weekly.total - weekly.completed);
+    return `${left} more session${left === 1 ? "" : "s"} this week. Pick any other day.`;
+  }
+  if (ctx.retestOpen) return null;
+  if (today.allDone) {
+    return retest ? `Your re-test opens ${retest}.` : `Next sessions unlock ${ctx.nextWeekLabel}`;
+  }
+  return daysUntilRetest !== null && daysUntilRetest > 0
+    ? `Re-test opens in ${daysUntilRetest} day${daysUntilRetest === 1 ? "" : "s"}`
+    : null;
+}

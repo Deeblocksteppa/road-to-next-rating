@@ -269,10 +269,12 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - Body one-liner → primary button **"See my 3-week plan"**.
 
 ### Home (`background`, tab bar HOME active)
-- Header: logo + wordmark; right: mono "DAY 8 / 21" + settings gear (32px circle, border `line-strong`).
-- **Bottleneck card** (`radius-2xl`, padding 22): eyebrow `CURRENT BOTTLENECK` → Archivo 800 27px skill name → small "Week 2 of 3 — …".
-- **Two-stat row:** *Readiness* card (flex 1.2) Archivo 44px number + 4px accent bar; *Sessions this week* card "2/3" + 3 dots (filled = accent).
-- Spacer → primary button h56 **"Start today's session"** + mono "18 MIN" suffix → mono caption "RE-TEST OPENS IN 13 DAYS".
+- Header: logo + wordmark; right: mono "DAY 8 / 21" + a gear (16px, in a 32px circle, border `line-strong`) to Settings.
+- Mono `YOUR FOCUS` → Archivo 800 28px skill title → the diagnosis's one-line insight (16px `ink-1`) → "Week 2 of 3" (16px `ink-2`).
+- **Open re-test:** the re-test block here, holding the accent; the session button below goes secondary.
+- **Today's session** (hairlines, no card): mono `TODAY · 25 MINUTES, 2 DRILLS` (`TODAY · DONE` once today's is logged; `THIS WEEK · DONE` once the week's two are, when the drill rows are hidden) → "1 of 2 sessions this week" (16px `ink-2`; it counts the week's sessions, and there are no dots) → one row per drill: Archivo 600 18px name, mono "15 MIN · SOLO" / "· PARTNER" / "· SOLO · WALL" at the right (a logged drill is struck through and reads "LOGGED").
+- Spacer → primary button h56 **"Start today's session"** / "Finish today's session" + mono minutes left; once today or the week is done, the disabled style ("Today's session done", "All sessions done this week").
+- Caption under the button (16px `ink-2`, left-aligned): "Re-test opens in 13 days" while there is a session to start; "1 more session this week. Pick any other day."; on the week's last day, "This week ends today. Next week's sessions open Monday, Nov 16."; week done, "Next sessions unlock Monday, Nov 16". In the plan's final week the lines that point to Monday point to the re-test instead ("Your re-test opens Dec 2."). With the re-test open its block says so and the caption is absent, except "1 more session this week…" on a day when today's is done.
 
 ### My Plan (tab bar PLAN active) and the anonymous plan on `/start`
 One component (`PlanView`) for both. No cards; hairlines only. Top to bottom:

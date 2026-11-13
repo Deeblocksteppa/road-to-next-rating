@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -6,19 +7,15 @@ import { Logo } from "@/components/brand/Logo";
 import { EXPIRED_BUTTON, ExpiredResult } from "@/components/plan/ExpiredResult";
 import { TodaySession, todayState } from "@/components/home/TodaySession";
 import { RetestOpen } from "@/components/retest/RetestOpen";
-import { monthDay } from "@/lib/date-format";
 import { SKILL_LABELS, SKILL_TITLES } from "@/lib/diagnoses";
 import { SkillTitle } from "@/components/diagnosis/SkillTitle";
 import { diagnose } from "@/lib/engine";
-import {
-  getCompletedTodayDrillIds,
-  getWeeklyProgress,
-  startOfWeekUTC,
-} from "@/lib/drill-sessions";
+import { getTodayLog, getWeeklyProgress, loggedThisUtcDay } from "@/lib/drill-sessions";
 import { loadPlanDrills } from "@/lib/plan-drills";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { createClient } from "@/lib/supabase/server";
 import type { AnswerMap, SkillId } from "@/lib/types";
+import { homeCaption, weekContext } from "@/lib/week-status";
 
 export default async function HomePage({
   searchParams,
@@ -52,12 +49,13 @@ export default async function HomePage({
 
   const planDrills = plan ? await loadPlanDrills(supabase, plan) : [];
 
-  const [weekly, completedToday] = plan
+  const [weekly, todayLog] = plan
     ? await Promise.all([
         getWeeklyProgress(supabase, plan.id, planDrills.length),
-        getCompletedTodayDrillIds(supabase, plan.id),
+        getTodayLog(supabase, plan.id),
       ])
-    : [{ completed: 0, total: 0 }, new Set<string>()];
+    : [{ completed: 0, total: 0 }, []];
+  const completedToday = new Set(todayLog.map((e) => e.drillId));
 
   const timeline =
     plan && plan.retest_date
@@ -89,50 +87,21 @@ export default async function HomePage({
   // never disagree with what they say.
   const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
   const { todayDone, allDone } = todayState(planDrills, Array.from(completedToday), weekComplete);
-  const sessionsLeft = Math.max(0, weekly.total - weekly.completed);
-  const nextWeekStart = new Date(startOfWeekUTC().getTime() + 7 * 24 * 60 * 60 * 1000);
-  // "Close" means within the week the re-test window opens — past that,
-  // "next sessions unlock Monday" is the more useful thing to tell them.
-  const retestIsClose = timeline !== null && timeline.daysUntilRetest <= 7;
   // Open re-test: the card below is the screen's main element, whatever else
   // happened today, so the caption never has to carry it.
   const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
 
-  const retestReadyLink = (
-    <Link href="/retest" className="text-optic underline underline-offset-4 hover:text-optic-hover">
-      Re-test ready. Take it now
-    </Link>
+  // Below-button caption: what comes next when it isn't the button. The
+  // re-test countdown while there is a session to start; once today or the
+  // week is done, the next day, next Monday, or (in the plan's final week,
+  // where there is no next week of sessions) the re-test date.
+  const caption = homeCaption(
+    weekContext((plan?.retest_date as string | null) ?? null),
+    weekly,
+    { todayDone, allDone },
+    timeline?.daysUntilRetest ?? null,
+    loggedThisUtcDay(todayLog)
   );
-  const retestOpensText = (days: number) => (
-    <>
-      Re-test opens in {days} day{days === 1 ? "" : "s"}
-    </>
-  );
-  const nextUnlockText = `Next sessions unlock Monday, ${monthDay(nextWeekStart)}`;
-
-  // Below-button caption. Unchanged from prior behavior when sessions remain
-  // (retest countdown, or nothing if there's no retest date yet); once the
-  // week is done, the button itself goes quiet so this line always has
-  // something forward-looking to say instead.
-  const caption = retestOpen
-    ? todayDone && !allDone
-      ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} this week. Pick any other day.`
-      : null
-    : todayDone && !allDone
-    ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} this week. Pick any other day.`
-    : allDone
-    ? timeline === null
-      ? nextUnlockText
-      : timeline.daysUntilRetest <= 0
-        ? retestReadyLink
-        : retestIsClose
-          ? retestOpensText(timeline.daysUntilRetest)
-          : nextUnlockText
-    : timeline
-      ? timeline.daysUntilRetest > 0
-        ? retestOpensText(timeline.daysUntilRetest)
-        : retestReadyLink
-      : null;
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-6 py-8">
@@ -155,15 +124,8 @@ export default async function HomePage({
             aria-label="Settings"
             className="relative flex h-8 w-8 items-center justify-center rounded-full after:absolute after:-inset-1.5 after:content-[''] border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-              <path
-                d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
+            {/* A gear. The circle-with-rays it replaces read as a sun. */}
+            <Settings size={16} strokeWidth={1.8} aria-hidden="true" />
           </Link>
         </div>
       </header>
@@ -180,9 +142,8 @@ export default async function HomePage({
               <p className="text-pretty text-[16px] leading-[1.6] text-ink-1">{insight}</p>
             )}
             {timeline && (
-              <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-                Week {timeline.weekNumber} of {timeline.weeksTarget} · Same drills each week. Beat
-                your last numbers.
+              <p className="text-[16px] leading-[1.6] tabular-nums text-ink-2">
+                Week {timeline.weekNumber} of {timeline.weeksTarget}
               </p>
             )}
           </section>
@@ -203,7 +164,7 @@ export default async function HomePage({
             // Sentence case in the body voice: at four to eight words, spaced
             // mono caps had to be decoded (DESIGN.md, Uppercase-Mono limit).
             // Left-aligned: nothing is centered except the reveal.
-            <p className="-mt-2 pb-1 text-[16px] leading-[1.5] text-ink-2">{caption}</p>
+            <p className="-mt-2 pb-1 text-[16px] leading-[1.5] tabular-nums text-ink-2">{caption}</p>
           )}
         </>
       ) : searchParams.expired === "1" ? (

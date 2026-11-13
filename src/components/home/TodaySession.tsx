@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { Drill } from "@/lib/drills";
+import { setupRowLabel, type Drill } from "@/lib/drills";
 import { sessionMinutes, sessionShape } from "@/lib/session-plan";
 
 /**
@@ -30,9 +30,13 @@ export function todayState(drills: Drill[], completedToday: string[], weekComple
  * are what is LEFT of the session, so a half-finished one reads "Finish
  * today's session · 10 MIN" rather than offering the full 25 again.
  *
+ * Under the label, the week's count in words: "1 of 2 sessions this week".
+ * It counts sessions, not today's drills, and says so. Each drill row has
+ * its minutes and who it needs ("15 MIN · SOLO · WALL").
+ *
  * Accent: the button, when it is live and nothing else on the screen is the
- * main action. Otherwise (re-test open, or nothing left to start today) the
- * week's dots are the one optic reading, unless the re-test holds it.
+ * main action. Otherwise (re-test open, or nothing left to start today)
+ * nothing here is optic.
  *
  * Presentational (the page does the querying) so its states can be rendered
  * and checked without a signed-in account.
@@ -61,34 +65,18 @@ export function TodaySession({
   );
   const minutesLeft = sessionMinutes(remaining);
   const buttonIsAccent = !(allDone || todayDone) && !secondary;
-  const dotsAreAccent = !buttonIsAccent && !secondary;
 
   return (
     <>
       <section className="flex flex-col">
-        <div className="flex items-baseline justify-between gap-4 pb-3">
+        <div className="flex flex-col gap-1.5 pb-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
             {allDone ? "This week · done" : todayDone ? "Today · done" : `Today · ${sessionShape(drills)}`}
           </p>
           {weekly.total > 0 && (
-            <div className="flex shrink-0 items-center gap-2.5">
-              <span className="font-mono text-[11px] uppercase tabular-nums tracking-[0.1em] text-ink-2">
-                {weekly.completed} of {weekly.total}
-                <span className="sr-only"> sessions this week</span>
-              </span>
-              <span className="flex gap-1.5" aria-hidden="true">
-                {Array.from({ length: weekly.total }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={
-                      i < weekly.completed
-                        ? `h-2.5 w-2.5 rounded-full ${dotsAreAccent ? "bg-optic" : "bg-ink-2"}`
-                        : "box-border h-2.5 w-2.5 rounded-full border border-line-strong"
-                    }
-                  />
-                ))}
-              </span>
-            </div>
+            <p className="text-[16px] leading-[1.5] tabular-nums text-ink-2">
+              {weekly.completed} of {weekly.total} sessions this week
+            </p>
           )}
         </div>
 
@@ -109,7 +97,7 @@ export function TodaySession({
                     {drill.name}
                   </span>
                   <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] tabular-nums text-ink-3">
-                    {logged ? "Logged" : drill.duration}
+                    {logged ? "Logged" : `${drill.duration} · ${setupRowLabel(drill.setup)}`}
                   </span>
                 </li>
               );
