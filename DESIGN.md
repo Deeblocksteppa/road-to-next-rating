@@ -403,6 +403,7 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 ### Inputs / Fields
 - **Style:** height 48px, `radius-md` (12px), bg `surface`, border `line-strong`, padding 0 16px, 16px font, placeholder `ink-3`. 16px also stops iOS Safari zooming the page when a field is focused.
 - **Focus:** no bespoke focus treatment beyond the ring — `--ring` is the accent, so focus = an optic ring.
+- **Autofill:** a field the browser filled keeps the form's ground and `ink` text. The browser's own pale fill is clipped to the text's shape (`background-clip: text` under an `ink` text fill) and also held off with a long transition, never an inset `box-shadow` (Flat-By-Default Rule). Email fields turn off auto-capitalisation and autocorrect.
 
 ### Option-Select Button (signature control — every assessment question)
 - Min-height 64px, `radius-xl` (16px), 16px font (the options are sentences the player reads), LH 1.4–1.45.

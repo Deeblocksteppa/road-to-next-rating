@@ -80,9 +80,9 @@ export function InlineLogIn({
   }
 
   return (
-    // Top-aligned, so the password and the button stay above the keyboard
-    // that the password's autofocus opens.
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-5 bg-background px-6 pb-12 pt-20 text-ink">
+    // Top-aligned on a phone, so the password and the button stay above the
+    // keyboard that the password's autofocus opens. Centered at 768px and wider.
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-5 bg-background px-6 pb-12 pt-20 text-ink md:justify-center md:pt-12">
       <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
         Log in
       </h1>
@@ -105,7 +105,7 @@ export function InlineLogIn({
               another address's sign-up is pending here. */}
           <Link
             href="/forgot-password"
-            className="-mb-2 self-start py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+            className="-mb-2.5 flex min-h-11 items-center self-start text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
           >
             Forgot password?
           </Link>

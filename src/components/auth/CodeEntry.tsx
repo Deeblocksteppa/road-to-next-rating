@@ -150,9 +150,9 @@ export function CodeEntry({
   const ready = code.length === CODE_LENGTH && !checking && error !== AUTH_ERRORS.code_failed;
 
   return (
-    // Top-aligned, so the field and "Continue" stay above the keyboard the
-    // field's autofocus opens.
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-7 bg-background px-6 pb-12 pt-20 text-ink">
+    // Top-aligned on a phone, so the field and "Continue" stay above the
+    // keyboard the field's autofocus opens. Centered at 768px and wider.
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-7 bg-background px-6 pb-12 pt-20 text-ink md:justify-center md:pt-12">
       <div className="flex flex-col gap-2.5">
         <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
           Enter the code we emailed

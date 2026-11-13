@@ -7,6 +7,7 @@ import { useFormStatus } from "react-dom";
 
 import { claimMySignup, login, signInWithGoogle } from "@/app/auth/actions";
 import { CodeEntry } from "@/components/auth/CodeEntry";
+import { CredentialFields } from "@/components/auth/CredentialFields";
 import { Logo } from "@/components/brand/Logo";
 import { AUTH_ERRORS } from "@/lib/auth-errors";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/auth-flags";
@@ -35,6 +36,7 @@ export function LoginScreen({
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [codeEmail, setCodeEmail] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   // An error from this page's own work (the code email), shown over the URL's.
@@ -56,6 +58,10 @@ export function LoginScreen({
       setSending(false);
     }
     if (sent === "sent") {
+      // The form comes back empty of the password, as it did when it was
+      // unmounted behind the code screen: "Change email" must not leave one
+      // account's password sitting under an empty address.
+      setPassword("");
       setCodeEmail(result.unconfirmed);
       // The password matched, so an `?error=` left from an earlier try no
       // longer applies; drop it before the form can show again.
@@ -119,8 +125,9 @@ export function LoginScreen({
         <Logo />
       </header>
 
-      {/* Top-aligned under the logo, so the fields and button stay above the keyboard. */}
-      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5">
+      {/* Top-aligned under the logo on a phone, so the fields and button stay
+          above the keyboard. Centered in the space left at 768px and wider. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5 md:justify-center">
         <h1 className="text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em] font-display">
           Welcome back.
         </h1>
@@ -132,52 +139,29 @@ export function LoginScreen({
           </p>
         )}
 
-        <form action={handleLogin} className="flex flex-col gap-3">
+        <form action={handleLogin} className="flex flex-col gap-4">
           <input type="hidden" name="next" value={next} />
 
-          <label htmlFor="email" className="sr-only">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            // Usually arrives server-rendered after a redirect, where a screen
-            // reader may not read the alert out: the fields name it instead.
-            aria-invalid={shownError ? true : undefined}
-            aria-describedby={shownError ? "login-error" : undefined}
-            className="h-12 w-full rounded-md border border-line-strong bg-surface px-4 text-[16px] text-ink placeholder-ink-3 focus:border-line-hover"
-          />
-
-          {/* Password row with the inline FORGOT? link to the reset flow. */}
-          {/* The ring goes on the row, not the bare input inside it, so it
-              wraps the whole field the way every other input's does. */}
-          <div className="flex h-12 w-full items-center rounded-md border border-line-strong bg-surface pl-4 pr-4 has-[input:focus-visible]:border-line-hover has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-optic">
-            <label htmlFor="password" className="sr-only">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Password"
-              required
-              aria-invalid={shownError ? true : undefined}
-              aria-describedby={shownError ? "login-error" : undefined}
-              className="flex-1 bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none"
+          <div className="flex flex-col gap-1.5">
+            {/* The save form's block. Named, because this form posts to the
+                `login` action. An error usually arrives server-rendered after
+                a redirect, where a screen reader may not read the alert out:
+                the fields name it instead. */}
+            <CredentialFields
+              idPrefix="login"
+              names={{ email: "email", password: "password" }}
+              email={email}
+              onEmailChange={setEmail}
+              password={password}
+              onPasswordChange={setPassword}
+              passwordAutoComplete="current-password"
+              describedBy={shownError ? "login-error" : undefined}
             />
-            {/* `-my-4 py-4` buys a 47px tap target without growing the row. */}
             <Link
               href="/forgot-password"
-              className="-my-4 shrink-0 py-4 pl-3 font-mono text-[10px] tracking-[0.08em] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+              className="-mb-2.5 flex min-h-11 items-center self-start text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
             >
-              FORGOT?
+              Forgot password?
             </Link>
           </div>
 
@@ -210,14 +194,15 @@ export function LoginScreen({
             </form>
           </>
         )}
-      </div>
 
-      <p className="pb-2 text-[16px] text-ink-2">
-        New here?{" "}
-        <Link href="/start" className="underline underline-offset-4">
-          Take the assessment
-        </Link>
-      </p>
+        {/* Directly under the form, not at the foot of the page. */}
+        <p className="text-[16px] text-ink-2">
+          New here?{" "}
+          <Link href="/start" className="underline underline-offset-4">
+            Take the assessment
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }

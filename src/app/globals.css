@@ -79,6 +79,28 @@
     outline-offset: 2px;
   }
 
+  /*
+   * Browser autofill paints a filled field with its own pale yellow or blue
+   * ground and dark text (most visibly iOS Safari), which on this palette is
+   * a bright slab inside a dark form. The ground can't be overridden with a
+   * background colour, and the usual fix is an inset box-shadow, which this
+   * system never uses. Two layers instead, so a filled field looks like one
+   * the player typed:
+   *   - the browser's ground is clipped to the text's shape, where the `ink`
+   *     text fill covers it. This holds however and whenever the field was
+   *     filled;
+   *   - its change of ground is also put on a transition so long it never
+   *     arrives, for a browser that ignores the clip. (That alone fails when
+   *     no transition starts: a field filled before its first style pass.)
+   */
+  input:-webkit-autofill {
+    -webkit-text-fill-color: #f4f4f2;
+    caret-color: #f4f4f2;
+    -webkit-background-clip: text;
+    background-clip: text;
+    transition: background-color 600000s 0s, color 600000s 0s;
+  }
+
   /* Identity: selection carries the optic accent. */
   ::selection {
     background: #d8e34c;

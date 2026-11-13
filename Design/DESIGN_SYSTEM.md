@@ -328,7 +328,8 @@ One component (`PlanView`) for both. No cards; hairlines only. Top to bottom:
 
 ### Auth screens (all of them)
 Applies to the Save Gate and its views (form, existing-account note, code screen, inline log-in), `/login` (form and code screen), `/forgot-password`, `/reset-password` and `/auth/link-error`.
-- **Top-aligned:** the heading about 80px from the top of the screen (88px on the pages with a logo, 20px under it), never vertically centered, so the field and the primary button stay above the phone keyboard.
+- **Top-aligned on a phone, centered at 768px and wider:** below 768px the heading sits about 80px from the top of the screen (88px on the pages with a logo, 20px under it), so the field and the primary button stay above the phone keyboard. At 768px and wider the form is centered vertically in the space it has (text stays left-aligned); a logo header, and the save form's log-in line, stay at the top.
+- **Fields:** email fields set `autoCapitalize="off"` and `autoCorrect="off"`. A field the browser autofilled keeps the form's own ground and `ink` text (`globals.css`: the browser's fill clipped to the text, plus a long transition; no `box-shadow`).
 - **Errors:** plain `danger` text, 16px, directly under the field or button it belongs to, `role="alert"`; no box, border or fill. An error the page arrives with (after a redirect, e.g. an expired reset link) sits there too, and its field points at it (`aria-invalid`, `aria-describedby`), since a screen reader may not read out an alert that was already on the page. The plan's Save my plan and pending line follow the same rule.
 
 ### Save Gate (auth)
@@ -356,9 +357,9 @@ Applies to the Save Gate and its views (form, existing-account note, code screen
 
 ### Log in (auth)
 - Logo + wordmark → Archivo 800 30px **"Welcome back."**
-- Email input → Password input (with mono "FORGOT?" inline) → primary **"Log in"** → ("OR" divider → "Continue with Google" only when the Google provider is on).
+- The Save Gate's grouped field block (EMAIL, hairline, PASSWORD with Show/Hide) → "Forgot password?" text link under the block → primary **"Log in"** → ("OR" divider → "Continue with Google" only when the Google provider is on).
 - An unconfirmed account gets a fresh code and the code screen in place.
-- Footer, left-aligned: "New here? Take the assessment". *Two fields, one primary action.*
+- Directly under the form, left-aligned: "New here? Take the assessment". *Two fields, one primary action.*
 - Player-facing wording is "Log in" everywhere (button, links, errors), and Settings says "Log out".
 
 ### Drill page (guided session, plan rows, landing example)

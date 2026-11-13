@@ -37,8 +37,8 @@ export default async function ResetPasswordPage({
         <Logo />
       </header>
 
-      {/* Top-aligned under the logo, so the fields and button stay above the keyboard. */}
-      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5">
+      {/* Top-aligned under the logo on a phone, so the fields and button stay above the keyboard; centered at 768px and wider. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5 md:justify-center">
         <div className="flex flex-col gap-2.5">
           <h1 className="font-display text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Choose a new password.

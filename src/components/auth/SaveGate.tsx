@@ -26,8 +26,9 @@ const MIN_PASSWORD_LENGTH = 8;
  * Post-roadmap Save Gate. Creates an account, then claims the anonymous
  * assessment/diagnosis/plan rows into it.
  *
- * Three screens, never mixed, each top-aligned so the field and its button
- * stay above the phone keyboard the autofocus opens:
+ * Three screens, never mixed, each top-aligned on a phone so the field and
+ * its button stay above the keyboard the autofocus opens (centered at 768px
+ * and wider):
  *
  *   - the form: a title, one line on what the account keeps, email and
  *     password in one block, "Create account", and "Back to my plan";
@@ -316,7 +317,9 @@ export function SaveGate({
         </span>
       </p>
 
-      <div className="flex flex-col gap-6 pt-6">
+      {/* The form centers in the space under the top row at 768px and wider;
+          the log-in line above stays at the top of the screen. */}
+      <div className="flex flex-1 flex-col gap-6 pt-6 md:justify-center">
         <div className="flex flex-col gap-2.5">
           <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Save your plan
