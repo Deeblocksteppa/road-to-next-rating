@@ -6,7 +6,6 @@ import {
   SessionCompleteScreen,
   type NextStep,
 } from "@/components/session/GuidedSession";
-import { monthDay } from "@/lib/date-format";
 import { SKILL_LABELS } from "@/lib/diagnoses";
 import { toGuidedDrill } from "@/lib/drill-lookup";
 import { loadPlanDrills } from "@/lib/plan-drills";
@@ -15,13 +14,14 @@ import {
   getScoredSessionsByDrill,
   getTodayLog,
   getWeeklyProgress,
+  loggedThisUtcDay,
   startOfSittingUTC,
-  startOfWeekUTC,
 } from "@/lib/drill-sessions";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { lastTimeBefore, type RecapRow } from "@/lib/session-recap";
 import { createClient } from "@/lib/supabase/server";
 import type { SkillId } from "@/lib/types";
+import { weekContext } from "@/lib/week-status";
 
 /**
  * Guided session flow (drill page → timer → log → confirmation).
@@ -84,7 +84,7 @@ export default async function SessionPage() {
     target: d.practiceTarget,
     lastTime: lastTimeBefore(scored.get(d.id) ?? [], sittingStart),
   }));
-  const next = await nextStep(supabase, plan);
+  const next = await nextStep(supabase, plan, loggedThisUtcDay(todayLog));
 
   const remaining = planDrills.filter((d) => !completedToday.has(d.id));
   const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
@@ -147,12 +147,13 @@ export default async function SessionPage() {
 
 /**
  * What the recap can point to: the re-test once it is open; otherwise
- * another session this week, or, once the week is done, Monday or the
- * re-test if it opens first. The recap chooses with its own weekly count.
+ * another day this week, next Monday, or, in the plan's final week, the
+ * re-test date. The recap chooses with its own weekly count (`recapSupportLine`).
  */
 async function nextStep(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  plan: { diagnosis_id: string | null; retest_date: string | null; created_at: string }
+  plan: { diagnosis_id: string | null; retest_date: string | null; created_at: string },
+  loggedToday: boolean
 ): Promise<NextStep> {
   const timeline = plan.retest_date ? getPlanTimeline(plan.created_at, plan.retest_date) : null;
   const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
@@ -166,15 +167,5 @@ async function nextStep(
     const skill = diagnosis?.bottleneck as SkillId | undefined;
     skillPhrase = skill ? SKILL_LABELS[skill] : undefined;
   }
-  const nextWeekStart = new Date(startOfWeekUTC().getTime() + 7 * 24 * 60 * 60 * 1000);
-  const retestBeforeNextWeek =
-    plan.retest_date && new Date(plan.retest_date).getTime() < nextWeekStart.getTime()
-      ? monthDay(new Date(plan.retest_date))
-      : null;
-  return {
-    retestOpen,
-    skillPhrase,
-    nextWeek: `Monday, ${monthDay(nextWeekStart)}`,
-    retestBeforeNextWeek,
-  };
+  return { retestOpen, skillPhrase, week: weekContext(plan.retest_date), loggedToday };
 }

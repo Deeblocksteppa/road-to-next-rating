@@ -373,6 +373,12 @@ One component (`DrillPage`), three places: the guided session's first screen, th
 - In a session: primary **"Begin"**, then mono `NEXT: {DRILL} · {MIN}` left-aligned. Read-only (from a plan row): no button and no NEXT line, back arrow only.
 - No card, no "When the timer ends" box.
 
+### Session complete (guided session)
+- Mono `SESSION COMPLETE` → Archivo 800 28px **"1 of 2 sessions this week."** (the main line) → one supporting sentence, 16px `ink-2`: "Next session: any other day this week." · week done, "That's the week. Next sessions open Monday, Nov 16." · the week's last day, "This week ends today. Next week's sessions open Monday, Nov 16." · in the plan's final week the Monday lines point to the re-test ("… Your re-test opens Dec 2.").
+- Then, as one group with no gap pushed between them: each drill's logged number (Archivo 800 32px, "/10" mono) against mono `TARGET 7 · LAST TIME 5`, and primary **"Back to my plan"**.
+- **Re-test open:** no supporting sentence; the results, then the re-test block (holding the accent), then "Back to my plan" secondary.
+- No "Session logged." line, no praise, nothing marked for hitting the target.
+
 ### Settings
 - Header: back button + Archivo 700 22px "Settings".
 - **ACCOUNT** group (surface card, dividers `line`): "Email → …", "Display name → … ›".

@@ -14,6 +14,7 @@ import {
 } from "@/components/session/DrillPage";
 import { RetestOpen } from "@/components/retest/RetestOpen";
 import { scoringRule } from "@/lib/drills";
+import { recapSupportLine, type WeekContext } from "@/lib/week-status";
 
 type Step = "brief" | "active" | "log";
 
@@ -44,10 +45,10 @@ export interface NextStep {
   retestOpen: boolean;
   /** In-sentence skill the re-test tests ("your third-shot drop"). */
   skillPhrase?: string;
-  /** When the next week's sessions open: "Monday, Nov 3". */
-  nextWeek: string;
-  /** The re-test date when it opens before next week ("Nov 1"), else null. */
-  retestBeforeNextWeek: string | null;
+  /** Where today sits in the week and the plan, for the line under the count. */
+  week: WeekContext;
+  /** Something was logged on the current UTC day as of page load (`loggedThisUtcDay`). */
+  loggedToday: boolean;
 }
 
 export interface GuidedSessionProps {
@@ -111,7 +112,10 @@ export function GuidedSession(props: GuidedSessionProps) {
   }));
   const drill = props.drills.find((d) => !loggedNow.includes(d.id));
 
-  // Every drill confirmed: the session is complete. This is also what the
+  // Every drill confirmed: the session is complete. `next.week` is from page
+  // load; the route's re-render after the last log brings a fresh one, and
+  // that server render is the authority if the day rolled over meanwhile.
+  // This is also what the
   // route renders on a fresh load once everything is logged, so the swap Next
   // makes after the last log (fresh props, no drills left) lands on the same
   // screen this is already showing.
@@ -121,7 +125,7 @@ export function GuidedSession(props: GuidedSessionProps) {
         <SessionCompleteScreen
           weekly={weekly}
           recap={props.recap.map((row) => ({ ...row, result: loggedValues[row.id] ?? row.result }))}
-          next={props.next}
+          next={{ ...props.next, loggedToday: props.next.loggedToday || loggedNow.length > 0 }}
         />
       </main>
     );
@@ -421,10 +425,13 @@ const SECONDARY =
  * /session route renders the identical screen when it loads with nothing
  * left to do, which is also what Next swaps in after the last log.
  *
- * Each drill's number against its target and the last one before today:
- * numbers in ink, labels in ink-3, nothing marked for hitting the target, no
- * praise. What comes next is the screen's main element and holds its one
- * accent. On a drill's first logged session there is no "last time" at all.
+ * The week's count is the main line ("1 of 2 sessions this week."), with what
+ * comes next under it as supporting text: another day, next Monday, or, in
+ * the plan's final week, the re-test date. Then each drill's number against
+ * its target and the last one before today (numbers in ink, labels in ink-3,
+ * nothing marked for hitting the target, no praise; no "last time" on a
+ * drill's first logged session), and the way back, as one group with no gap
+ * pushing them apart.
  */
 export function SessionCompleteScreen({
   weekly,
@@ -435,54 +442,47 @@ export function SessionCompleteScreen({
   recap: RecapRow[];
   next: NextStep;
 }) {
-  const weekDone = weekly.total > 0 && weekly.completed >= weekly.total;
-  const weekLine = `${weekly.completed} of ${weekly.total} sessions this week.`;
-  // Sessions left: any other day. Week done: Monday, or the re-test first.
-  const upcoming = !weekDone
-    ? { label: "Next session", when: "Any day but today." }
-    : next.retestBeforeNextWeek
-      ? { label: "Re-test opens", when: `${next.retestBeforeNextWeek}.` }
-      : { label: "Next session", when: `${next.nextWeek}.` };
   return (
     <>
       <header className="flex flex-col gap-3 pt-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Session complete</p>
-        {/* Confirmation, not the headline: what comes next is the screen's main element. */}
-        <h1 className="font-display text-[20px] font-bold leading-[1.25] tracking-[-0.01em]">
-          Session logged.
+        <h1 className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em] tabular-nums">
+          {weekly.completed} of {weekly.total} sessions this week.
         </h1>
+        {/* An open re-test is what comes next; its block below says so. */}
+        {!next.retestOpen && (
+          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+            {recapSupportLine(next.week, weekly, next.loggedToday)}
+          </p>
+        )}
       </header>
 
-      <ul className="border-b border-line">
-        {recap.map((row) => (
-          <RecapItem key={row.id} row={row} />
-        ))}
-      </ul>
-
-      <div className="flex-1" />
-
       {next.retestOpen ? (
-        <div className="flex flex-col gap-4">
-          <p className="text-[16px] leading-[1.6] text-ink-2">{weekLine}</p>
-          <RetestOpen variant="block" skillPhrase={next.skillPhrase} />
+        <>
+          {/* One group, no gap: the re-test block's top rule closes the list. */}
+          <div className="flex flex-col">
+            <ul>
+              {recap.map((row) => (
+                <RecapItem key={row.id} row={row} />
+              ))}
+            </ul>
+            <RetestOpen variant="block" skillPhrase={next.skillPhrase} />
+          </div>
           <Link href="/plan" className={SECONDARY}>
             Back to my plan
           </Link>
-        </div>
+        </>
       ) : (
-        <section className="flex flex-col gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{upcoming.label}</p>
-          <p className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em]">
-            {upcoming.when}
-          </p>
-          <p className="text-[16px] leading-[1.6] text-ink-2">
-            {weekLine}
-            {weekDone ? " That's the week. Rest counts too." : ""}
-          </p>
-          <Link href="/plan" className={`mt-3 ${PRIMARY}`}>
+        <>
+          <ul className="border-b border-line">
+            {recap.map((row) => (
+              <RecapItem key={row.id} row={row} />
+            ))}
+          </ul>
+          <Link href="/plan" className={PRIMARY}>
             Back to my plan
           </Link>
-        </section>
+        </>
       )}
     </>
   );
