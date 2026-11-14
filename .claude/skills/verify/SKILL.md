@@ -111,7 +111,7 @@ Gradients are allowed only on the landing's closing section. Focus rings are fil
 
 On each screenshot, check against CLAUDE.md's hard rules and DESIGN.md:
 
-- one accent meaning per screen; nothing centered except the reveal (a form may sit vertically centered at 768px and wider, top-aligned below that; its text is still left-aligned);
+- one accent meaning per screen; nothing centered except the reveal (a form may sit vertically centered at 1024px and wider, top-aligned below that; its text is still left-aligned);
 - text wraps cleanly at 375 (no mid-word breaks on big titles, no orphaned single words in headlines);
 - one dominant element; nothing clipped, overlapping, or cut off by the tab bar;
 - copy: no em dashes, one name per concept, example data on the landing has its `ExampleTag` beside it;

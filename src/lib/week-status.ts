@@ -91,7 +91,7 @@ export function planStatusLine(
 
 /**
  * Under the session recap's "1 of 2 sessions this week.": what comes next.
- * Not used while the re-test is open; its block is what comes next then.
+ * Not used while the re-test is open: the recap's headline is the re-test then.
  */
 export function recapSupportLine(ctx: WeekContext, weekly: WeekCount, loggedToday: boolean): string {
   const retest = retestNext(ctx);
@@ -135,7 +135,7 @@ export function homeCaption(
   }
   if (ctx.retestOpen) return null;
   if (today.allDone) {
-    return retest ? `Your re-test opens ${retest}.` : `Next sessions unlock ${ctx.nextWeekLabel}`;
+    return retest ? `Your re-test opens ${retest}.` : `Next sessions open ${ctx.nextWeekLabel}`;
   }
   return daysUntilRetest !== null && daysUntilRetest > 0
     ? `Re-test opens in ${daysUntilRetest} day${daysUntilRetest === 1 ? "" : "s"}`

@@ -38,8 +38,8 @@ export default function LinkErrorPage({
         <Logo />
       </header>
 
-      {/* Top-aligned under the logo on a phone, so the field and button stay above the keyboard; centered at 768px and wider. */}
-      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5 md:justify-center">
+      {/* Top-aligned under the logo on a phone, so the field and button stay above the keyboard; centered at 1024px and wider. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5 lg:justify-center">
         <div className="flex flex-col gap-2.5">
           <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
             {sent ? "Check your email." : "That link didn't work."}

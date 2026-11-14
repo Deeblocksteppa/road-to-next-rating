@@ -13,7 +13,7 @@
    - **Archivo** (heavy, expanded for the wordmark, tabular for numbers) = **verdicts & metrics**. Stadium-signage authority.
    - **Instrument Sans** = the **coach's speaking voice**: body, explanations, buttons.
    - **IBM Plex Mono** = the **instrument**: every label, unit, and countdown is mono smallcaps. This is what makes the UI feel *calibrated* rather than styled.
-   - No font is ever italic. **Nothing is ever centered except the reveal.** (A form may be centered vertically at 768px and wider; top-aligned below that.)
+   - No font is ever italic. **Nothing is ever centered except the reveal.** (A form may be centered vertically at 1024px and wider; top-aligned below that.)
 3. **Logo — "the plateau, broken."** Two strokes on a 32px grid: a flat gray plateau line (the rating you've been stuck on) and an accent line breaking upward off its end. 3px weight, round caps. The plateau is always `ink-3` (muted); the break is always accent — the mark never appears in a single color. Legible to 16px minimum. Doubles as the Progress chart motif (the chart is the logo happening slowly).
 
 ---
@@ -270,9 +270,9 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - Header: logo + wordmark; right: mono "DAY 8 / 21" + a gear (16px, in a 32px circle, border `line-strong`) to Settings.
 - Mono `YOUR FOCUS` → Archivo 800 28px skill title → the diagnosis's one-line insight (16px `ink-1`) → "Week 2 of 3" (16px `ink-2`).
 - **Open re-test:** the re-test block here, holding the accent; the session button below goes secondary.
-- **Today's session** (hairlines, no card): mono `TODAY · 25 MINUTES, 2 DRILLS` (`TODAY · DONE` once today's is logged; `THIS WEEK · DONE` once the week's two are, when the drill rows are hidden) → "1 of 2 sessions this week" (16px `ink-2`; it counts the week's sessions, and there are no dots) → one row per drill: Archivo 600 18px name, mono "15 MIN · SOLO" / "· PARTNER" / "· SOLO · WALL" at the right (a logged drill is struck through and reads "LOGGED").
+- **Today's session** (hairlines, no card): mono `TODAY · 25 MINUTES, 2 DRILLS` (`TODAY · DONE` once today's is logged; `THIS WEEK · DONE` once the week's two are, when the drill rows are hidden) → "1 of 2 sessions this week" (16px `ink-2`; it counts the week's sessions, and there are no dots) → one row per drill, the plan's own row (`DrillRow`) without the chevron and not a link: Archivo 600 18px name, mono "15 MIN · SOLO" / "· PARTNER" / "· SOLO · WALL" under it. A drill logged today reads "TODAY · 7/10" under its name; no strikethrough, and no "LOGGED" label at the right. (Like the plan's row, a log saved without a number would read "TODAY · LOGGED"; the guided session always saves a number, so the app does not produce it.)
 - Spacer → primary button h56 **"Start today's session"** / "Finish today's session" + mono minutes left; once today or the week is done, the disabled style ("Today's session done", "All sessions done this week").
-- Caption under the button (16px `ink-2`, left-aligned): "Re-test opens in 13 days" while there is a session to start; "1 more session this week. Pick any other day."; on the week's last day, "This week ends today. Next week's sessions open Monday, Nov 16."; week done, "Next sessions unlock Monday, Nov 16". In the plan's final week the lines that point to Monday point to the re-test instead ("Your re-test opens Dec 2."). With the re-test open its block says so and the caption is absent, except "1 more session this week…" on a day when today's is done.
+- Caption under the button (16px `ink-2`, left-aligned): "Re-test opens in 13 days" while there is a session to start; "1 more session this week. Pick any other day."; on the week's last day, "This week ends today. Next week's sessions open Monday, Nov 16."; week done, "Next sessions open Monday, Nov 16". In the plan's final week the lines that point to Monday point to the re-test instead ("Your re-test opens Dec 2."). With the re-test open its block says so and the caption is absent, except "1 more session this week…" on a day when today's is done.
 
 ### My Plan (tab bar PLAN active) and the anonymous plan on `/start`
 One component (`PlanView`) for both. No cards; hairlines only. Top to bottom:
@@ -328,7 +328,7 @@ One component (`PlanView`) for both. No cards; hairlines only. Top to bottom:
 
 ### Auth screens (all of them)
 Applies to the Save Gate and its views (form, existing-account note, code screen, inline log-in), `/login` (form and code screen), `/forgot-password`, `/reset-password` and `/auth/link-error`.
-- **Top-aligned on a phone, centered at 768px and wider:** below 768px the heading sits about 80px from the top of the screen (88px on the pages with a logo, 20px under it), so the field and the primary button stay above the phone keyboard. At 768px and wider the form is centered vertically in the space it has (text stays left-aligned); a logo header, and the save form's log-in line, stay at the top.
+- **Top-aligned on a phone or tablet, centered at 1024px and wider:** below 1024px the heading sits about 80px from the top of the screen (88px on the pages with a logo, 20px under it), so the field and the primary button stay above an on-screen keyboard (a tablet in portrait, 768px, has one too). At 1024px and wider the form is centered vertically in the space it has (text stays left-aligned); a logo header, and the save form's log-in line, stay at the top.
 - **Fields:** email fields set `autoCapitalize="off"` and `autoCorrect="off"`. A field the browser autofilled keeps the form's own ground and `ink` text (`globals.css`: the browser's fill clipped to the text, plus a long transition; no `box-shadow`).
 - **Errors:** plain `danger` text, 16px, directly under the field or button it belongs to, `role="alert"`; no box, border or fill. An error the page arrives with (after a redirect, e.g. an expired reset link) sits there too, and its field points at it (`aria-invalid`, `aria-describedby`), since a screen reader may not read out an alert that was already on the page. The plan's Save my plan and pending line follow the same rule.
 
@@ -365,7 +365,7 @@ Applies to the Save Gate and its views (form, existing-account note, code screen
 ### Drill page (guided session, plan rows, landing example)
 One component (`DrillPage`), three places: the guided session's first screen, the read-only page a plan row opens, and the landing's example drill.
 - Header: back button (36×36, `radius-md`) + mono `DRILL 1 OF 2` beside it.
-- Diagram (side view: the shot's court diagram, or the shared wall template with per-drill labels for a drill prescribed at a wall) → Archivo 700 24px drill name → one sentence (the drill's `task`, 16px `ink`).
+- Diagram (side view: the shot's court diagram, or the shared wall template with per-drill labels for a drill prescribed at a wall; its labels render at 10px or larger at 375px, here and in the landing's framed example, and none touches another label, a mark or the ball's path) → Archivo 700 24px drill name → one sentence (the drill's `task`, 16px `ink`).
 - Rows between hairlines, mono label and a 16px body-font value: `TIME` "15 min" · `WHO` "Partner" / "Solo" / "Solo, at a wall" · `COUNTS` (the "counts if" sentence) · `LOG` "Your last set of 10 drops" · `TARGET` "7 of 10". Times come from the drill, never fixed text.
 - The scoring rule, 16px `ink-2`: "When the timer ends, finish the {set / rep / exchange / rally} you're on and log it." (the drill's own word). Also on the timer, followed by "Falling short of 7 of 10 still counts."; not on the log screen. The full description is behind "View instructions" on the timer.
 - In a session: primary **"Begin"**, then mono `NEXT: {DRILL} · {MIN}` left-aligned. Read-only (from a plan row): no button and no NEXT line, back arrow only.
@@ -374,7 +374,7 @@ One component (`DrillPage`), three places: the guided session's first screen, th
 ### Session complete (guided session)
 - Mono `SESSION COMPLETE` → Archivo 800 28px **"1 of 2 sessions this week."** (the main line) → one supporting sentence, 16px `ink-2`: "Next session: any other day this week." · week done, "That's the week. Next sessions open Monday, Nov 16." · the week's last day, "This week ends today. Next week's sessions open Monday, Nov 16." · in the plan's final week the Monday lines point to the re-test ("… Your re-test opens Dec 2.").
 - Then, as one group with no gap pushed between them: each drill's logged number (Archivo 800 32px, "/10" mono) against mono `TARGET 7 · LAST TIME 5`, and primary **"Back to my plan"**.
-- **Re-test open:** no supporting sentence; the results, then the re-test block (holding the accent), then "Back to my plan" secondary.
+- **Re-test open:** one headline, and it is the re-test. Mono `SESSION COMPLETE` → Archivo 800 28px **"Your re-test is open."** → "Same twelve questions, about four minutes." (16px `ink-2`) → the results → primary **"Take your re-test"** (the one accent) → "Back to my plan" secondary. No weekly count and no re-test block in this state.
 - No "Session logged." line, no praise, nothing marked for hitting the target.
 
 ### Settings

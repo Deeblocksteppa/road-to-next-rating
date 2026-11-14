@@ -126,8 +126,8 @@ export function LoginScreen({
       </header>
 
       {/* Top-aligned under the logo on a phone, so the fields and button stay
-          above the keyboard. Centered in the space left at 768px and wider. */}
-      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5 md:justify-center">
+          above the keyboard. Centered in the space left at 1024px and wider. */}
+      <div className="flex flex-1 flex-col gap-5 pb-10 pt-5 lg:justify-center">
         <h1 className="text-[1.875rem] font-extrabold leading-[1.1] tracking-[-0.02em] font-display">
           Welcome back.
         </h1>

@@ -12,7 +12,6 @@ import {
   NextDrillLine,
   type DrillPageDrill,
 } from "@/components/session/DrillPage";
-import { RetestOpen } from "@/components/retest/RetestOpen";
 import { scoringRule } from "@/lib/drills";
 import { recapSupportLine, type WeekContext } from "@/lib/week-status";
 
@@ -43,8 +42,6 @@ export interface OutlineItem {
 export interface NextStep {
   /** The re-test is open: it is the next thing to do, whatever the week says. */
   retestOpen: boolean;
-  /** In-sentence skill the re-test tests ("your third-shot drop"). */
-  skillPhrase?: string;
   /** Where today sits in the week and the plan, for the line under the count. */
   week: WeekContext;
   /** Something was logged on the current UTC day as of page load (`loggedThisUtcDay`). */
@@ -432,6 +429,12 @@ const SECONDARY =
  * nothing marked for hitting the target, no praise; no "last time" on a
  * drill's first logged session), and the way back, as one group with no gap
  * pushing them apart.
+ *
+ * With the re-test open the screen has one headline, and it is the re-test:
+ * "Your re-test is open.", how long it takes, the same results, then "Take
+ * your re-test" as the one accent and "Back to my plan" secondary. No weekly
+ * count there: two headlines of the same weight competed, and the re-test is
+ * what comes next whatever the week says.
  */
 export function SessionCompleteScreen({
   weekly,
@@ -447,42 +450,36 @@ export function SessionCompleteScreen({
       <header className="flex flex-col gap-3 pt-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Session complete</p>
         <h1 className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em] tabular-nums">
-          {weekly.completed} of {weekly.total} sessions this week.
+          {next.retestOpen
+            ? "Your re-test is open."
+            : `${weekly.completed} of ${weekly.total} sessions this week.`}
         </h1>
-        {/* An open re-test is what comes next; its block below says so. */}
-        {!next.retestOpen && (
-          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-            {recapSupportLine(next.week, weekly, next.loggedToday)}
-          </p>
-        )}
+        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+          {next.retestOpen
+            ? "Same twelve questions, about four minutes."
+            : recapSupportLine(next.week, weekly, next.loggedToday)}
+        </p>
       </header>
 
+      <ul className="border-b border-line">
+        {recap.map((row) => (
+          <RecapItem key={row.id} row={row} />
+        ))}
+      </ul>
+
       {next.retestOpen ? (
-        <>
-          {/* One group, no gap: the re-test block's top rule closes the list. */}
-          <div className="flex flex-col">
-            <ul>
-              {recap.map((row) => (
-                <RecapItem key={row.id} row={row} />
-              ))}
-            </ul>
-            <RetestOpen variant="block" skillPhrase={next.skillPhrase} />
-          </div>
+        <div className="flex flex-col gap-3">
+          <Link href="/retest" className={PRIMARY}>
+            Take your re-test
+          </Link>
           <Link href="/plan" className={SECONDARY}>
             Back to my plan
           </Link>
-        </>
+        </div>
       ) : (
-        <>
-          <ul className="border-b border-line">
-            {recap.map((row) => (
-              <RecapItem key={row.id} row={row} />
-            ))}
-          </ul>
-          <Link href="/plan" className={PRIMARY}>
-            Back to my plan
-          </Link>
-        </>
+        <Link href="/plan" className={PRIMARY}>
+          Back to my plan
+        </Link>
       )}
     </>
   );

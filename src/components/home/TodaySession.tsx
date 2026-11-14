@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-import { setupRowLabel, type Drill } from "@/lib/drills";
+import { DrillRow } from "@/components/plan/DrillRow";
+import type { Drill } from "@/lib/drills";
+import type { TodayLogEntry } from "@/lib/drill-sessions";
 import { sessionMinutes, sessionShape } from "@/lib/session-plan";
 
 /**
@@ -31,8 +33,10 @@ export function todayState(drills: Drill[], completedToday: string[], weekComple
  * today's session · 10 MIN" rather than offering the full 25 again.
  *
  * Under the label, the week's count in words: "1 of 2 sessions this week".
- * It counts sessions, not today's drills, and says so. Each drill row has
- * its minutes and who it needs ("15 MIN · SOLO · WALL").
+ * It counts sessions, not today's drills, and says so. Each drill is the
+ * plan's own row (`DrillRow`): the name, and under it its minutes and who it
+ * needs ("15 MIN · SOLO · WALL"), or "TODAY · 7/10" once it is logged. Here
+ * the rows are not links: the button is the one way on.
  *
  * Accent: the button, when it is live and nothing else on the screen is the
  * main action. Otherwise (re-test open, or nothing left to start today)
@@ -43,14 +47,14 @@ export function todayState(drills: Drill[], completedToday: string[], weekComple
  */
 export function TodaySession({
   drills,
-  completedToday,
+  todayLog,
   weekComplete,
   weekly,
   secondary = false,
 }: {
   drills: Drill[];
-  /** Ids of drills already logged today. */
-  completedToday: string[];
+  /** The drills already logged today, each with the number it was logged with. */
+  todayLog: Pick<TodayLogEntry, "drillId" | "result">[];
   /** This week's session target is already met. */
   weekComplete: boolean;
   /** Sessions done this week against the weekly target (free; not the paid streak). */
@@ -58,9 +62,10 @@ export function TodaySession({
   /** Something else on the screen is the main action (an open re-test). */
   secondary?: boolean;
 }) {
-  const { done, remaining, todayDone, startedToday, allDone } = todayState(
+  const logged = new Map(todayLog.map((e) => [e.drillId, e.result]));
+  const { remaining, todayDone, startedToday, allDone } = todayState(
     drills,
-    completedToday,
+    Array.from(logged.keys()),
     weekComplete
   );
   const minutesLeft = sessionMinutes(remaining);
@@ -82,26 +87,13 @@ export function TodaySession({
 
         {drills.length > 0 && !allDone && (
           <ul className="border-b border-line">
-            {drills.map((drill) => {
-              const logged = done.has(drill.id);
-              return (
-                <li
-                  key={drill.id}
-                  className="flex items-baseline justify-between gap-3 border-t border-line py-4"
-                >
-                  <span
-                    className={`font-display text-[18px] font-semibold leading-[1.3] ${
-                      logged ? "text-ink-3 line-through" : "text-ink"
-                    }`}
-                  >
-                    {drill.name}
-                  </span>
-                  <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] tabular-nums text-ink-3">
-                    {logged ? "Logged" : `${drill.duration} · ${setupRowLabel(drill.setup)}`}
-                  </span>
-                </li>
-              );
-            })}
+            {drills.map((drill) => (
+              <DrillRow
+                key={drill.id}
+                drill={drill}
+                loggedToday={logged.has(drill.id) ? { result: logged.get(drill.id) ?? null } : null}
+              />
+            ))}
           </ul>
         )}
       </section>

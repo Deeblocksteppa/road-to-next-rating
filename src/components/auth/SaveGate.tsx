@@ -27,7 +27,7 @@ const MIN_PASSWORD_LENGTH = 8;
  * assessment/diagnosis/plan rows into it.
  *
  * Three screens, never mixed, each top-aligned on a phone so the field and
- * its button stay above the keyboard the autofocus opens (centered at 768px
+ * its button stay above the keyboard the autofocus opens (centered at 1024px
  * and wider):
  *
  *   - the form: a title, one line on what the account keeps, email and
@@ -317,9 +317,9 @@ export function SaveGate({
         </span>
       </p>
 
-      {/* The form centers in the space under the top row at 768px and wider;
+      {/* The form centers in the space under the top row at 1024px and wider;
           the log-in line above stays at the top of the screen. */}
-      <div className="flex flex-1 flex-col gap-6 pt-6 md:justify-center">
+      <div className="flex flex-1 flex-col gap-6 pt-6 lg:justify-center">
         <div className="flex flex-col gap-2.5">
           <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
             Save your plan

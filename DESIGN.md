@@ -283,7 +283,7 @@ This is a deliberate rejection of two adjacent registers: the AI-dev-tool blue/n
 - Monochrome-plus-one: every screen is near-black neutrals; optic yellow-green appears in exactly one place at a time.
 - Flat by construction: no shadows, no gradients; depth is tonal layering only.
 - Three voices, one job each: Archivo for verdicts, Instrument Sans for the coach's speaking voice, IBM Plex Mono for the instrument reading.
-- Nothing is centered except the reveal — the one screen where the whole UI stops and looks straight at the player. (A form may sit vertically centered on the screen at 768px and wider; see Layout.)
+- Nothing is centered except the reveal — the one screen where the whole UI stops and looks straight at the player. (A form may sit vertically centered on the screen at 1024px and wider; see Layout.)
 - The break (accent) is earned, not decorative: CTA, one data line, one selected state — never a background, never a heading.
 
 ## Colors
@@ -335,7 +335,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 - **Statement** (800, 26px → 36px sm → 46px md → 54px desktop, LH 1.08–1.15, tracking −0.02em): the marketing site's statement sections — one sentence, centred, spanning the container, nothing beside it. Deliberately a step below Display: the hero must stay the loudest thing on the page, and a statement that matched it would read as a second hero. Mobile runs 26px because 30px wrapped the sentence to six centred lines of ~20 characters, which is the hardest wrap the page can produce.
 - **Marketing H2 (group)** (700, 26px → 32px, LH 1.2–1.25, tracking −0.01em): a heading that has to hold a group of numbered steps under it rather than one column of prose. At ordinary section scale a centred heading over a 2,300px group reads as a caption that lost its paragraph.
 - **Marketing formula** (400, 12px, LH 1.5, IBM Plex Mono, sentence case, `ink-2`): the one place mono is not uppercased. The Nothing-But-Caps habit is right for labels, units and countdowns; an equation set in 67 characters of caps is a paragraph wearing a label's clothes, and it is the sentence that makes the weighted-gap readout legible at all.
-- **Headline, complete** (800, 28px, LH 1.15, tracking −0.01em): the one-line headline on a screen where a flow has ended — the session recap's count ("1 of 2 sessions this week.", with what comes next under it as body text), the "done for the week" dead-end, and the session error screen. A step above H1 because it is the whole message on an otherwise empty screen; well below Display because nothing is being revealed.
+- **Headline, complete** (800, 28px, LH 1.15, tracking −0.01em): the one-line headline on a screen where a flow has ended — the session recap's count ("1 of 2 sessions this week.", with what comes next under it as body text; with the re-test open the headline is "Your re-test is open." instead, never both), the "done for the week" dead-end, and the session error screen. A step above H1 because it is the whole message on an otherwise empty screen; well below Display because nothing is being revealed.
 - **H1** (700, 24px → 32px, LH ~1.25, tracking −0.01em): screen titles.
 - **H2** (600, 17–18px → 20px): card titles, section headers.
 - **Body** (400, 16px, LH 1.6 → 1.7 desktop, color `ink-2`): explanations, descriptions, every sentence a player reads: paragraphs, helper text, captions, error messages, teasers, caveats. 16px at every width, matching the landing page. This supersedes the 15px mobile body in `Design/DESIGN_SYSTEM.md` §2.
@@ -356,7 +356,7 @@ True-neutral near-blacks with a whisper of warmth (no blue cast) carry the entir
 
 Mobile-first, specified natively at **375×812px**; desktop only has hinted type-scale targets (display 38→64px, H1 24→32px, H2 17/18→20px, body 15→16px), so desktop layout composition is an open implementation decision, not yet specified.
 
-**Forms: top-aligned on a phone, centered at 768px and wider.** Below 768px a form starts near the top of the screen, so its fields and primary button stay above the phone keyboard. At 768px and wider no keyboard covers the screen, and the form may sit vertically centered in the space it has. Its text stays left-aligned at every width.
+**Forms: top-aligned on a phone or tablet, centered at 1024px and wider.** Below 1024px a form starts near the top of the screen, so its fields and primary button stay above an on-screen keyboard (a tablet in portrait is 768px wide and has one). At 1024px and wider the form may sit vertically centered in the space it has. Its text stays left-aligned at every width.
 
 **Label and value rows.** A fact with a short name (PLAN, SESSION, TIME, COUNTS, RE-TEST) is a row between hairlines: the name as a mono label, the value in the body font at 16px. The value is never mono, because most run past three words (Uppercase-Mono Rule).
 
@@ -438,6 +438,6 @@ Buttons, cards, and inputs all share the same restraint: flat fills, one radius 
 ### Don't:
 - **Don't** use a gradient anywhere in UI chrome — it reads as marketing, and specifically as "AI dev tool" in this palette.
 - **Don't** add a `box-shadow` to anything; depth comes from tonal layering and border weight only.
-- **Don't** italicize any text, or center any layout other than the reveal sequence. (A form's vertical position at 768px and wider is not centering in this sense: see Layout.)
+- **Don't** italicize any text, or center any layout other than the reveal sequence. (A form's vertical position at 1024px and wider is not centering in this sense: see Layout.)
 - **Don't** let the accent touch a background fill behind body copy or become a heading color — it marks a point, it never paints a surface.
 - **Don't** introduce a second accent hue for a new state; new states (warn, danger) must share the accent's lightness/chroma family so they read as "the same instrument, different reading."

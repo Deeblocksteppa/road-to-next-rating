@@ -6,7 +6,6 @@ import {
   SessionCompleteScreen,
   type NextStep,
 } from "@/components/session/GuidedSession";
-import { SKILL_LABELS } from "@/lib/diagnoses";
 import { toGuidedDrill } from "@/lib/drill-lookup";
 import { loadPlanDrills } from "@/lib/plan-drills";
 import {
@@ -20,7 +19,6 @@ import {
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { lastTimeBefore, type RecapRow } from "@/lib/session-recap";
 import { createClient } from "@/lib/supabase/server";
-import type { SkillId } from "@/lib/types";
 import { weekContext } from "@/lib/week-status";
 
 /**
@@ -84,7 +82,7 @@ export default async function SessionPage() {
     target: d.practiceTarget,
     lastTime: lastTimeBefore(scored.get(d.id) ?? [], sittingStart),
   }));
-  const next = await nextStep(supabase, plan, loggedThisUtcDay(todayLog));
+  const next = nextStep(plan, loggedThisUtcDay(todayLog));
 
   const remaining = planDrills.filter((d) => !completedToday.has(d.id));
   const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
@@ -150,22 +148,11 @@ export default async function SessionPage() {
  * another day this week, next Monday, or, in the plan's final week, the
  * re-test date. The recap chooses with its own weekly count (`recapSupportLine`).
  */
-async function nextStep(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  plan: { diagnosis_id: string | null; retest_date: string | null; created_at: string },
+function nextStep(
+  plan: { retest_date: string | null; created_at: string },
   loggedToday: boolean
-): Promise<NextStep> {
+): NextStep {
   const timeline = plan.retest_date ? getPlanTimeline(plan.created_at, plan.retest_date) : null;
   const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
-  let skillPhrase: string | undefined;
-  if (retestOpen && plan.diagnosis_id) {
-    const { data: diagnosis } = await supabase
-      .from("diagnoses")
-      .select("bottleneck")
-      .eq("id", plan.diagnosis_id)
-      .maybeSingle();
-    const skill = diagnosis?.bottleneck as SkillId | undefined;
-    skillPhrase = skill ? SKILL_LABELS[skill] : undefined;
-  }
-  return { retestOpen, skillPhrase, week: weekContext(plan.retest_date), loggedToday };
+  return { retestOpen, week: weekContext(plan.retest_date), loggedToday };
 }

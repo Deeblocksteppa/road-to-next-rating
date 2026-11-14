@@ -154,7 +154,7 @@ export default async function HomePage({
 
           <TodaySession
             drills={planDrills}
-            completedToday={Array.from(completedToday)}
+            todayLog={todayLog}
             weekComplete={weekComplete}
             weekly={weekly}
             secondary={retestOpen}

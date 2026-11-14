@@ -81,8 +81,8 @@ export function InlineLogIn({
 
   return (
     // Top-aligned on a phone, so the password and the button stay above the
-    // keyboard that the password's autofocus opens. Centered at 768px and wider.
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-5 bg-background px-6 pb-12 pt-20 text-ink md:justify-center md:pt-12">
+    // keyboard that the password's autofocus opens. Centered at 1024px and wider.
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-5 bg-background px-6 pb-12 pt-20 text-ink lg:justify-center lg:pt-12">
       <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
         Log in
       </h1>
