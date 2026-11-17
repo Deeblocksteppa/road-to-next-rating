@@ -24,28 +24,25 @@ interface ChartData {
 export type ProgressViewData =
   | { kind: "empty" }
   | {
-      kind: "day-one";
-      /** Null when the plan has no retest_date: the screen says "Not scheduled" and nothing more. */
-      retest: {
-        dateLabel: string;
-        daysUntilRetest: number;
-        weekNumber: number;
-        weeksTarget: number;
-        daysElapsed: number;
-      } | null;
-      bottleneckPhrase: string;
-      sessionsDone: number;
       /**
-       * Diagnoses on the account. Above 1 means a signed-in retake with no
-       * re-test yet: the baseline isn't the only reading, so the line doesn't
-       * say "one point" or "second reading".
+       * Before the first completed re-test, every tier. Three facts and no
+       * more: nothing here carries an earlier reading, a re-test's history or
+       * a logged result.
        */
-      readingCount: number;
+      kind: "day-one";
+      /** Completed sessions on the current plan. */
+      sessionsDone: number;
+      /** What the plan asks for in all: six. */
+      sessionsTotal: number;
+      /** The reading the plan was built from. Null only if the row has no scores. */
+      baselineReadiness: number | null;
+      /** Null when the plan has no retest_date: the row says "Not scheduled". */
+      retest: { dateLabel: string; daysUntilRetest: number } | null;
       /**
        * Subscribers only (null for free): weeks with both sessions, live
-       * before any re-test. Its presence also adds the readiness and history
-       * empty states. Free players get Day One alone: nothing is offered
-       * before there is a re-test to show.
+       * before any re-test. Its presence also adds the history empty state.
+       * Free players get the top block alone: nothing is offered before
+       * there is a re-test to show.
        */
       paidStreak: StreakData | null;
     }
@@ -93,11 +90,16 @@ export function ProgressView({
   );
 }
 
-/* ── State 1: Day One ─────────────────────────────────────────── */
+/* ── State 1: before the first re-test ────────────────────────── */
 /**
- * The re-test date is the page: set straight on the page, not in a tinted
- * card. Under it, two readings split by hairlines and the one-point chart
- * line, as a sentence rather than a dashed box.
+ * The sessions are the page: this plan's count out of six, with a segment for
+ * each. Under it, two readings in rows: the baseline readiness, and when the
+ * re-test gives the score to compare it with. No date countdown as a
+ * headline, no week or day count, no chart mark.
+ *
+ * The lit segments are the screen's one accent. An open re-test takes it (the
+ * block above), so they go neutral, and the RE-TEST row gives way to that
+ * block. Past six sessions the count holds at six.
  */
 function DayOneState({
   data,
@@ -108,138 +110,102 @@ function DayOneState({
   retestOpen: boolean;
 }) {
   const { retest } = data;
+  const done = Math.max(0, Math.min(data.sessionsDone, data.sessionsTotal));
+  const showReadiness = data.baselineReadiness !== null;
+  // The re-test block above says it is open; this row would only repeat it.
+  const showRetest = !retestOpen;
   return (
     <>
-      {!retestOpen && (
-        <section className="flex flex-col gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">First re-test</p>
-          {retest ? (
-            <>
-              <p className="font-display text-[56px] font-extrabold leading-none tabular-nums">
-                {retest.dateLabel}
-              </p>
-              <p className="font-mono text-[11px] uppercase tabular-nums tracking-[0.1em] text-ink-2">
-                {retest.daysUntilRetest > 0
-                  ? `In ${retest.daysUntilRetest} day${retest.daysUntilRetest === 1 ? "" : "s"} · `
-                  : "Open now · "}
-                Week {retest.weekNumber} of {retest.weeksTarget}
-              </p>
-              <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-                This is the day you find out if {data.bottleneckPhrase} moved.
-              </p>
-            </>
-          ) : (
-            // No date, no countdown, no week: any of them would describe a
-            // re-test that isn't scheduled.
-            <p className="font-display text-[32px] font-extrabold leading-none">Not scheduled</p>
-          )}
-        </section>
-      )}
-
-      {/* With the re-test open, the block above ends in a hairline: the strip
-          sits right under it (cancelling the screen's gap) instead of drawing
-          a second rule 32px lower. */}
-      <dl
-        className={`grid border-line ${retestOpen ? "-mt-8 border-b" : "border-y"} ${
-          retest ? "grid-cols-2" : "grid-cols-1"
-        }`}
-      >
-        <Reading label="Sessions done" value={String(data.sessionsDone)} />
-        {retest && <Reading label="Into the plan" value={`Day ${retest.daysElapsed}`} divided />}
-      </dl>
-
-      {data.paidStreak ? (
-        <PaidBeforeRetest streak={data.paidStreak} retest={retest} readingCount={data.readingCount} />
-      ) : (
-        /*
-          One reading exists (the baseline), and a line needs a second one. The
-          copy says that and only that; the small mark is the chart's first point.
-        */
-        <div className="flex items-start gap-4">
-          <BaselineMark />
-          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
-            {data.readingCount > 1 ? (
-              retestOpen
-                ? "Your re-test, open now, adds the next reading."
-                : retest
-                  ? `Your first re-test on ${retest.dateLabel} adds the next reading.`
-                  : "Your first re-test adds the next reading."
-            ) : (
-              <>
-                One point so far: your baseline.{" "}
-                {retestOpen
-                  ? "Your re-test, open now, adds the second reading."
-                  : retest
-                    ? `Your first re-test on ${retest.dateLabel} adds the second reading.`
-                    : "Your first re-test adds the second reading."}
-              </>
-            )}
-          </p>
+      <section className="flex flex-col gap-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Sessions done</p>
+        <p className="font-display text-[56px] font-extrabold leading-none tabular-nums">
+          {done}
+          <span className="text-[24px] font-bold text-ink-3"> of {data.sessionsTotal}</span>
+        </p>
+        {/* Decoration for the count above, so it is read once. */}
+        <div className="flex gap-1.5" aria-hidden="true">
+          {Array.from({ length: data.sessionsTotal }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 flex-1 rounded-full ${
+                i < done ? (retestOpen ? "bg-ink-2" : "bg-optic") : "bg-line"
+              }`}
+            />
+          ))}
         </div>
-      )}
+      </section>
+
+      <div className="flex flex-col">
+        {(showReadiness || showRetest) && (
+          <div className={data.paidStreak ? "" : "border-b border-line"}>
+            {showReadiness && (
+              <div className="flex flex-col gap-2 border-t border-line py-5">
+                <dl className="flex items-baseline justify-between gap-4">
+                  <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Readiness</dt>
+                  <dd className="font-display text-[32px] font-extrabold leading-none tabular-nums">
+                    {data.baselineReadiness}
+                    <span className="font-mono text-[13px] font-normal tracking-[0.1em] text-ink-3"> /100</span>
+                  </dd>
+                </dl>
+                <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+                  A score from your answers, not a DUPR estimate.
+                </p>
+              </div>
+            )}
+            {showRetest && (
+              <div className="flex flex-col gap-2 border-t border-line py-5">
+                <dl className="flex items-baseline justify-between gap-4">
+                  <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Re-test</dt>
+                  <dd className="text-[16px] font-semibold leading-[1.3] tabular-nums text-ink">
+                    {!retest
+                      ? "Not scheduled"
+                      : retest.daysUntilRetest > 0
+                        ? `${retest.dateLabel} · in ${retest.daysUntilRetest} day${
+                            retest.daysUntilRetest === 1 ? "" : "s"
+                          }`
+                        : // Not reached while the block above shows; never "in 0 days".
+                          `${retest.dateLabel} · open now`}
+                  </dd>
+                </dl>
+                <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+                  Your re-test gives you a new score to compare with this one.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {data.paidStreak && <PaidBeforeRetest streak={data.paidStreak} retest={retest} />}
+      </div>
     </>
   );
 }
 
-/** The chart's first point: the baseline, with nothing after it yet. */
-function BaselineMark() {
-  return (
-    <svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true" className="shrink-0">
-      <line x1="4" y1="12" x2="36" y2="12" stroke="#2E2E33" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="4" cy="12" r="3.5" fill="#80807B" />
-    </svg>
-  );
-}
-
 /**
- * A subscriber before their first re-test: what they pay for, unlocked. Weeks
- * with both sessions is live; readiness and re-test history (each row of
- * which opens that re-test's breakdown) need a re-test, so each says what it
- * gets from it and when. Neutral, no lock: nothing here is withheld.
+ * A subscriber before their first re-test: what they pay for, unlocked, under
+ * the same top block everyone gets. Weeks with both sessions is live; re-test
+ * history (each row of which opens that re-test's breakdown) needs a re-test,
+ * so it says when its first entry arrives. Neutral, no lock: nothing here is
+ * withheld.
  */
 function PaidBeforeRetest({
   streak,
   retest,
-  readingCount,
 }: {
   streak: StreakData;
   retest: Extract<ProgressViewData, { kind: "day-one" }>["retest"];
-  /** Above 1 after a signed-in retake: the re-test is not the second reading. */
-  readingCount: number;
 }) {
   // A date only while it is ahead. Open (today or past) or unscheduled, the
   // line names the re-test instead; the block above says it is open.
   const when = retest && retest.daysUntilRetest > 0 ? retest.dateLabel : null;
-  const reading = readingCount > 1 ? "next" : "second";
-  const readinessLine = when
-    ? `Your ${reading} reading lands ${when}.`
-    : `Your ${reading} reading comes from your re-test.`;
-  const historyLine = when
-    ? `Your first entry lands ${when}.`
-    : "Your first entry comes from your re-test.";
   return (
     <div className="flex flex-col">
-      {/* Bare: the readings strip's bottom hairline already sits above it. */}
-      <Section label="Readiness" bare>
-        <div className="mt-3 flex items-start gap-4">
-          <BaselineMark />
-          <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">{readinessLine}</p>
-        </div>
-      </Section>
       <Section label="Re-test history">
-        <p className="mt-2 text-pretty text-[16px] leading-[1.6] text-ink-2">{historyLine}</p>
+        <p className="mt-2 text-pretty text-[16px] leading-[1.6] text-ink-2">
+          {when ? `Your first entry lands ${when}.` : "Your first entry comes from your re-test."}
+        </p>
       </Section>
       <StreakContent streak={streak} />
-    </div>
-  );
-}
-
-/** One cell of a strip of readings, split from its neighbour by a hairline. */
-function Reading({ label, value, divided = false }: { label: string; value: string; divided?: boolean }) {
-  return (
-    <div className={`flex flex-col gap-3 py-5 ${divided ? "border-l border-line pl-5" : "pr-5"}`}>
-      <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{label}</dt>
-      <dd className="font-display text-[32px] font-extrabold leading-none tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -377,18 +343,9 @@ function ChangeText({ change }: { change: number }) {
 
 /* ── Full-state sections ──────────────────────────────────────── */
 /** A section under the readiness block: a hairline, a mono label, its content. */
-function Section({
-  label,
-  children,
-  bare = false,
-}: {
-  label: string;
-  children: React.ReactNode;
-  /** No top hairline, for a section that sits right under another rule. */
-  bare?: boolean;
-}) {
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className={`flex flex-col ${bare ? "pb-6" : "border-t border-line py-6"}`}>
+    <section className="flex flex-col border-t border-line py-6">
       <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{label}</p>
       {children}
     </section>

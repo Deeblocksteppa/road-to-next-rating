@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Assessment } from "@/components/assessment/Assessment";
 import { Computing } from "@/components/assessment/Computing";
 import { Reveal } from "@/components/diagnosis/Reveal";
 import { SaveGate } from "@/components/auth/SaveGate";
 import { EXPIRED_BUTTON, ExpiredResult } from "@/components/plan/ExpiredResult";
 import { PlanView } from "@/components/plan/PlanView";
+import { DrillPageReadOnly } from "@/components/session/DrillPage";
+import { toGuidedDrill } from "@/lib/drill-lookup";
 import { diagnose } from "@/lib/engine";
 import { clearLocalResult, loadLocalResult, saveLocalResult } from "@/lib/local-result";
 import { clearSignupPending, loadSignupPending } from "@/lib/signup-pending";
 import { createClient } from "@/lib/supabase/client";
 import { generateRoadmap } from "@/lib/roadmap";
-import { focusReason, retestStart } from "@/lib/result-copy";
 import { AnswerMap } from "@/lib/types";
 import {
   attachLocalResult,
@@ -34,22 +36,39 @@ import {
  * /start opens on for anyone with a result on this device, so a returning
  * player sees their diagnosis and plan instead of question one.
  *
- * Nothing opens the save form by itself: only "Start session" and "Save my
- * plan" do, and every way out of it ("Not now", "Back to my plan") returns
- * to the plan. Replaying the diagnosis also returns there.
+ * Nothing opens the save form by itself: only "Save my plan" does (and the
+ * pending line's "Enter code"), and every way out of it ("Back to my plan")
+ * returns to the plan. Replaying the diagnosis also returns there. A drill
+ * row opens that drill's page, read-only; nothing here starts a session.
+ * Sessions start from Home and the Plan tab, once the plan is on an account,
+ * and every way through the form ends on Home.
  *
- * A signed-in player retaking the assessment never sees the form: the same two
- * buttons save and claim the new result, then go to the session or /plan.
+ * A signed-in player retaking the assessment never sees the form: "Save my
+ * plan" saves and claims the new result, then goes to Home.
  *
  * The result (assessment, diagnosis, plan) is saved once, starting when the
- * assessment ends, through `saveAnonymousResult`. Both buttons wait for that
+ * assessment ends, through `saveAnonymousResult`. The button waits for that
  * save to finish before opening the form, so a sign-up always carries the
  * complete set of ids. If it still fails after its retries, the form does
  * not open and the plan says so; the next tap tries again.
  */
 type Phase = "loading" | "expired" | "assessment" | "computing" | "reveal" | "savegate" | "saved";
 
-export default function Start() {
+export default function StartPage() {
+  // `useSearchParams` needs a boundary above it in a page that is otherwise
+  // static. The fallback is the same blank frame the first render shows.
+  return (
+    <Suspense fallback={<main className="min-h-app w-full bg-background" />}>
+      <Start />
+    </Suspense>
+  );
+}
+
+function Start() {
+  // A drill row on the plan links to `/start?drill=<id>`: that drill's page,
+  // read-only, drawn from the plan already on this device. No fetch, no rows.
+  const openDrillId = useSearchParams().get("drill");
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
   const [answers, setAnswers] = useState<AnswerMap | null>(null);
   // The address a sign-up on this device is waiting on (`signup-pending.ts`).
@@ -58,12 +77,9 @@ export default function Start() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   // Only changes the plan's line about accounts. The buttons ask again when tapped.
   const [signedIn, setSignedIn] = useState(false);
-  // Why the save form is open: where the player goes once signed in ("Start
-  // session" to the session, anything else to the plan), and its subtitle.
-  const [gateReason, setGateReason] = useState<"save" | "session">("save");
-  // The button waiting on the save, and the one whose save failed.
-  const [saving, setSaving] = useState<"save" | "session" | null>(null);
-  const [saveFailed, setSaveFailed] = useState<"save" | "session" | null>(null);
+  // "Save my plan" (or "Enter code") is waiting on the save, and whether it failed.
+  const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   // localStorage is only readable after mount, so the first render is a blank
   // "loading" frame rather than question one flashing before the saved result.
@@ -171,6 +187,9 @@ export default function Start() {
     saveLocalResult(ans);
     // A new result: ids from an earlier run must not mix into its set.
     clearPendingIds();
+    // Nor a drill left in the URL (a restored tab, an old link): the reveal
+    // ends on the new plan, not on one of its drills.
+    if (openDrillId) router.replace("/start");
     setAnswers(ans);
     setPhase("computing");
 
@@ -187,20 +206,19 @@ export default function Start() {
   }
 
   function handleLeaveGate() {
-    setGateReason("save");
     setPhase("saved");
     window.scrollTo(0, 0);
   }
 
   /**
-   * "Start session", "Save my plan", and the pending line's "Enter code":
-   * claim for a signed-in player, the save form for anyone else (the code
-   * screen while a sign-up is waiting).
+   * "Save my plan" and the pending line's "Enter code": claim for a signed-in
+   * player, the save form for anyone else (the code screen while a sign-up
+   * is waiting).
    */
-  async function saveResult(reason: "save" | "session") {
+  async function saveResult() {
     if (!answers || !diagnosis || !roadmap || saving) return;
-    setSaving(reason);
-    setSaveFailed(null);
+    setSaving(true);
+    setSaveFailed(false);
     try {
       await saveAnonymousResult(answers, diagnosis, roadmap);
 
@@ -213,29 +231,28 @@ export default function Start() {
         // Throws unless the caller ended up with all three rows.
         // Clears the pending note itself once claimed.
         await attachLocalResult(answers, diagnosis, roadmap);
-        window.location.assign(reason === "session" ? "/session" : "/plan");
+        // Home, like every saved plan: it says "Plan saved" once.
+        window.location.assign("/home?saved=1");
         return;
       }
     } catch (err) {
       // Signed in as someone else while a sign-up waits here ("Enter code",
-      // or either button): nothing was claimed. The gate opens on that
+      // or the button): nothing was claimed. The gate opens on that
       // sign-up's code screen, which is how the result gets saved.
       if (err instanceof PendingOtherAccountError) {
-        setSaving(null);
+        setSaving(false);
         setPendingEmail(loadSignupPending()?.email ?? null);
-        setGateReason(reason);
         setPhase("savegate");
         window.scrollTo(0, 0);
         return;
       }
       // Retried already. The form needs all three ids, so it stays closed.
       console.error("Failed to save the result:", err);
-      setSaving(null);
-      setSaveFailed(reason);
+      setSaving(false);
+      setSaveFailed(true);
       return;
     }
-    setSaving(null);
-    setGateReason(reason);
+    setSaving(false);
     setPhase("savegate");
     window.scrollTo(0, 0);
   }
@@ -246,7 +263,8 @@ export default function Start() {
     clearSignupPending();
     setPendingEmail(null);
     setAnswers(null);
-    setSaveFailed(null);
+    setSaveFailed(false);
+    if (openDrillId) router.replace("/start");
     setPhase("assessment");
     window.scrollTo(0, 0);
   }
@@ -282,34 +300,46 @@ export default function Start() {
         onSkip={handleLeaveGate}
         pendingEmail={pendingEmail}
         onPendingChange={setPendingEmail}
-        reason={gateReason}
       />
     );
   }
 
   if (phase === "saved" && diagnosis && roadmap && answers) {
+    const openIndex = openDrillId ? roadmap.weeklyDrills.findIndex((d) => d.id === openDrillId) : -1;
+    if (openIndex >= 0) {
+      return (
+        <main className="min-h-app w-full bg-background text-ink">
+          <div className="mx-auto w-full max-w-md px-6 py-8">
+            <DrillPageReadOnly
+              drill={toGuidedDrill(roadmap.weeklyDrills[openIndex])}
+              position={openIndex + 1}
+              total={roadmap.weeklyDrills.length}
+              backHref="/start"
+            />
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="min-h-app w-full bg-background text-ink">
         <div className="mx-auto w-full max-w-[600px] px-6 py-12 md:py-16">
           <PlanView
             skill={diagnosis.bottleneck}
             drills={roadmap.weeklyDrills}
+            drillBase="/start"
             inGameRule={roadmap.inGameRule}
-            retestMetric={roadmap.retestMetric}
-            retestStart={retestStart(diagnosis.bottleneck, answers)}
+            retestGoal={roadmap.retestMetric}
             retestWhen={`In ${roadmap.weeksTarget} weeks`}
-            readiness={diagnosis.readiness}
             weeksTarget={roadmap.weeksTarget}
             context={{
               kind: "anonymous",
-              focusReason: focusReason(diagnosis, answers),
               pendingEmail,
               signedIn,
               saving,
               saveFailed,
-              onStartSession: () => saveResult("session"),
-              onSavePlan: () => saveResult("save"),
-              onEnterCode: () => saveResult("save"),
+              onSavePlan: () => saveResult(),
+              onEnterCode: () => saveResult(),
               onReplay: () => setPhase("reveal"),
               onStartOver: handleStartOver,
             }}

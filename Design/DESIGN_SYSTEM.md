@@ -13,7 +13,7 @@
    - **Archivo** (heavy, expanded for the wordmark, tabular for numbers) = **verdicts & metrics**. Stadium-signage authority.
    - **Instrument Sans** = the **coach's speaking voice**: body, explanations, buttons.
    - **IBM Plex Mono** = the **instrument**: every label, unit, and countdown is mono smallcaps. This is what makes the UI feel *calibrated* rather than styled.
-   - No font is ever italic. **Nothing is ever centered except the reveal.**
+   - No font is ever italic. **Nothing is ever centered except the reveal.** (A form may be centered vertically at 1024px and wider; top-aligned below that.)
 3. **Logo — "the plateau, broken."** Two strokes on a 32px grid: a flat gray plateau line (the rating you've been stuck on) and an accent line breaking upward off its end. 3px weight, round caps. The plateau is always `ink-3` (muted); the break is always accent — the mark never appears in a single color. Legible to 16px minimum. Doubles as the Progress chart motif (the chart is the logo happening slowly).
 
 ---
@@ -49,7 +49,6 @@
 | `rgba(216,227,76,0.12)` | `optic-dim` — ON TRACK / PAID badges, dim swatch |
 | `rgba(216,227,76,0.08)` | Selected option-button fill |
 | `rgba(216,227,76,0.05)` | Paywall plan card / progress-empty callout / progress-locked callout |
-| `rgba(216,227,76,0.04)` | "In-game rule" card fill |
 | `rgba(227,184,76,0.12)` | `warn` badge fill (DUE TODAY) |
 | `rgba(227,101,76,0.12)` | `danger` badge fill (PLATEAU) |
 
@@ -154,7 +153,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 - **Canvas / phone frame:** `375 × 812px`. The whole system is specified at **375px width only**.
 - **Card internal padding:** `20px` default (variants: `18px 20px`, `20px 22px`, `22px`, `24px`); child gap `6–14px`.
 - **Vertical rhythm inside screens:** stacks `gap: 12–16px`; hero / centered blocks `gap: 20–28px`.
-- **Button → caption:** 14px gap; caption is mono 11px `ink-3`, centered.
+- **Button → caption:** 14px gap; caption is mono 11px `ink-3`, left-aligned (nothing is centered except the reveal).
 - **Section gaps (design canvas only):** 56px between major sections, 24px between cards in a row.
 
 ---
@@ -168,7 +167,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 | **Primary** | bg `optic`, text `optic-ink`, weight 600 | bg `optic-hover` | active `scale(0.98)` |
 | **Secondary** | bg `surface-2`, border `line-strong`, text `ink`, weight 600 | border → `line-hover` | — |
 | **Ghost / tertiary** | h44, no bg, text `ink-2`, weight 500, 14px | text → `ink` | — |
-| **Disabled / done** | bg `surface`, border `line`, text `ink-3` | — | e.g. "Session logged today · done" |
+| **Disabled / done** | bg `surface`, border `line`, text `ink-3` | — | e.g. Home's "Today's session done" |
 | **Primary + meta** | h56; adds mono 11px `opacity:0.75` suffix (e.g. "18 MIN") | bg `optic-hover` | Home CTA |
 
 ### Option-select button — min-height 64px · `radius-xl` (16) · font 15px · LH 1.4–1.45
@@ -185,7 +184,7 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 ### Card — `radius-2xl` (20) · padding 20px
 
 - bg `surface`, border `line`. Eyebrow = mono 10px, tracking 0.14–0.16em, `ink-3`. Title = Archivo 700, 20px.
-- **Accent-tinted variant:** border `optic` + bg `rgba(216,227,76,0.04–0.05)` (in-game rule; "your first re-test" callout).
+- **Accent-tinted variant:** border `optic` + bg `rgba(216,227,76,0.05)` (the paywall's selected plan). The plan screen has no cards: "In your games" is a mono label and a sentence under a hairline.
 
 ### Progress bar
 
@@ -213,7 +212,6 @@ The ladder 12 / 14 / 16 is deliberately tight (inputs < buttons < option-cards, 
 ### Other elements
 
 - **Toggle (settings):** 44×26px pill, `radius-full`. On = `optic` with a 20×20 knob `optic-ink`, inset top/right 3px.
-- **Checkbox (plan task):** 26×26px, `radius-sm` (8, snapped from 9). Done = `optic` fill + `optic-ink` check. Todo = 1.5px `line-hover` border, transparent.
 - **Back / icon button:** 36×36px, `radius-md` (12), border `line-strong`, glyph `ink-2`; hover border `line-hover`.
 - **Story-progress ticks (reveal):** 5 equal bars, height 2px, `radius-full`. Filled = `ink`, empty = `line-strong`.
 - **Locked / blur treatment:** a placeholder of the real structure (never the paid values) at `filter: blur(6–7px); opacity: 0.45–0.5`, under a flat cover `rgba(19,19,21,0.6)` (no gradient), a lock icon, and a one-line teaser naming what's underneath. **The current number always stays visible** — desire, not resentment. Never a hard empty box.
@@ -269,17 +267,25 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - Body one-liner → primary button **"See my 3-week plan"**.
 
 ### Home (`background`, tab bar HOME active)
-- Header: logo + wordmark; right: mono "DAY 8 / 21" + settings gear (32px circle, border `line-strong`).
-- **Bottleneck card** (`radius-2xl`, padding 22): eyebrow `CURRENT BOTTLENECK` → Archivo 800 27px skill name → small "Week 2 of 3 — …".
-- **Two-stat row:** *Readiness* card (flex 1.2) Archivo 44px number + 4px accent bar; *Sessions this week* card "2/3" + 3 dots (filled = accent).
-- Spacer → primary button h56 **"Start today's session"** + mono "18 MIN" suffix → mono caption "RE-TEST OPENS IN 13 DAYS".
+- Header: logo + wordmark; right: mono "DAY 8 / 21" + a gear (16px, in a 32px circle, border `line-strong`) to Settings.
+- Mono `YOUR FOCUS` → Archivo 800 28px skill title → the diagnosis's one-line insight (16px `ink-1`) → "Week 2 of 3" (16px `ink-2`).
+- **Open re-test:** the re-test block here, holding the accent; the session button below goes secondary.
+- **Today's session** (hairlines, no card): mono `TODAY · 25 MINUTES, 2 DRILLS` (`TODAY · DONE` once today's is logged; `THIS WEEK · DONE` once the week's two are, when the drill rows are hidden) → "1 of 2 sessions this week" (16px `ink-2`; it counts the week's sessions, and there are no dots) → one row per drill, the plan's own row (`DrillRow`) without the chevron and not a link: Archivo 600 18px name, mono "15 MIN · SOLO" / "· PARTNER" / "· SOLO · WALL" under it. A drill logged today reads "TODAY · 7/10" under its name; no strikethrough, and no "LOGGED" label at the right. (Like the plan's row, a log saved without a number would read "TODAY · LOGGED"; the guided session always saves a number, so the app does not produce it.)
+- Spacer → primary button h56 **"Start today's session"** / "Finish today's session" + mono minutes left; once today or the week is done, the disabled style ("Today's session done", "All sessions done this week").
+- Caption under the button (16px `ink-2`, left-aligned): "Re-test opens in 13 days" while there is a session to start; "1 more session this week. Pick any other day."; on the week's last day, "This week ends today. Next week's sessions open Monday, Nov 16."; week done, "Next sessions open Monday, Nov 16". In the plan's final week the lines that point to Monday point to the re-test instead ("Your re-test opens Dec 2."). With the re-test open its block says so and the caption is absent, except "1 more session this week…" on a day when today's is done.
 
-### My Plan (tab bar PLAN active)
-- Header: eyebrow `WEEK 2 OF 3` → Archivo 700 24px week title; right: accent mono "2/3 SESSIONS".
-- **Completed task** card: accent 26px check + strikethrough title `ink-3` + detail.
-- **Due task** card (hover `line-hover`): empty checkbox + title + detail + `DUE TODAY` badge.
-- **In-game rule** card (accent border, bg `rgba(216,227,76,0.04)`): eyebrow accent `IN-GAME RULE — THIS WEEK` + rule text.
-- **Re-test metric** card: eyebrow `RE-TEST METRIC` + target with current progress inline.
+### My Plan (tab bar PLAN active) and the anonymous plan on `/start`
+One component (`PlanView`) for both. No cards; hairlines only. Top to bottom:
+- Mono `YOUR FOCUS` → Archivo 800 32px skill title. On `/start` only: "Replay your diagnosis" text link.
+- **Rows** between hairlines, mono label and a 16px body-font value: `PLAN` "3 weeks · 2 sessions a week" · `SESSION` "25 min · both drills" (minutes summed from the drills, never fixed text) · `THIS WEEK` "1 of 2 sessions" (signed in only) · `RE-TEST` "Nov 29" / "Open now" / "Not scheduled" / "In 3 weeks" (anonymous).
+- **Two drill rows:** Archivo 600 18px name, mono "15 MIN · SOLO" / "15 MIN · PARTNER" / "10 MIN · SOLO · WALL" under it, a chevron at the right. The whole row opens the drill's page, read-only (`?drill=<id>` on the same route). No inline description, no fold-out, no per-drill button. A drill logged today reads "TODAY · 7/10" in place of its time ("TODAY · LOGGED" when it was logged without a number).
+- **One action slot, the screen's one accent:**
+  - anonymous: "A free account keeps your plan and lets you start your sessions." + primary **"Save my plan"** (the only way into the save form; signed in and retaking, the line is "This plan isn't on your account yet. Saving it makes it your current plan.");
+  - signed in with a session to do: primary **"Start session"** ("Continue session" when today's is half done), secondary while an open re-test's banner holds the accent;
+  - signed in with nothing to start: a status line, no button. "Today's session complete. 1 to go this week." · "Today's session complete. Both sessions done this week." · on the week's last day, "Today's session complete. Next week's sessions open Monday." · both done earlier, "Both sessions done this week. Next week's open Monday." In the plan's final week (the re-test date is on or before next Monday) a line that would point to Monday points to the re-test instead: "… Your re-test opens Dec 2." With the re-test open the banner above says so, and the lines stop at "Today's session complete." / "Both sessions done this week."
+- `IN YOUR GAMES` (one sentence), then `RE-TEST GOAL` (one sentence): mono label, 16px `ink` text, hairline above each. Both are rendered from code by skill (the third-shot goal from the starting answer), not read from the plan row.
+- On `/start` only: "Start over with a new assessment" (text link, confirmed before it runs).
+- Not here: a quote of the player's answer, "Same drills each week…", a paragraph about the device, Readiness (on Progress), a pinned button.
 
 ### Progress — full (PAID) (tab bar PROGRESS active)
 - Title Archivo 700 24px "Progress".
@@ -287,16 +293,18 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 - **Re-test history** card: rows (name / date → score, accent deltas, `SCHEDULED` badge for future).
 - **Streak** card: eyebrow `STREAK` + "5 weeks hitting target" + filled/empty 12px squares.
 
-### Progress — Day One (empty)
-- No card, no accent (unless the re-test is open, when the re-test block above takes it): mono `FIRST RE-TEST` → Archivo 800 56px date → mono "IN 13 DAYS · WEEK 1 OF 3" → explainer ("This is the day you find out if {skill} moved."). No date: "Not scheduled" (32px) and nothing more.
-- A strip of two readings between hairlines: "SESSIONS DONE / 4", "INTO THE PLAN / Day 8".
-- The one-point line: a tiny flat-line mark (the baseline dot) + "One point so far: your baseline. Your first re-test on Nov 29 adds the second reading." **No fake chart.** After a signed-in retake (two or more diagnoses, no re-test) it drops the count: "Your first re-test on Nov 29 adds the next reading."
-- **Re-test open:** the re-test block leads the screen and its bottom hairline is the readings strip's top rule (one hairline, not two 32px apart).
+### Progress — before the first re-test
 - **Shown until the first completed re-test** (`hasCompletedRetest`, `src/lib/retest-gate.ts`: the player owns a plan a re-test made), not until a second diagnosis: a retake adds a diagnosis without a re-test. Nothing is sold here: no locked cards, no upgrade, for any tier.
-- **Subscriber variant:** the one-point line is replaced by what they pay for, unlocked and neutral (no lock, no blur, no accent), in hairline sections: `READINESS` (no top rule, the strip's sits above it; the one-point mark + "Your second reading lands Nov 29."), `RE-TEST HISTORY` ("Your first entry lands Nov 29."; it also stands in for the per-re-test breakdown each row opens), then "Weeks with both sessions" with live data. With the re-test open or no date: "Your second reading comes from your re-test." / "Your first entry comes from your re-test." After a signed-in retake, "second" reads "next". The chart, history and logged-sessions series aren't loaded in this state.
+- **Hero, set on the page (no card):** mono `SESSIONS DONE` → Archivo 800 56px "3" with " of 6" at 24px `ink-3` → a row of six plain segments (6px, `radius-full`), completed ones in `optic`, not grouped by week. The count is this plan's completed sessions only (a retake starts again at 0) and holds at "6 of 6" past six. The lit segments are the screen's one accent.
+- **`READINESS` row** (hairline above): mono label left, Archivo 800 32px "45" with mono "/100" in `ink-3` right, then "A score from your answers, not a DUPR estimate." The baseline: the reading this plan was built from, free for every tier.
+- **`RE-TEST` row:** mono label left, "Nov 29 · in 13 days" (16px, 600) right, then one sentence, the same for everyone: "Your re-test gives you a new score to compare with this one." No date: "Not scheduled", sentence kept.
+- **Re-test open:** the re-test block leads the screen and holds the accent, so the lit segments go neutral (`ink-2`) and the `RE-TEST` row is hidden.
+- Not here: a large date, a week or day count, "This is the day you find out…", or a chart mark.
+- **Subscriber variant:** the same top block, then what they pay for, unlocked and neutral (no lock, no blur, no accent), in hairline sections: `RE-TEST HISTORY` ("Your first entry lands Nov 29."; with the re-test open or no date, "Your first entry comes from your re-test."), then "Weeks with both sessions" with live data. The chart, history and logged-sessions series aren't loaded in this state.
+- **What the page is handed:** the session count, the one readiness number and the re-test date. Never the diagnoses or plans themselves, so no earlier reading, re-test history or logged result reaches a browser in this state.
 
 ### Progress — locked (FREE)
-- Only after the first completed re-test; before it, Day One.
+- Only after the first completed re-test; before it, the screen above.
 - Readiness now, set on the page (no card): mono `READINESS NOW` → Archivo 800 72px number → mono "SINCE START 52 → 58 +6" (change in ink, `danger` when down, NO CHANGE neutral) → "A score from your answers, not a DUPR estimate."
 - Two locked cards (flat cover, no gradient; see Locked / blur treatment) with lock icons + teasers: "Your readiness line across every re-test, whichever way it went." / "Re-test history, with how every skill moved each time."
 - Primary button **"Unlock Progress"** (no price on an entry point; secondary while the re-test is open).
@@ -320,16 +328,18 @@ All screens: `375 × 812px`, 24px padding. Reveal/delta screens use `reveal-bg` 
 
 ### Auth screens (all of them)
 Applies to the Save Gate and its views (form, existing-account note, code screen, inline log-in), `/login` (form and code screen), `/forgot-password`, `/reset-password` and `/auth/link-error`.
-- **Top-aligned:** the heading about 80px from the top of the screen (88px on the pages with a logo, 20px under it), never vertically centered, so the field and the primary button stay above the phone keyboard.
-- **Errors:** plain `danger` text, 16px, directly under the field or button it belongs to, `role="alert"`; no box, border or fill. An error the page arrives with (after a redirect, e.g. an expired reset link) sits there too, and its field points at it (`aria-invalid`, `aria-describedby`), since a screen reader may not read out an alert that was already on the page. The plan's Start session, Save my plan and pending line follow the same rule.
+- **Top-aligned on a phone or tablet, centered at 1024px and wider:** below 1024px the heading sits about 80px from the top of the screen (88px on the pages with a logo, 20px under it), so the field and the primary button stay above an on-screen keyboard (a tablet in portrait, 768px, has one too). At 1024px and wider the form is centered vertically in the space it has (text stays left-aligned); a logo header, and the save form's log-in line, stay at the top.
+- **Fields:** email fields set `autoCapitalize="off"` and `autoCorrect="off"`. A field the browser autofilled keeps the form's own ground and `ink` text (`globals.css`: the browser's fill clipped to the text, plus a long transition; no `box-shadow`).
+- **Errors:** plain `danger` text, 16px, directly under the field or button it belongs to, `role="alert"`; no box, border or fill. An error the page arrives with (after a redirect, e.g. an expired reset link) sits there too, and its field points at it (`aria-invalid`, `aria-describedby`), since a screen reader may not read out an alert that was already on the page. The plan's Save my plan and pending line follow the same rule.
 
 ### Save Gate (auth)
-- Top row: a small text link **"Log in"** at the right (opens the inline log-in view, address carried over).
-- Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you." Opened from "Start session": "Sessions need a free account. Your plan and session numbers stay with you."
+- The plan's **"Save my plan"** is the only way in (and the pending line's "Enter code", to its code screen). Every way through it ends on Home, which says "Plan saved" once: the typed code, the inline log-in, the emailed link.
+- Top row, at the right: "Already have an account? **Log in**" (16px, the two words underlined; opens the inline log-in view, address carried over).
+- Archivo 800 30px **"Save your plan"** → one line: "Free account. Your plan and session numbers stay with you."
 - **One grouped field block** (`radius-md`, border `line-strong`, bg `surface`): Email row, hairline `line`, Password row with a mono Show/Hide. Each row keeps its mono uppercase label inside the block (EMAIL, PASSWORD), so it doesn't vanish when typed over. Inputs 16px; the password placeholder carries the rule ("8+ characters"). Focus on either field turns the whole block's border `optic` (focus-within), so the rounded corners stay intact.
-- Primary full-width **"Create account"** ("Creating account…" while busy) directly under the block → consent line → **"Not now"** as a quiet left-aligned text link.
+- Primary full-width **"Create account"** ("Creating account…" while busy) directly under the block → consent line (legal fine print, 14px `ink-2`) → **"Back to my plan"** as a quiet left-aligned text link.
 - **Existing account:** a sign-up with an address that already has a confirmed account shows a neutral note under the block (hairline above): "You already have an account with this email." with a primary **"Log in"**; "Create account" goes secondary while it shows, and editing the address hides it.
-- No eyebrow, no "Your plan" card, no reason paragraph, no Google button (the flag is off), no bottom "Already have an account?" line.
+- No eyebrow, no "Your plan" card, no reason paragraph, no Google button (the flag is off), no second log-in line at the bottom.
 - *A **save** action, not a signup wall: it comes after value is delivered.*
 
 ### Code screen (sign-up)
@@ -339,28 +349,43 @@ Applies to the Save Gate and its views (form, existing-account note, code screen
 - Wrong or expired code: one alert as plain `danger` text under the field (no box, border or fill), "That code didn't work or has expired.", with the code selected for retyping. The selection inside the field is a muted white (`white/20`), not the accent.
 
 ### Inline log-in (save form)
-- Archivo 800 30px **"Log in"** → the Save Gate's grouped field block (EMAIL filled in, hairline, PASSWORD with Show/Hide) → "Forgot password?" → primary **"Log in"** ("Logging in…") → "Back".
+- Archivo 800 30px **"Log in"** → the Save Gate's grouped field block (EMAIL filled in, hairline, PASSWORD with Show/Hide) → "Forgot password?" → primary **"Log in"** ("Logging in…") → "Back to save your plan" (plain "Back" when it was opened from the code screen, since that is where it returns).
 - An account still waiting on its code gets a fresh one emailed and goes to the code screen.
 
 ### Pending sign-up (on the plan)
-- Between hairlines at the top of the plan: "Finish saving your plan: enter the code we sent to **{email}**." → one text link, **"Enter code"** (opens the code screen, which has resend, Change email and "Already confirmed? Log in"). A failed save shows its alert inside the block.
+- Between hairlines at the top of the plan: "Finish saving your plan: enter the code we sent to **{email}**." → one text link, **"Enter code"** (opens the code screen, which has resend, Change email and "Already confirmed? Log in"; the code lands on Home). A failed save shows its alert inside the block.
 
 ### Log in (auth)
 - Logo + wordmark → Archivo 800 30px **"Welcome back."**
-- Email input → Password input (with mono "FORGOT?" inline) → primary **"Log in"** → ("OR" divider → "Continue with Google" only when the Google provider is on).
+- The Save Gate's grouped field block (EMAIL, hairline, PASSWORD with Show/Hide) → "Forgot password?" text link under the block → primary **"Log in"** → ("OR" divider → "Continue with Google" only when the Google provider is on).
 - An unconfirmed account gets a fresh code and the code screen in place.
-- Footer, left-aligned: "New here? Take the assessment". *Two fields, one primary action.*
+- Directly under the form, left-aligned: "New here? Take the assessment". *Two fields, one primary action.*
 - Player-facing wording is "Log in" everywhere (button, links, errors), and Settings says "Log out".
+
+### Drill page (guided session, plan rows, landing example)
+One component (`DrillPage`), three places: the guided session's first screen, the read-only page a plan row opens, and the landing's example drill.
+- Header: back button (36×36, `radius-md`) + mono `DRILL 1 OF 2` beside it.
+- Diagram (side view: the shot's court diagram, or the shared wall template with per-drill labels for a drill prescribed at a wall; its labels render at 10px or larger at 375px, here and in the landing's framed example, and none touches another label, a mark or the ball's path) → Archivo 700 24px drill name → one sentence (the drill's `task`, 16px `ink`).
+- Rows between hairlines, mono label and a 16px body-font value: `TIME` "15 min" · `WHO` "Partner" / "Solo" / "Solo, at a wall" · `COUNTS` (the "counts if" sentence) · `LOG` "Your last set of 10 drops" · `TARGET` "7 of 10". Times come from the drill, never fixed text.
+- The scoring rule, 16px `ink-2`: "When the timer ends, finish the {set / rep / exchange / rally} you're on and log it." (the drill's own word). Also on the timer, followed by "Falling short of 7 of 10 still counts."; not on the log screen. The full description is behind "View instructions" on the timer.
+- In a session: primary **"Begin"**, then mono `NEXT: {DRILL} · {MIN}` left-aligned. Read-only (from a plan row): no button and no NEXT line, back arrow only.
+- No card, no "When the timer ends" box.
+
+### Session complete (guided session)
+- Mono `SESSION COMPLETE` → Archivo 800 28px **"1 of 2 sessions this week."** (the main line) → one supporting sentence, 16px `ink-2`: "Next session: any other day this week." · week done, "That's the week. Next sessions open Monday, Nov 16." · the week's last day, "This week ends today. Next week's sessions open Monday, Nov 16." · in the plan's final week the Monday lines point to the re-test ("… Your re-test opens Dec 2.").
+- Then, as one group with no gap pushed between them: each drill's logged number (Archivo 800 32px, "/10" mono) against mono `TARGET 7 · LAST TIME 5`, and primary **"Back to my plan"**.
+- **Re-test open:** one headline, and it is the re-test. Mono `SESSION COMPLETE` → Archivo 800 28px **"Your re-test is open."** → "Same twelve questions, about four minutes." (16px `ink-2`) → the results → primary **"Take your re-test"** (the one accent) → "Back to my plan" secondary. No weekly count and no re-test block in this state.
+- No "Session logged." line, no praise, nothing marked for hitting the target.
 
 ### Settings
 - Header: back button + Archivo 700 22px "Settings".
 - **ACCOUNT** group (surface card, dividers `line`): "Email → …", "Display name → … ›".
-- **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (accent text) + caption. *(Free users see "Plan · Upgrade to unlock Progress ›" instead, a link to the paywall, but only after their first completed re-test. Before it, a static "Plan · Free" row: no link, no chevron.)*
+- **SUBSCRIPTION** group: "Plan → Annual · renews …", **"Manage subscription ›"** (neutral) + caption. *(Free users see "Plan · Upgrade to unlock Progress ›" instead, a link to the paywall, but only after their first completed re-test. Before it, a static "Plan · Free" row: no link, no chevron.)*
 - **Subscription already ended in Stripe** (a Cancel or "Keep my subscription" tap on a subscription that had ended, or found when Manage or Settings re-reads Stripe on load): Settings in its free state, with one line under the SUBSCRIPTION group: Body 16px, `ink-2`, `role="status"`, no accent, left-aligned. Cancel or found on load: "Your subscription had already ended. Nothing more will be charged." Keep: "Your subscription has ended, so it can't be resumed. You're on the free plan now." (no date). Never shown while the profile is paid.
 - **Manage subscription error:** "Something went wrong. Email support@… and we'll sort it out." in `danger`, left-aligned, under the button.
-- **NOTIFICATIONS** group: "Email me when my re-test opens" + accent toggle.
+- **NOTIFICATIONS** group: "Email me when my re-test opens" + accent toggle; "Session reminders" + accent toggle, with one `ink-2` line under the label stating the cadence as it is: "One email a day while a session is left this week. Stops at your re-test."
 - Footer: "Log out" (secondary) + "Delete account" (`danger` text, hover `danger-hover`).
-- *The plainest screen in the app. Accent appears only on the two things a person came here to do — Manage subscription / Upgrade. Manage and Delete are both one tap from the top, never buried.*
+- *The plainest screen in the app. The accent appears only on the two toggles. Manage and Delete are both one tap from the top, never buried.*
 
 ---
 

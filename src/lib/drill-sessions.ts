@@ -211,17 +211,20 @@ export async function getWeeklyProgress(
 }
 
 /**
- * Every session the caller has ever completed, across plans (RLS scopes the
- * read). The Progress screen's "sessions done" stat — it used to be a raw row
- * count, which is drills, not sessions.
+ * Sessions completed on one plan, over its whole run. Progress's "n of 6"
+ * before the first re-test: the plan's own sessions, so a player who retook
+ * the assessment starts the new plan at 0 rather than with the old plan's
+ * sessions already counted toward it.
  */
-export async function getTotalSessions(
+export async function getPlanSessions(
   supabase: SupabaseClient,
+  planId: string,
   drillsPerSession: number
 ): Promise<number> {
   const { data, error } = await supabase
     .from("drill_sessions")
-    .select("plan_id, drill_id, completed_at");
+    .select("plan_id, drill_id, completed_at")
+    .eq("plan_id", planId);
   if (error) throw error;
   return countSessions(toLogged(data), drillsPerSession);
 }
@@ -251,6 +254,20 @@ export async function getCompletedTodayDrillIds(
 export interface TodayLogEntry {
   drillId: string;
   result: number | null;
+  /** ISO timestamp. The sitting can reach back past midnight UTC, so this isn't always today. */
+  completedAt: string;
+}
+
+/**
+ * Whether anything in the sitting's log falls on the current UTC day. A drill
+ * can be logged once per UTC day, so when this is true no further session can
+ * be completed today; when the sitting's logs are all from before midnight
+ * UTC, today is still open. Lines about "the week's last day" need this, not
+ * just "the sitting is done".
+ */
+export function loggedThisUtcDay(entries: Pick<TodayLogEntry, "completedAt">[], now: Date = new Date()): boolean {
+  const today = startOfTodayUTC(now).getTime();
+  return entries.some((e) => new Date(e.completedAt).getTime() >= today);
 }
 
 /**
@@ -264,13 +281,14 @@ export async function getTodayLog(
   const since = startOfSittingUTC();
   const { data, error } = await supabase
     .from("drill_sessions")
-    .select("drill_id, result_value")
+    .select("drill_id, result_value, completed_at")
     .eq("plan_id", planId)
     .gte("completed_at", since.toISOString());
   if (error) throw error;
   return (data ?? []).map((row) => ({
     drillId: row.drill_id as string,
     result: (row.result_value as number | null) ?? null,
+    completedAt: row.completed_at as string,
   }));
 }
 

@@ -7,9 +7,10 @@ import Link from "next/link";
  * this week" as soon as a session was logged, so on re-test day the one
  * entry point could disappear.
  *
- *   - `block`: the main element of a screen (Home, Progress, the session
- *     recap). Flat: hairlines, no tinted card, and the button is its only
- *     accent.
+ *   - `block`: the main element of a screen (Home, Progress). Flat:
+ *     hairlines, no tinted card, and the button is its only accent. The
+ *     session recap doesn't use it: there the re-test is the screen's own
+ *     headline (`SessionCompleteScreen`).
  *   - `banner`: a compact line at the top of a screen (Plan), between
  *     hairlines, with the screen's one primary button.
  */

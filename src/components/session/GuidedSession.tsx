@@ -6,29 +6,23 @@ import { useEffect, useRef, useState } from "react";
 import { logGuidedSession } from "@/app/(app)/plan/actions";
 import type { WeeklyProgress } from "@/lib/drill-sessions";
 import { practiceTargetCount, type RecapRow } from "@/lib/session-recap";
-import { DrillBriefContent } from "@/components/session/DrillBrief";
-import { RetestOpen } from "@/components/retest/RetestOpen";
-import { ShotDemo } from "@/components/session/ShotDemo";
+import {
+  DrillPageBody,
+  DrillPageHeader,
+  NextDrillLine,
+  type DrillPageDrill,
+} from "@/components/session/DrillPage";
+import { scoringRule } from "@/lib/drills";
+import { recapSupportLine, type WeekContext } from "@/lib/week-status";
 
 type Step = "brief" | "active" | "log";
 
-/** One drill of the session, as the flow needs it. */
-export interface GuidedDrill {
-  id: string;
-  name: string;
-  /** Full technique instructions — behind "View instructions" on the timer. */
+/** One drill of the session, as the flow needs it: its page, plus the timer and log screens. */
+export interface GuidedDrill extends DrillPageDrill {
+  /** Full technique instructions, behind "View instructions" on the timer. */
   instructions: string;
-  /** "Partner" / "Wall" / "Solo". */
-  setup: string;
   /** One technique cue for the timer screen. */
   cue: string;
-  /** What to log when the timer ends. */
-  logProtocol: string;
-  /** What counts as a success. */
-  counts: string;
-  /** "7 of 10". */
-  practiceTarget: string;
-  duration: string;
   durationMinutes: number;
   logPrompt: string;
 }
@@ -48,12 +42,10 @@ export interface OutlineItem {
 export interface NextStep {
   /** The re-test is open: it is the next thing to do, whatever the week says. */
   retestOpen: boolean;
-  /** In-sentence skill the re-test tests ("your third-shot drop"). */
-  skillPhrase?: string;
-  /** When the next week's sessions open: "Monday, Nov 3". */
-  nextWeek: string;
-  /** The re-test date when it opens before next week ("Nov 1"), else null. */
-  retestBeforeNextWeek: string | null;
+  /** Where today sits in the week and the plan, for the line under the count. */
+  week: WeekContext;
+  /** Something was logged on the current UTC day as of page load (`loggedThisUtcDay`). */
+  loggedToday: boolean;
 }
 
 export interface GuidedSessionProps {
@@ -62,8 +54,6 @@ export interface GuidedSessionProps {
   outline: OutlineItem[];
   /** The drills still to run today, in order. */
   drills: GuidedDrill[];
-  /** The plan's match re-test target sentence, shown beside the practice target. */
-  retestMetric: string | null;
   /** Weekly count as of page load, shown if the log write returns nothing. */
   fallbackWeekly: WeeklyProgress;
   /** Every plan drill as the recap shows it, with today's results as of page load. */
@@ -119,7 +109,10 @@ export function GuidedSession(props: GuidedSessionProps) {
   }));
   const drill = props.drills.find((d) => !loggedNow.includes(d.id));
 
-  // Every drill confirmed: the session is complete. This is also what the
+  // Every drill confirmed: the session is complete. `next.week` is from page
+  // load; the route's re-render after the last log brings a fresh one, and
+  // that server render is the authority if the day rolled over meanwhile.
+  // This is also what the
   // route renders on a fresh load once everything is logged, so the swap Next
   // makes after the last log (fresh props, no drills left) lands on the same
   // screen this is already showing.
@@ -129,7 +122,7 @@ export function GuidedSession(props: GuidedSessionProps) {
         <SessionCompleteScreen
           weekly={weekly}
           recap={props.recap.map((row) => ({ ...row, result: loggedValues[row.id] ?? row.result }))}
-          next={props.next}
+          next={{ ...props.next, loggedToday: props.next.loggedToday || loggedNow.length > 0 }}
         />
       </main>
     );
@@ -146,7 +139,6 @@ export function GuidedSession(props: GuidedSessionProps) {
           position={position}
           total={outline.length}
           next={next}
-          retestMetric={props.retestMetric}
           onBegin={() => setStep("active")}
         />
       )}
@@ -198,59 +190,30 @@ export function GuidedSession(props: GuidedSessionProps) {
   );
 }
 
-/* ── Screen 1 — Brief ───────────────────────────────────────────── */
+/* ── Screen 1: the drill page ───────────────────────────────────── */
 /**
- * Drill n of m · duration · setup, the title, the instructions, the logging
- * protocol, the diagram, Begin. What is NOT here any more: the session's
- * total, the skill category, and an outline that repeated the title and
- * duration — the next drill is one small line at the bottom instead.
+ * The drill's page (`DrillPage`: diagram, name, one sentence, its facts, the
+ * scoring rule), then Begin and the next drill. The same page a plan row
+ * opens read-only; here it has the one button that starts the clock.
  */
 function BriefScreen({
   drill,
   position,
   total,
   next,
-  retestMetric,
   onBegin,
 }: {
   drill: GuidedDrill;
   position: number;
   total: number;
   next: OutlineItem | null;
-  retestMetric: string | null;
   onBegin: () => void;
 }) {
   return (
     <>
-      <header className="flex items-center justify-between pt-4">
-        <Link
-          href="/plan"
-          aria-label="Back to my plan"
-          className="relative after:absolute after:-inset-1 after:content-[''] flex h-9 w-9 items-center justify-center rounded-md border border-line-strong text-ink-2 transition-colors hover:border-line-hover hover:text-ink"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M15 5l-7 7 7 7"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Link>
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
-          Drill {position} of {total} · {drill.duration} · {drill.setup}
-        </span>
-      </header>
+      <DrillPageHeader backHref="/plan" backLabel="Back to my plan" position={position} total={total} />
 
-      <DrillBriefContent drill={drill} retestMetric={retestMetric} />
-
-      <div className="flex-1" />
-
-      {/* Shot demo sits centered in the empty space. It renders nothing for
-          drills whose animation isn't built yet, in which case the two
-          spacers simply collapse into one. */}
-      <ShotDemo drillId={drill.id} setup={drill.setup} />
+      <DrillPageBody drill={drill} />
 
       <div className="flex-1" />
 
@@ -259,13 +222,9 @@ function BriefScreen({
           onClick={onBegin}
           className="flex h-[52px] w-full items-center justify-center rounded-lg bg-optic text-[15px] font-semibold text-optic-ink transition-colors hover:bg-optic-hover active:scale-[0.98]"
         >
-          {position === 1 ? "Begin" : `Begin drill ${position}`}
+          Begin
         </button>
-        {next && (
-          <p className="text-center font-mono text-[11px] uppercase tracking-[0.12em] text-ink-3">
-            Next: {next.name} · {next.duration}
-          </p>
-        )}
+        <NextDrillLine next={next} />
       </div>
     </>
   );
@@ -337,14 +296,13 @@ function ActiveScreen({ drill, onFinish }: { drill: GuidedDrill; onFinish: () =>
         </div>
       </div>
 
-      {/* One cue and the measurement reminder — not the paragraph again. */}
+      {/* One cue and the scoring rule, not the paragraph again. */}
       <div className="flex flex-col gap-3">
         <p className="font-display text-[20px] font-bold leading-[1.3] tracking-[-0.01em]">
           {drill.cue}
         </p>
         <p className="text-pretty text-[16px] leading-[1.55] text-ink-2">
-          {drill.logProtocol} When the clock hits zero, stop where you are and log it. Falling
-          short of {drill.practiceTarget} still counts.
+          {scoringRule(drill.unit)} Falling short of {drill.practiceTarget} still counts.
         </p>
         <button
           type="button"
@@ -464,10 +422,19 @@ const SECONDARY =
  * /session route renders the identical screen when it loads with nothing
  * left to do, which is also what Next swaps in after the last log.
  *
- * Each drill's number against its target and the last one before today:
- * numbers in ink, labels in ink-3, nothing marked for hitting the target, no
- * praise. What comes next is the screen's main element and holds its one
- * accent. On a drill's first logged session there is no "last time" at all.
+ * The week's count is the main line ("1 of 2 sessions this week."), with what
+ * comes next under it as supporting text: another day, next Monday, or, in
+ * the plan's final week, the re-test date. Then each drill's number against
+ * its target and the last one before today (numbers in ink, labels in ink-3,
+ * nothing marked for hitting the target, no praise; no "last time" on a
+ * drill's first logged session), and the way back, as one group with no gap
+ * pushing them apart.
+ *
+ * With the re-test open the screen has one headline, and it is the re-test:
+ * "Your re-test is open.", how long it takes, the same results, then "Take
+ * your re-test" as the one accent and "Back to my plan" secondary. No weekly
+ * count there: two headlines of the same weight competed, and the re-test is
+ * what comes next whatever the week says.
  */
 export function SessionCompleteScreen({
   weekly,
@@ -478,22 +445,20 @@ export function SessionCompleteScreen({
   recap: RecapRow[];
   next: NextStep;
 }) {
-  const weekDone = weekly.total > 0 && weekly.completed >= weekly.total;
-  const weekLine = `${weekly.completed} of ${weekly.total} sessions this week.`;
-  // Sessions left: any other day. Week done: Monday, or the re-test first.
-  const upcoming = !weekDone
-    ? { label: "Next session", when: "Any day but today." }
-    : next.retestBeforeNextWeek
-      ? { label: "Re-test opens", when: `${next.retestBeforeNextWeek}.` }
-      : { label: "Next session", when: `${next.nextWeek}.` };
   return (
     <>
       <header className="flex flex-col gap-3 pt-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">Session complete</p>
-        {/* Confirmation, not the headline: what comes next is the screen's main element. */}
-        <h1 className="font-display text-[20px] font-bold leading-[1.25] tracking-[-0.01em]">
-          Session logged.
+        <h1 className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em] tabular-nums">
+          {next.retestOpen
+            ? "Your re-test is open."
+            : `${weekly.completed} of ${weekly.total} sessions this week.`}
         </h1>
+        <p className="text-pretty text-[16px] leading-[1.6] text-ink-2">
+          {next.retestOpen
+            ? "Same twelve questions, about four minutes."
+            : recapSupportLine(next.week, weekly, next.loggedToday)}
+        </p>
       </header>
 
       <ul className="border-b border-line">
@@ -502,30 +467,19 @@ export function SessionCompleteScreen({
         ))}
       </ul>
 
-      <div className="flex-1" />
-
       {next.retestOpen ? (
-        <div className="flex flex-col gap-4">
-          <p className="text-[16px] leading-[1.6] text-ink-2">{weekLine}</p>
-          <RetestOpen variant="block" skillPhrase={next.skillPhrase} />
+        <div className="flex flex-col gap-3">
+          <Link href="/retest" className={PRIMARY}>
+            Take your re-test
+          </Link>
           <Link href="/plan" className={SECONDARY}>
             Back to my plan
           </Link>
         </div>
       ) : (
-        <section className="flex flex-col gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{upcoming.label}</p>
-          <p className="font-display text-[28px] font-extrabold leading-[1.15] tracking-[-0.01em]">
-            {upcoming.when}
-          </p>
-          <p className="text-[16px] leading-[1.6] text-ink-2">
-            {weekLine}
-            {weekDone ? " That's the week. Rest counts too." : ""}
-          </p>
-          <Link href="/plan" className={`mt-3 ${PRIMARY}`}>
-            Back to my plan
-          </Link>
-        </section>
+        <Link href="/plan" className={PRIMARY}>
+          Back to my plan
+        </Link>
       )}
     </>
   );

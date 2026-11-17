@@ -23,6 +23,7 @@ export function InlineLogIn({
   onSignedIn,
   onUnconfirmed,
   onBack,
+  backLabel,
 }: {
   initialEmail: string;
   /** Signed in now: claim the plan and leave the screen. */
@@ -30,6 +31,8 @@ export function InlineLogIn({
   /** A code went to this address (or one did under a minute ago). */
   onUnconfirmed: (email: string) => void;
   onBack: () => void;
+  /** Names where Back goes: the save form, or plain "Back" to the code screen. */
+  backLabel: string;
 }) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -77,9 +80,9 @@ export function InlineLogIn({
   }
 
   return (
-    // Top-aligned, so the password and the button stay above the keyboard
-    // that the password's autofocus opens.
-    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-5 bg-background px-6 pb-12 pt-20 text-ink">
+    // Top-aligned on a phone, so the password and the button stay above the
+    // keyboard that the password's autofocus opens. Centered at 1024px and wider.
+    <main className="mx-auto flex min-h-app w-full max-w-md flex-col gap-5 bg-background px-6 pb-12 pt-20 text-ink lg:justify-center lg:pt-12">
       <h1 className="text-balance font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em]">
         Log in
       </h1>
@@ -102,7 +105,7 @@ export function InlineLogIn({
               another address's sign-up is pending here. */}
           <Link
             href="/forgot-password"
-            className="-mb-2 self-start py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
+            className="-mb-2.5 flex min-h-11 items-center self-start text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink"
           >
             Forgot password?
           </Link>
@@ -128,7 +131,7 @@ export function InlineLogIn({
         disabled={busy}
         className="-my-2 self-start py-2 text-[15px] text-ink-2 underline decoration-line-hover underline-offset-4 transition-colors hover:text-ink disabled:pointer-events-none disabled:opacity-60"
       >
-        Back
+        {backLabel}
       </button>
     </main>
   );

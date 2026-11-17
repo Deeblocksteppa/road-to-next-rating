@@ -200,10 +200,19 @@ export default async function SettingsPage({
           </div>
           <div className="h-px bg-line" />
           <div className="flex items-center justify-between gap-4 px-[18px] py-[15px]">
-            <span className="text-[16px] leading-[1.4] text-ink">
-              Email me while a session is still due
+            {/* The real cadence (`reminders.ts`): one email on any day with
+                nothing logged, until the week's two sessions are done, and
+                none after the re-test date. */}
+            <span className="flex flex-col gap-1">
+              <span className="text-[16px] leading-[1.4] text-ink">Session reminders</span>
+              <span id="session-reminder-cadence" className="text-pretty text-[16px] leading-[1.5] text-ink-2">
+                One email a day while a session is left this week. Stops at your re-test.
+              </span>
             </span>
-            <DrillReminderToggle initialEnabled={drillReminderEnabled} />
+            <DrillReminderToggle
+              initialEnabled={drillReminderEnabled}
+              describedBy="session-reminder-cadence"
+            />
           </div>
         </div>
       </section>

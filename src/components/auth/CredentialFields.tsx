@@ -7,8 +7,8 @@ const INPUT =
   "h-8 w-full bg-transparent text-[16px] text-ink placeholder-ink-3 focus-visible:outline-none";
 
 /**
- * Email and password as one block, two rows: the save form and the inline
- * log-in. Each row keeps its mono label inside it, so the label is still
+ * Email and password as one block, two rows: the save form, the inline
+ * log-in and /login. Each row keeps its mono label inside it, so the label is still
  * there once the field is filled: a placeholder-only label disappears exactly
  * when the player goes back to check what they typed. Focus lights the whole
  * block's border, so its rounded corners stay intact.
@@ -24,6 +24,8 @@ export function CredentialFields({
   minLength,
   emailRef,
   passwordRef,
+  names,
+  describedBy,
 }: {
   /** Keeps the ids unique per view: `{idPrefix}-email`, `{idPrefix}-password`. */
   idPrefix: string;
@@ -36,6 +38,14 @@ export function CredentialFields({
   minLength?: number;
   emailRef?: Ref<HTMLInputElement>;
   passwordRef?: Ref<HTMLInputElement>;
+  /** Field names, for a form that posts to a server action (/login). */
+  names?: { email: string; password: string };
+  /**
+   * The id of an error the page arrived with (after a redirect). Both fields
+   * point at it and are marked invalid: a screen reader may not read out an
+   * alert that was already on the page.
+   */
+  describedBy?: string;
 }) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -48,8 +58,14 @@ export function CredentialFields({
         <input
           ref={emailRef}
           id={`${idPrefix}-email`}
+          name={names?.email}
           type="email"
           autoComplete="email"
+          // An address is never a sentence: no capital first letter, no autocorrect.
+          autoCapitalize="off"
+          autoCorrect="off"
+          aria-invalid={describedBy ? true : undefined}
+          aria-describedby={describedBy}
           placeholder="you@example.com"
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
@@ -66,6 +82,9 @@ export function CredentialFields({
           <input
             ref={passwordRef}
             id={`${idPrefix}-password`}
+            name={names?.password}
+            aria-invalid={describedBy ? true : undefined}
+            aria-describedby={describedBy}
             type={showPassword ? "text" : "password"}
             autoComplete={passwordAutoComplete}
             minLength={minLength}

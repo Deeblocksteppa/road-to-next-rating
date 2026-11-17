@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { shotTypeForDrill, type ShotType } from "@/lib/drill-shot";
+import { shotTypeForDrill, wallLabelsForDrill, type ShotType, type WallLabels } from "@/lib/drill-shot";
 
 /**
  * A small side-view diagram of the drill's shot, shown on the Brief screen so a
@@ -25,6 +25,12 @@ import { shotTypeForDrill, type ShotType } from "@/lib/drill-shot";
  * Motion is SMIL-driven (reliable for path following in mobile Safari/Chrome);
  * prefers-reduced-motion swaps the moving ball for the static dotted arc plus a
  * ball resting at the shot's end point.
+ *
+ * A drill prescribed at a wall isn't played over a net, so it gets the wall
+ * template instead: one drawing shared by every wall version (a wall, where
+ * the player stands, the ball out and back), with labels per drill saying how
+ * far to stand and what the return should do. The picture is the same for all
+ * of them; the labels carry what differs.
  */
 
 const COURT = "#4A4A50"; // line-hover — muted but legible court lines
@@ -32,7 +38,23 @@ const OPTIC = "#D8E34C";
 // ink-2, not ink-3: at 6.5px the labels were the least legible thing on the
 // screen. Raised a step and a size along with it.
 const LABEL = "#B0B0AB";
+/**
+ * Label size in the drawing's own units (the viewBox is 320 wide). The
+ * drawing scales with its container, so this is what keeps a label at 10px
+ * or more on a 375px phone: 11.7px on the drill page (327px wide) and 10.2px
+ * in the landing's framed example (285px). Tracking is tighter than a mono
+ * label's elsewhere so the longest pair on one line still clears.
+ */
+const LABEL_TEXT = {
+  fill: LABEL,
+  fontSize: 11.5,
+  letterSpacing: "0.05em",
+  fontFamily: "var(--font-mono), monospace",
+} as const;
 const GROUND = 120;
+/** Baseline of the labels under the court: far enough down that the target ring on the ground clears their caps. */
+const LABEL_Y = 138;
+const VIEW_BOTTOM = 144;
 const NET_X = 178;
 const NET_TOP = 88;
 
@@ -42,21 +64,26 @@ export function ShotDemo({
   forceStatic = false,
 }: {
   drillId: string;
-  /** The prescribed version's setup. A wall drill isn't played over a net, so it gets no court. */
+  /** The prescribed version's setup. A wall drill isn't played over a net: it gets the wall template. */
   setup?: string;
   /** Render the reduced-motion state regardless of the OS setting (previews, fixtures). */
   forceStatic?: boolean;
 }) {
   const reduced = usePrefersReducedMotion() || forceStatic;
 
+  if (setup === "Wall") {
+    const labels = wallLabelsForDrill(drillId);
+    return labels ? <WallDemo labels={labels} reduced={reduced} /> : null;
+  }
+
   const type = shotTypeForDrill(drillId);
-  if (!type || setup === "Wall") return null;
+  if (!type) return null;
   const demo = DEMOS[type];
 
   return (
     <div role="img" aria-label={demo.aria} className="w-full">
       <svg
-        viewBox={`0 ${demo.top} 320 ${140 - demo.top}`}
+        viewBox={`0 ${demo.top} 320 ${VIEW_BOTTOM - demo.top}`}
         className="h-auto w-full"
         aria-hidden="true"
       >
@@ -67,7 +94,7 @@ export function ShotDemo({
         <line x1={NET_X - 5} y1={NET_TOP} x2={NET_X + 5} y2={NET_TOP} stroke={COURT} strokeWidth="1.5" strokeLinecap="round" />
         {/* Beside the post at mid-height, not above it: every arc crosses the
             space above the net, and the label was sitting in the flight path. */}
-        <text x={NET_X - 6} y={NET_TOP + 14} fill={LABEL} fontSize="7" letterSpacing="0.1em" textAnchor="end" fontFamily="var(--font-mono), monospace">
+        <text x={NET_X - 6} y={NET_TOP + 20} textAnchor="end" {...LABEL_TEXT}>
           NET
         </text>
 
@@ -91,11 +118,105 @@ export function ShotDemo({
       </svg>
       {/* Under reduced motion the ball is parked at the landing point and the
           arc carries the shape, so the picture is complete without playing. */}
-      {reduced && (
-        <p className="mt-1 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
-          Dotted line: the ball&apos;s path · ball: where it lands
-        </p>
-      )}
+      {reduced && <StaticCaption ball="where it lands" />}
+    </div>
+  );
+}
+
+/** What the still picture shows, since nothing moves: the path, and where the ball is parked. */
+function StaticCaption({ ball }: { ball: string }) {
+  return (
+    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
+      Dotted line: the ball&apos;s path · ball: {ball}
+    </p>
+  );
+}
+
+/* ── The wall template ──────────────────────────────────────────── */
+
+const WALL_X = 272;
+/** Net height on the wall, on the court diagrams' scale (ground 120, net top 88). */
+const WALL_LINE_Y = NET_TOP;
+const STAND_X = 78;
+/** A label's width in the drawing's units: mono advance (0.6em) plus tracking, per character. */
+const labelWidth = (text: string) => text.length * LABEL_TEXT.fontSize * 0.65;
+/**
+ * Centre of the label for what the return does: midway between the standing
+ * label (or the standing tick, when the drill names no distance) and WALL.
+ * A fixed centre left "KITCHEN DISTANCE" and "NET HEIGHT" reading as one label.
+ */
+function wallBackX(stand: string | undefined): number {
+  const left = STAND_X + (stand ? labelWidth(stand) / 2 : 0);
+  const right = WALL_X - labelWidth("WALL") / 2;
+  return (left + right) / 2;
+}
+
+/** Out to the wall, back to the player: one path for every wall drill. */
+const WALL_MOTION: Motion = {
+  // The outgoing leg stops with the ball's edge on the wall's face (radius 4.5).
+  path: `M${STAND_X + 8} 96 Q 180 70 ${WALL_X - 6} 82 Q 186 88 ${STAND_X + 22} 106`,
+  dur: "2.8s",
+  // out → the briefest contact with the wall → back → rest. The wall is at
+  // 0.52 of the path's length (the two legs are not equal), so that is
+  // where the ball holds.
+  keyTimes: "0;0.42;0.46;0.88;1",
+  keyPoints: "0;0.52;0.52;1;1",
+  keySplines: "0.3 0 0.7 1;0 0 1 1;0.3 0 0.6 1;0 0 1 1",
+  opacity: { keyTimes: "0;0.05;0.86;0.94;1", values: "0;1;1;0;0" },
+  rest: [STAND_X + 22, 106],
+};
+
+function WallDemo({ labels, reduced }: { labels: WallLabels; reduced: boolean }) {
+  return (
+    <div role="img" aria-label={labels.aria} className="w-full">
+      <svg viewBox={`0 52 320 ${VIEW_BOTTOM - 52}`} className="h-auto w-full" aria-hidden="true">
+        <line x1="12" y1={GROUND} x2={WALL_X} y2={GROUND} stroke={COURT} strokeWidth="1" />
+        {/* The wall: heavier than a court line, so it reads as a surface. */}
+        <line x1={WALL_X} y1={GROUND} x2={WALL_X} y2="58" stroke={COURT} strokeWidth="3" strokeLinecap="round" />
+        {/* Where the player stands. Unlabelled when the drill names no distance. */}
+        <Tick x={STAND_X} top={108} />
+
+        {/* A height on the wall, for the drills that name one (net height, the tape). */}
+        {labels.line !== undefined && (
+          <>
+            <line
+              x1={WALL_X - 34}
+              y1={WALL_LINE_Y}
+              x2={WALL_X - 3}
+              y2={WALL_LINE_Y}
+              stroke={COURT}
+              strokeWidth="1.5"
+              strokeDasharray="3 3"
+              strokeLinecap="round"
+            />
+            {labels.line && (
+              // Under the line, by the wall, low enough that the ball on its
+              // way back passes over it without touching.
+              <text x={WALL_X - 6} y={WALL_LINE_Y + 22} textAnchor="end" {...LABEL_TEXT}>
+                {labels.line}
+              </text>
+            )}
+          </>
+        )}
+
+        <path
+          d={WALL_MOTION.path}
+          fill="none"
+          stroke={OPTIC}
+          strokeOpacity={reduced ? "0.8" : "0.5"}
+          strokeWidth="1.5"
+          strokeDasharray="0.5 5"
+          strokeLinecap="round"
+        />
+
+        {labels.stand && <CourtLabel x={STAND_X}>{labels.stand}</CourtLabel>}
+        {/* Between the standing label and WALL, which sits under the wall itself. */}
+        <CourtLabel x={wallBackX(labels.stand)}>{labels.back}</CourtLabel>
+        <CourtLabel x={WALL_X}>WALL</CourtLabel>
+        <Ball reduced={reduced} motion={WALL_MOTION} />
+      </svg>
+      {/* Parked on its way back to the player, not at a landing point. */}
+      {reduced && <StaticCaption ball="back to you" />}
     </div>
   );
 }
@@ -131,10 +252,21 @@ function Target({ x }: { x: number }) {
   );
 }
 
-/** A mono court label centered under the court, matching the drop's language. */
-function CourtLabel({ x, children }: { x: number; children: string }) {
+/**
+ * A mono court label under the court, matching the drop's language. Centered
+ * on `x` unless `anchor` says the label starts there.
+ */
+function CourtLabel({
+  x,
+  anchor = "middle",
+  children,
+}: {
+  x: number;
+  anchor?: "middle" | "start";
+  children: string;
+}) {
   return (
-    <text x={x} y="134" fill={LABEL} fontSize="7" letterSpacing="0.1em" textAnchor="middle" fontFamily="var(--font-mono), monospace">
+    <text x={x} y={LABEL_Y} textAnchor={anchor} {...LABEL_TEXT}>
       {children}
     </text>
   );
@@ -201,7 +333,11 @@ const DEMOS: Record<ShotType, Demo> = {
   /* Drop — a high, floaty parabola from the baseline that settles at the apex
      and drops soft into the kitchen just past the net. */
   drop: {
-    top: 18,
+    // The arc's apex is at about y33 (ball top 28). The labels under the court
+    // moved down four units, so here the sky gives four back and this drawing,
+    // the tallest, keeps its height: on its page "Begin" stays above the fold
+    // at 375×812. The flatter drawings are four units taller than they were.
+    top: 22,
     aria:
       "Side view of a third-shot drop: the ball floats up from the baseline in a soft high arc and drops gently into the kitchen just past the net.",
     marks: (
@@ -249,7 +385,9 @@ const DEMOS: Record<ShotType, Demo> = {
     labels: (
       <>
         <CourtLabel x={115}>MID-COURT</CourtLabel>
-        <CourtLabel x={205}>KITCHEN · TARGET</CourtLabel>
+        {/* Starts at the net, where the kitchen does: centered under the
+            target it ran into MID-COURT and the two read as one label. */}
+        <CourtLabel x={NET_X} anchor="start">KITCHEN · TARGET</CourtLabel>
       </>
     ),
     motion: {
@@ -303,7 +441,9 @@ const DEMOS: Record<ShotType, Demo> = {
         <Tick x={214} top={112} />
       </>
     ),
-    labels: <CourtLabel x={130}>KITCHEN</CourtLabel>,
+    // Under the net, as on the dink: the kitchen runs from one tick to the
+    // other (142 to 214). At x=130 most of the word sat behind the near line.
+    labels: <CourtLabel x={NET_X}>KITCHEN</CourtLabel>,
     motion: {
       path: "M244 74 L126 82 C 148 64 184 80 208 102",
       dur: "2.2s",

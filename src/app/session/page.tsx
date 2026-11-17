@@ -6,8 +6,6 @@ import {
   SessionCompleteScreen,
   type NextStep,
 } from "@/components/session/GuidedSession";
-import { monthDay } from "@/lib/date-format";
-import { SKILL_LABELS } from "@/lib/diagnoses";
 import { toGuidedDrill } from "@/lib/drill-lookup";
 import { loadPlanDrills } from "@/lib/plan-drills";
 import {
@@ -15,33 +13,29 @@ import {
   getScoredSessionsByDrill,
   getTodayLog,
   getWeeklyProgress,
+  loggedThisUtcDay,
   startOfSittingUTC,
-  startOfWeekUTC,
 } from "@/lib/drill-sessions";
 import { getPlanTimeline } from "@/lib/plan-timeline";
 import { lastTimeBefore, type RecapRow } from "@/lib/session-recap";
 import { createClient } from "@/lib/supabase/server";
-import type { SkillId } from "@/lib/types";
+import { weekContext } from "@/lib/week-status";
 
 /**
- * Guided session flow (brief → timer → log → confirmation).
+ * Guided session flow (drill page → timer → log → confirmation).
  *
  * Lives outside the (app) route group deliberately: this is a focused,
  * one-way flow, so it gets no tab bar — same reasoning as /settings.
  *
  * A session is every drill on the plan, same day (`session-plan.ts`), so this
- * route runs them all, in plan order, one brief → timer → log loop per drill.
+ * route runs them all, in plan order, one page → timer → log loop per drill.
  * It used to open only the first drill not yet logged this week, under a Home
  * button that promised the combined length of both. Drills already logged
  * today are skipped, so leaving halfway and coming back resumes the session
- * rather than restarting it. `?drill=<id>` — the Plan tab's "Start drill" —
- * starts with that drill; the rest of the session still follows.
+ * rather than restarting it. A session always starts at the first drill not
+ * yet logged today: there is no way to start at a later one.
  */
-export default async function SessionPage({
-  searchParams,
-}: {
-  searchParams: { drill?: string };
-}) {
+export default async function SessionPage() {
   const supabase = await createClient();
 
   const {
@@ -53,7 +47,7 @@ export default async function SessionPage({
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, drill_ids, diagnosis_id, retest_metric, retest_date, created_at")
+    .select("id, drill_ids, diagnosis_id, retest_date, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -63,8 +57,8 @@ export default async function SessionPage({
     redirect("/home");
   }
 
-  // As prescribed: the solo version for a player without a partner. The brief,
-  // the timer cue and the log question all come from this.
+  // As prescribed: the solo version for a player without a partner. The drill
+  // page, the timer cue and the log question all come from this.
   const planDrills = await loadPlanDrills(supabase, plan);
 
   // The recap's inputs come with the page so the screen is ready the moment
@@ -88,12 +82,9 @@ export default async function SessionPage({
     target: d.practiceTarget,
     lastTime: lastTimeBefore(scored.get(d.id) ?? [], sittingStart),
   }));
-  const next = await nextStep(supabase, plan);
+  const next = nextStep(plan, loggedThisUtcDay(todayLog));
 
-  const notDone = planDrills.filter((d) => !completedToday.has(d.id));
-  const requested = notDone.findIndex((d) => d.id === searchParams.drill);
-  const remaining =
-    requested > 0 ? [...notDone.slice(requested), ...notDone.slice(0, requested)] : notDone;
+  const remaining = planDrills.filter((d) => !completedToday.has(d.id));
   const weekComplete = weekly.total > 0 && weekly.completed >= weekly.total;
   const startedToday = remaining.length < planDrills.length;
 
@@ -145,7 +136,6 @@ export default async function SessionPage({
         doneToday: completedToday.has(d.id),
       }))}
       drills={remaining.map(toGuidedDrill)}
-      retestMetric={(plan.retest_metric as string | null) ?? null}
       fallbackWeekly={weekly}
       recap={recap}
       next={next}
@@ -155,34 +145,14 @@ export default async function SessionPage({
 
 /**
  * What the recap can point to: the re-test once it is open; otherwise
- * another session this week, or, once the week is done, Monday or the
- * re-test if it opens first. The recap chooses with its own weekly count.
+ * another day this week, next Monday, or, in the plan's final week, the
+ * re-test date. The recap chooses with its own weekly count (`recapSupportLine`).
  */
-async function nextStep(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  plan: { diagnosis_id: string | null; retest_date: string | null; created_at: string }
-): Promise<NextStep> {
+function nextStep(
+  plan: { retest_date: string | null; created_at: string },
+  loggedToday: boolean
+): NextStep {
   const timeline = plan.retest_date ? getPlanTimeline(plan.created_at, plan.retest_date) : null;
   const retestOpen = timeline !== null && timeline.daysUntilRetest <= 0;
-  let skillPhrase: string | undefined;
-  if (retestOpen && plan.diagnosis_id) {
-    const { data: diagnosis } = await supabase
-      .from("diagnoses")
-      .select("bottleneck")
-      .eq("id", plan.diagnosis_id)
-      .maybeSingle();
-    const skill = diagnosis?.bottleneck as SkillId | undefined;
-    skillPhrase = skill ? SKILL_LABELS[skill] : undefined;
-  }
-  const nextWeekStart = new Date(startOfWeekUTC().getTime() + 7 * 24 * 60 * 60 * 1000);
-  const retestBeforeNextWeek =
-    plan.retest_date && new Date(plan.retest_date).getTime() < nextWeekStart.getTime()
-      ? monthDay(new Date(plan.retest_date))
-      : null;
-  return {
-    retestOpen,
-    skillPhrase,
-    nextWeek: `Monday, ${monthDay(nextWeekStart)}`,
-    retestBeforeNextWeek,
-  };
+  return { retestOpen, week: weekContext(plan.retest_date), loggedToday };
 }
